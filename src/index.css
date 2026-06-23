@@ -1,0 +1,991 @@
+:root {
+  /* Font Family */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-title: 'Outfit', var(--font-sans);
+
+  /* Color System (Dark Luxury & Gold Accent) */
+  --bg-base: #090a0f;
+  --bg-surface: rgba(17, 19, 28, 0.75);
+  --bg-surface-solid: #11131c;
+  --bg-card: rgba(26, 29, 43, 0.6);
+  --bg-card-hover: rgba(36, 40, 59, 0.8);
+  
+  --primary: #d4af37; /* Metallic Gold */
+  --primary-rgb: 212, 175, 55;
+  --primary-hover: #f3e5ab; /* Champagne Gold */
+  --primary-active: #aa8513;
+  
+  --text-main: #f3f4f6;
+  --text-muted: #8d92a3;
+  --text-inverse: #090a0f;
+
+  --border-color: rgba(255, 255, 255, 0.08);
+  --border-focus: rgba(212, 175, 55, 0.6);
+  
+  --success: #10b981;
+  --success-bg: rgba(16, 185, 129, 0.1);
+  --danger: #ef4444;
+  --danger-bg: rgba(239, 68, 68, 0.1);
+  --warning: #f59e0b;
+  --warning-bg: rgba(245, 158, 11, 0.1);
+  --info: #3b82f6;
+
+  /* Glassmorphism Effect */
+  --backdrop-blur: blur(16px);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.08);
+
+  /* AG Grid overrides variables */
+  --ag-background-color: #11131c;
+  --ag-header-background-color: #161925;
+  --ag-odd-row-background-color: #131622;
+  --ag-border-color: rgba(255, 255, 255, 0.08);
+  --ag-row-hover-color: rgba(212, 175, 55, 0.1);
+  --ag-selected-row-color: rgba(212, 175, 55, 0.2);
+  --ag-foreground-color: #f3f4f6;
+  --ag-header-foreground-color: #8d92a3;
+  --ag-font-family: var(--font-sans);
+  --ag-font-size: 13px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg-base);
+  color: var(--text-main);
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(212, 175, 55, 0.05) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(59, 130, 246, 0.03) 0px, transparent 50%),
+    radial-gradient(at 50% 100%, rgba(26, 29, 43, 0.5) 0px, transparent 50%);
+  background-attachment: fixed;
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-base);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* App Containers */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  max-width: 1920px;
+  margin: 0 auto;
+  padding: 16px;
+  gap: 16px;
+}
+
+/* Glassmorphism Panels */
+.glass-panel {
+  background: var(--bg-surface);
+  backdrop-filter: var(--backdrop-blur);
+  border: var(--glass-border);
+  border-radius: 12px;
+  box-shadow: var(--glass-shadow);
+  padding: 20px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-panel:hover {
+  border-color: rgba(212, 175, 55, 0.2);
+}
+
+/* Typography & Titles */
+h1, h2, h3, h4 {
+  font-family: var(--font-title);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #fff 0%, var(--primary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Button & Form Controls */
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary) 0%, #aa8513 100%);
+  color: var(--text-inverse);
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: transform 0.1s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.2);
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(212, 175, 55, 0.3);
+}
+
+.btn-primary:active {
+  transform: translateY(1px);
+}
+
+.input-field {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  padding: 8px 12px;
+  border-radius: 6px;
+  outline: none;
+  font-size: 14px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input-field:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.15);
+}
+
+/* select 요소 하위 option의 브라우저 기본 배경 및 글자색 보정 (다크 모드 가독성 확보) */
+.input-field option,
+select option {
+  background-color: #11131c;
+  color: #f3f4f6;
+}
+
+
+/* Utility Badges */
+.badge {
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+}
+
+.badge-success {
+  background-color: var(--success-bg);
+  color: var(--success);
+}
+
+.badge-danger {
+  background-color: var(--danger-bg);
+  color: var(--danger);
+}
+
+.badge-warning {
+  background-color: var(--warning-bg);
+  color: var(--warning);
+}
+
+/* AG Grid custom styling to fit premium design */
+.ag-theme-custom {
+  --ag-border-radius: 8px;
+}
+.ag-theme-custom .ag-root-wrapper {
+  border: 1px solid var(--border-color) !important;
+  box-shadow: var(--glass-shadow);
+}
+.ag-theme-custom .ag-cell-focus:not(.ag-cell-range-selected) {
+  border: 1px solid var(--primary) !important;
+  outline: none;
+}
+.ag-theme-custom .ag-header-cell-label {
+  font-family: var(--font-title);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Micro-animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* input[type="number"] 우측의 브라우저 기본 증감(스피너) 화살표 버튼 제거 */
+/* Chrome, Safari, Edge, Opera */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  margin: 0 !important;
+}
+
+/* Firefox */
+input[type="number"] {
+  -moz-appearance: textfield !important;
+  appearance: textfield !important;
+}
+
+
+/* 엑셀형 주문 테이블 커스텀 스타일 */
+.excel-table th, 
+.excel-table td {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 12px;
+  vertical-align: middle;
+  transition: background-color 0.15s ease;
+}
+
+.excel-table th {
+  font-weight: 700;
+  text-align: center;
+  font-family: var(--font-title);
+}
+
+.excel-table td {
+  padding: 0 !important; /* 인풋창이 셀을 꽉 채우게 패딩 제거 */
+}
+
+.excel-input {
+  width: 100%;
+  height: 30px;
+  background: transparent;
+  border: none;
+  color: var(--text-main);
+  padding: 2px 8px;
+  outline: none;
+  font-size: 12px;
+  transition: background-color 0.2s, box-shadow 0.2s;
+}
+
+.excel-input:focus {
+  background-color: rgba(212, 175, 55, 0.08);
+  box-shadow: inset 0 0 0 1px var(--primary);
+}
+
+.excel-input:disabled {
+  color: var(--text-muted);
+  background-color: rgba(0, 0, 0, 0.2);
+  cursor: not-allowed;
+}
+
+select.excel-input {
+  cursor: pointer;
+  padding: 2px 4px;
+}
+
+/* 스톤 선택 모달 내 아이템 호버 */
+.stone-select-item:hover {
+  background-color: rgba(212, 175, 55, 0.15) !important;
+  border-color: var(--primary) !important;
+}
+
+/* --- 모바일 반응형 카탈로그 스타일 추가 --- */
+
+.catalog-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+  overflow-y: auto;
+  max-height: 75vh;
+  padding-right: 4px;
+}
+
+@media (max-width: 768px) {
+  /* 카탈로그 매니저 목록 */
+  .catalog-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
+    gap: 10px !important;
+    max-height: 70vh !important;
+  }
+  
+  .catalog-header-bar {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 10px;
+  }
+  
+  .catalog-header-bar button {
+    width: 100%;
+    justify-content: center;
+    padding: 10px !important;
+    font-size: 14px !important;
+  }
+
+  /* 카탈로그 등록 폼 */
+  .catalog-form-container {
+    flex-direction: column !important;
+    gap: 16px !important;
+  }
+
+  .catalog-form-section {
+    width: 100% !important;
+  }
+
+  /* 스톤 그리드 테이블 랩 */
+  .catalog-stone-table-wrapper {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    margin-top: 8px;
+  }
+
+  .catalog-stone-table {
+    min-width: 600px !important; /* 스크롤 활성화를 위해 최소 너비 확보 */
+  }
+
+  /* 카탈로그 상세 화면 */
+  .catalog-detail-container {
+    flex-direction: column !important;
+    gap: 16px !important;
+  }
+
+  .catalog-detail-image-section {
+    width: 100% !important;
+    max-height: 300px !important;
+  }
+
+  .catalog-detail-info-section {
+    width: 100% !important;
+  }
+
+  .catalog-detail-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* PC용 헤더 네비게이션 버튼 가로 배열 보장 */
+.nav-buttons-container {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* --- 모바일 반응형 공통 스타일 추가 --- */
+
+/* 헤더 반응형 */
+@media (max-width: 1024px) {
+  .app-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    padding: 12px 16px !important;
+    gap: 16px !important;
+  }
+  
+  .app-nav {
+    width: 100% !important;
+    gap: 12px !important;
+  }
+
+  .nav-group {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    width: 100% !important;
+    gap: 6px !important;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.05);
+    padding-bottom: 8px;
+  }
+
+  .nav-group-label {
+    width: auto !important;
+    border-right: none !important;
+    padding-right: 0 !important;
+    margin-bottom: 4px;
+  }
+
+  .nav-buttons-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    width: 100%;
+  }
+
+  .nav-buttons-container button {
+    flex: 1 1 calc(50% - 6px);
+    justify-content: center;
+  }
+}
+
+@media (max-width: 600px) {
+  .nav-buttons-container button {
+    flex: 1 1 100%; /* 모바일 좁은 화면에서는 한 줄에 하나씩 */
+  }
+}
+
+/* 대시보드 반응형 */
+@media (max-width: 900px) {
+  .dashboard-charts-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* 주문서 작성(OrderGrid) 폼 그리드 반응형 */
+@media (max-width: 768px) {
+  .order-form-step-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    align-items: stretch !important;
+  }
+
+  .order-form-step-grid > div {
+    grid-column: span 24 !important; /* 모바일에서는 24칸 전체 너비 차지 */
+    width: 100% !important;
+  }
+}
+
+/* 공통 테이블 래퍼 모바일 최적화 */
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+/* 실시간 금시세 영역 반응형 */
+@media (max-width: 768px) {
+  .dashboard-rates-container {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+  }
+}
+
+/* 주문서 하단 액션 영역 반응형 */
+@media (max-width: 768px) {
+  .order-form-actions {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 16px !important;
+  }
+  .order-form-actions > button,
+  .order-form-actions > div {
+    width: 100% !important;
+  }
+  .order-form-actions > div {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+  }
+  .order-form-actions > div > div:first-child {
+    text-align: center !important;
+  }
+  .order-form-actions > div > div:last-child {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    gap: 8px !important;
+  }
+  .order-form-actions button {
+    width: 100% !important;
+    justify-content: center !important;
+    margin-left: 0 !important;
+  }
+}
+
+/* 세공 작업 툴바 및 진단 패널 반응형 */
+@media (max-width: 768px) {
+  .workshop-toolbar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+  }
+  .workshop-toolbar > div {
+    width: 100% !important;
+    margin-left: 0 !important;
+    justify-content: flex-start !important;
+  }
+  .workshop-toolbar .btn-primary {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+  .workshop-toolbar > div:last-child {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+  .workshop-diagnostic-panel {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+  }
+  .workshop-diagnostic-panel > button {
+    margin-left: 0 !important;
+    width: 100% !important;
+    padding: 6px !important;
+    text-align: center !important;
+  }
+}
+
+/* 장부 대장 필터 및 배치 액션 툴바 반응형 */
+@media (max-width: 900px) {
+  .ledger-filter-toolbar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+  }
+  .ledger-filter-toolbar > div {
+    width: 100% !important;
+  }
+  .ledger-filter-toolbar > div > input,
+  .ledger-filter-toolbar > div > select {
+    flex: 1 !important;
+    width: auto !important;
+  }
+  .ledger-filter-toolbar > div:last-child {
+    margin-left: 0 !important;
+    text-align: left !important;
+  }
+  
+  .ledger-action-toolbar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+  }
+  .ledger-action-toolbar > div {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+  .ledger-action-toolbar button {
+    margin-left: 0 !important;
+    width: 100% !important;
+    justify-content: center !important;
+  }
+  .ledger-action-toolbar > div:last-child {
+    text-align: left !important;
+  }
+}
+
+/* 모달창 반응형 너비 제약 */
+.responsive-modal {
+  max-width: 92vw !important;
+}
+
+/* 모바일 전용 타이틀 바 */
+.mobile-header-bar {
+  display: none;
+}
+
+@media (max-width: 1024px) {
+  .mobile-header-bar {
+    display: flex !important;
+  }
+
+  /* 모바일 네비게이션 가시성 제어 */
+  .app-nav.mobile-hide {
+    display: none !important;
+  }
+  .app-nav.mobile-show {
+    display: flex !important;
+  }
+  
+  /* 모바일 시뮬레이션 버튼 가시성 제어 */
+  .global-action-tools.mobile-hide {
+    display: none !important;
+  }
+  .global-action-tools.mobile-show {
+    display: flex !important;
+  }
+}
+
+/* --- 거래처 마스터 화면 모바일 반응형 --- */
+.customer-manager-grid {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 16px;
+  height: 100%;
+  align-items: start;
+}
+
+.customer-form-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* 모바일 전용 거래처 신규 등록 단축 버튼 (기본 숨김) */
+.mobile-customer-add-btn {
+  display: none;
+}
+
+/* 모바일용 Backdrop (기본 숨김) */
+.mobile-backdrop {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .customer-manager-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .mobile-customer-add-btn {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    font-size: 11px;
+    height: 32px;
+  }
+
+  /* 모바일에서 등록 폼 패널 가시성 제어 - 바텀 시트(Drawer) 레이아웃 */
+  .customer-form-panel.mobile-hide {
+    display: none !important;
+  }
+  
+  .customer-form-panel.mobile-show {
+    display: flex !important;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    max-height: 85vh;
+    overflow-y: auto;
+    border-radius: 16px 16px 0 0;
+    border-top: 2px solid var(--primary);
+    background: var(--bg-surface-solid);
+    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.6);
+    padding: 24px 20px 32px 20px;
+    animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+
+  /* 모바일 Backdrop 활성화 */
+  .mobile-backdrop {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 99;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* --- 금 시세 관리 화면 모바일 반응형 --- */
+.rates-manager-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 16px;
+}
+
+.rates-form-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.rates-cards-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  width: 100%;
+}
+
+@media (max-width: 900px) {
+  .rates-manager-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .rates-cards-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+  .rates-cards-grid > div {
+    padding: 10px !important;
+  }
+}
+
+.rates-card-inputs-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 10px;
+}
+
+.rates-card-inputs-grid > div:last-child {
+  grid-column: span 2;
+}
+
+@media (max-width: 600px) {
+  .rates-card-inputs-grid {
+    gap: 6px 8px !important;
+  }
+  .rates-card-inputs-grid label {
+    font-size: 10px !important;
+  }
+  .rates-card-inputs-grid input {
+    height: 28px !important;
+    padding: 4px 8px !important;
+    font-size: 11px !important;
+  }
+}
+
+/* 금 시세 폼 패널 모바일 바텀 시트 스타일 */
+.mobile-cancel-btn {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .rates-form-panel.mobile-hide {
+    display: none !important;
+  }
+  
+  .rates-form-panel.mobile-show {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    z-index: 100 !important;
+    max-height: 92vh !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    border-radius: 16px 16px 0 0 !important;
+    border-top: 2px solid var(--primary) !important;
+    background: var(--bg-surface-solid) !important;
+    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.6) !important;
+    padding: 20px 16px 50px 16px !important;
+    animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+  }
+
+/* --- 주문서 헤더 모바일 최적화 --- */
+.order-grid-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 32px;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 12px;
+}
+
+.order-grid-header .order-header-select-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.order-grid-header select {
+  width: 220px;
+}
+
+@media (max-width: 768px) {
+  .order-grid-header {
+    flex-direction: column-reverse !important;
+    align-items: stretch !important;
+    gap: 16px !important;
+  }
+
+  .order-grid-header .order-header-select-group {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 6px !important;
+  }
+
+  .order-grid-header select {
+    width: 100% !important;
+  }
+
+  .order-grid-header h2 {
+    justify-content: center !important;
+    text-align: center !important;
+    margin-bottom: 4px;
+  }
+}
+
+  .mobile-cancel-btn {
+    display: inline-flex !important;
+  }
+}
+
+/* --- 원장 내역 마스터(OrderList.tsx) 헤더 및 필터 반응형 --- */
+.order-list-header h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 12px;
+  width: 100%;
+}
+
+.order-list-header .header-subtitle {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: normal;
+}
+
+.order-list-filter-bar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  background: rgba(255,255,255,0.01);
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+}
+
+.order-list-filter-bar .filter-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.order-list-filter-bar .filter-group input {
+  width: 180px;
+}
+
+.order-list-filter-bar .filter-group select {
+  width: 120px;
+}
+
+.order-list-filter-bar .filter-action-group {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+@media (max-width: 900px) {
+  .order-list-header h2 {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 4px !important;
+  }
+  
+  .order-list-header .header-subtitle {
+    margin-left: 26px !important; /* 아이콘 두께 감안한 내어쓰기 */
+  }
+
+  .order-list-filter-bar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+    padding: 14px 12px !important;
+  }
+
+  .order-list-filter-bar .filter-group {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 6px !important;
+  }
+
+  .order-list-filter-bar .filter-group label {
+    font-size: 11px;
+  }
+
+  .order-list-filter-bar .filter-group input,
+  .order-list-filter-bar .filter-group select {
+    width: 100% !important; /* 모바일에서 인풋 가로 100% */
+  }
+
+  .order-list-filter-bar .filter-action-group {
+    margin-left: 0 !important;
+    width: 100% !important;
+    justify-content: space-between !important;
+    border-top: 1px dashed var(--border-color);
+    padding-top: 10px;
+    margin-top: 4px;
+  }
+
+  .order-list-filter-bar .filter-action-group button {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+}
+
+/* --- 출고 대기 화면 (ReleaseList) 반응형 스타일 추가 --- */
+@media (max-width: 900px) {
+  .release-diagnostic-panel {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+  }
+  
+  .release-diagnostic-panel > span {
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.05);
+    padding-bottom: 4px;
+    display: block;
+  }
+
+  .release-refresh-btn {
+    margin-left: 0 !important;
+    width: 100% !important;
+    padding: 6px !important;
+    text-align: center !important;
+    justify-content: center !important;
+    display: flex !important;
+  }
+
+  .release-action-toolbar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+  }
+
+  .release-action-toolbar > div:first-child {
+    width: 100% !important;
+    justify-content: flex-start !important;
+  }
+
+  .release-action-group {
+    margin-left: 0 !important;
+    width: 100% !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+  }
+
+  .release-action-group button {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
