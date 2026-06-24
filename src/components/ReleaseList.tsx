@@ -27,7 +27,7 @@ interface ReleaseItemRow {
 }
 
 export const ReleaseList: React.FC = () => {
-  const { orders, catalog, customers, updateMultipleItemsStatus, updateItemActualWeight, updateItemStepWeights, fetchDb, setActiveTab } = useErpStore();
+  const { orders, catalog, customers, updateMultipleItemsStatus, updateItemStepWeightsAndActualWeight, fetchDb, setActiveTab } = useErpStore();
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
   const [showPrice, setShowPrice] = useState<boolean>(true);
 
@@ -56,7 +56,7 @@ export const ReleaseList: React.FC = () => {
     });
   };
 
-  const handleSaveStepWeights = () => {
+  const handleSaveStepWeights = async () => {
     if (!activeWeightModalItem) return;
     
     const parseVal = (val: string) => {
@@ -70,14 +70,15 @@ export const ReleaseList: React.FC = () => {
       step3: { before: parseVal(step3Before), after: parseVal(step3After) }
     };
     
-    // 1. 단계별 세공 무게 업데이트
-    updateItemStepWeights(activeWeightModalItem.orderId, activeWeightModalItem.itemId, stepWeights);
-    
-    // 2. 만약 3단계 작업후 무게가 입력되었다면 완제품의 실제 중량으로도 확정 처리
     const actualWt = stepWeights.step3.after;
-    if (actualWt > 0) {
-      updateItemActualWeight(activeWeightModalItem.orderId, activeWeightModalItem.itemId, actualWt);
-    }
+    
+    // 통합 업데이트 함수 호출 (await로 처리 보장)
+    await updateItemStepWeightsAndActualWeight(
+      activeWeightModalItem.orderId,
+      activeWeightModalItem.itemId,
+      stepWeights,
+      actualWt > 0 ? actualWt : undefined
+    );
     
     alert('세공 손실 무게 및 실제 중량이 재계산되어 정상 반영되었습니다.');
     setActiveWeightModalItem(null);
