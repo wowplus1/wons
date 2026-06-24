@@ -208,23 +208,23 @@ export const ReleaseList: React.FC = () => {
     }
   };
 
-  // 개별 출고 완료
-  const handleSingleRelease = async (orderId: string, itemId: number) => {
+  // 개별 세공작업(공장발주) 되돌리기
+  const handleRevertToWork = async (orderId: string, itemId: number) => {
     try {
-      const isConfirm = window.confirm("해당 품목을 최종 출고 완료 상태로 변경하시겠습니까?");
+      const isConfirm = window.confirm("선택하신 품목을 '세공 작업(공장발주)' 상태로 되돌리시겠습니까?\n되돌린 후 주얼리 세공리스트로 자동 이동합니다.");
       if (!isConfirm) return;
 
-      await updateMultipleItemsStatus([{ orderId, itemId }], '출고완료');
-      alert('출고 완료 처리되었습니다.');
+      await updateMultipleItemsStatus([{ orderId, itemId }], '공장발주');
+      alert('세공 작업 상태로 복구되었습니다.');
       fetchDb();
 
-      // 미수 대장 탭으로 화면 전환
+      // 주얼리 세공리스트 탭으로 화면 전환
       setTimeout(() => {
-        setActiveTab('unpaid_ledger');
+        setActiveTab('work_list');
       }, 50);
     } catch (err: any) {
-      alert(`[개별 출고 완료 오류]\n에러가 발생했습니다:\n${err.message || err}`);
-      console.error("handleSingleRelease error:", err);
+      alert(`[되돌리기 오류]\n에러가 발생했습니다:\n${err.message || err}`);
+      console.error("handleRevertToWork error:", err);
     }
   };
 
@@ -596,23 +596,23 @@ export const ReleaseList: React.FC = () => {
                       </span>
                     </td>
 
-                    {/* 액션 (출고완료 단축버튼) */}
+                    {/* 액션 (세공작업 되돌리기 버튼) */}
                     <td style={{ padding: '6px 4px', textAlign: 'center', verticalAlign: 'middle' }}>
                       <button
                         type="button"
-                        onClick={() => handleSingleRelease(row.orderId, row.itemId)}
+                        onClick={() => handleRevertToWork(row.orderId, row.itemId)}
                         className="btn-primary"
                         style={{
                           padding: '4px 8px',
                           fontSize: '10px',
-                          background: 'rgba(16, 185, 129, 0.1)',
-                          color: '#10b981',
-                          border: '1px solid rgba(16, 185, 129, 0.3)',
+                          background: 'rgba(245, 158, 11, 0.1)',
+                          color: '#fbbf24',
+                          border: '1px solid rgba(245, 158, 11, 0.3)',
                           borderRadius: '4px',
                           cursor: 'pointer'
                         }}
                       >
-                        출고완료
+                        되돌리기
                       </button>
                     </td>
                   </tr>
