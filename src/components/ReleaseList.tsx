@@ -23,6 +23,7 @@ interface ReleaseItemRow {
   estimatedWeightG: number;
   itemId: number;
   actualWeightG?: number;
+  division?: string;
   stepWeights?: any;
 }
 
@@ -129,6 +130,7 @@ export const ReleaseList: React.FC = () => {
             estimatedWeightG: item.estimated_weight_g || 0,
             itemId: item.item_id,
             actualWeightG: item.actual_weight_g,
+            division: item.division,
             stepWeights: item.step_weights
           });
         } catch (itemErr) {
@@ -478,7 +480,11 @@ export const ReleaseList: React.FC = () => {
 
                     {/* 세공 손실 (혜리) */}
                     <td style={{ padding: '8px 6px', verticalAlign: 'middle', color: 'var(--text-main)' }}>
-                      {(() => {
+                      {row.division === '결제' || (row.division === '판매' && row.model === '디자인출력') ? (
+                        <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '11px', fontStyle: 'italic' }}>
+                          {row.model === '디자인출력' ? '디자인출력 (해리 없음)' : '결제 구분 (해리 없음)'}
+                        </div>
+                      ) : (() => {
                         const sw = row.stepWeights;
                         const hasWeights = sw && (
                           (sw.step1?.before || sw.step1?.after || 
