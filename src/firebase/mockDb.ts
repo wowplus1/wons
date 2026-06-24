@@ -97,6 +97,7 @@ export interface OrderItem {
   quantity: number;         // 수량
   color: string;            // 색상 (YG, WG, RG)
   material: string;         // 재질 (14K, 18K, 24K, Silver)
+  status?: '접수' | '공장발주' | '출고대기' | '출고완료' | '보류'; // 품목 개별 상태
   
   // 스톤 종류 (마스터 연동용 ID 및 명칭)
   stone_main_id: string;    // 중심 스톤 ID

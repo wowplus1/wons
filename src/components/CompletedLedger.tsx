@@ -31,7 +31,7 @@ interface LedgerRowData {
 }
 
 export const CompletedLedger: React.FC = () => {
-  const { orders, customers, transactions, fetchDb, updateMultipleItemsPaymentStatus, updateMultipleOrderStatus, activeTab, setActiveTab } = useErpStore();
+  const { orders, customers, transactions, fetchDb, updateMultipleItemsPaymentStatus, updateMultipleItemsStatus, activeTab, setActiveTab } = useErpStore();
   const [filterCustomer, setFilterCustomer] = useState('');
   const [filterType, setFilterType] = useState<'전체' | '판매' | '결제' | '반품' | 'DC'>('전체');
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
@@ -40,9 +40,9 @@ export const CompletedLedger: React.FC = () => {
     fetchDb();
   }, [fetchDb]);
 
-  const handleRevertToReleaseReady = (orderId: string) => {
-    if (window.confirm(`선택하신 품목이 포함된 주문(주문번호: ${orderId})을 '출고 대기' 상태로 되돌리시겠습니까?\n되돌린 후 출고 대기 대장으로 자동 이동합니다.`)) {
-      updateMultipleOrderStatus([orderId], '출고대기');
+  const handleRevertToReleaseReady = (orderId: string, itemId: number) => {
+    if (window.confirm(`선택하신 품목(주문번호: ${orderId})을 '출고 대기' 상태로 되돌리시겠습니까?\n되돌린 후 출고 대기 대장으로 자동 이동합니다.`)) {
+      updateMultipleItemsStatus([{ orderId, itemId }], '출고대기');
       alert('출고 대기 상태로 복구되었습니다.');
       setTimeout(() => {
         setActiveTab('release_list');
@@ -57,7 +57,7 @@ export const CompletedLedger: React.FC = () => {
     const top = window.screen.height / 2 - h / 2;
 
     window.open(
-      `/?popup=invoice&orderId=${orderId}`,
+      `./?popup=invoice&orderId=${orderId}`,
       `invoice_popup_${orderId}`,
       `width=${w},height=${h},top=${top},left=${left},resizable=yes,scrollbars=yes`
     );
@@ -70,7 +70,7 @@ export const CompletedLedger: React.FC = () => {
     const top = window.screen.height / 2 - h / 2;
     
     window.open(
-      `/?popup=catalog_detail&model=${encodeURIComponent(modelNumber)}`, 
+      `./?popup=catalog_detail&model=${encodeURIComponent(modelNumber)}`, 
       `catalog_detail_popup_${modelNumber.replace(/[^a-zA-Z0-9가-힣]/g, '_')}`, 
       `width=${w},height=${h},top=${top},left=${left},resizable=yes,scrollbars=yes`
     );
@@ -119,11 +119,9 @@ export const CompletedLedger: React.FC = () => {
 
   const completedRows: LedgerRowData[] = [];
 
-  // 오직 status === '출고완료' 상태인 주문 품목들만 수집
+  // 개별 품목의 status가 '출고완료'인 품목들만 수집
   orders.forEach(order => {
     if (!order) return;
-    const orderStatus = (order.status || '').trim();
-    if (orderStatus !== '출고완료') return;
 
     const cId = order.customer_snapshot?.customer_id;
     const customer = cId ? customers.find(c => c.customer_id === cId) : undefined;
@@ -131,6 +129,8 @@ export const CompletedLedger: React.FC = () => {
 
     const itemsList = order.items || [];
     itemsList.forEach((item, itemIdx) => {
+      const itemStatus = item.status || order.status || '접수';
+      if (itemStatus !== '출고완료') return;
       const division = item.division || '판매';
 
       const qty = item.quantity || 1;
@@ -624,7 +624,7 @@ export const CompletedLedger: React.FC = () => {
                     {/* 되돌리기 */}
                     <td style={{ padding: '4px', textAlign: 'center' }}>
                       <button
-                        onClick={() => handleRevertToReleaseReady(row.orderId)}
+                        onClick={() => handleRevertToReleaseReady(row.orderId, row.itemId)}
                         className="btn-primary"
                         style={{
                           background: 'rgba(245, 158, 11, 0.15)',

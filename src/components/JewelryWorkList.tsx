@@ -30,7 +30,7 @@ interface WorkItemRow {
 }
 
 export const JewelryWorkList: React.FC = () => {
-  const { orders, catalog, updateMultipleOrderStatus, fetchDb, setActiveTab, updateItemStepWeights } = useErpStore();
+  const { orders, catalog, updateMultipleItemsStatus, fetchDb, setActiveTab, updateItemStepWeights } = useErpStore();
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
   const [showPrice, setShowPrice] = useState<boolean>(true); // 기본값: 금액 표시 켬
 
@@ -99,44 +99,44 @@ export const JewelryWorkList: React.FC = () => {
   
   orders.forEach(order => {
     try {
-      const orderStatus = (order.status || '').trim();
-      if (orderStatus === '공장발주') {
-        const itemsList = order.items || [];
-        itemsList.forEach((item, itemIdx) => {
-          try {
-            const catalogItem = catalog.find(c => c.model_number === item.model_number);
-            const imageUrl = catalogItem?.images?.[0] || '';
+      const itemsList = order.items || [];
+      itemsList.forEach((item, itemIdx) => {
+        try {
+          const itemStatus = item.status || order.status || '접수';
+          if (itemStatus !== '공장발주') return;
 
-            // 개당 공임비 (기본+추가+스톤공임)
-            const baseExtra = (item.labor_base || 0) + (item.labor_extra || 0);
-            const stoneLabor = ((item.labor_main || 0) * (item.qty_main || 0)) + ((item.labor_sub || 0) * (item.qty_sub || 0));
-            const laborSingle = baseExtra + stoneLabor;
+          const catalogItem = catalog.find(c => c.model_number === item.model_number);
+          const imageUrl = catalogItem?.images?.[0] || '';
 
-            workItems.push({
-              id: `work-item::${order.order_id}::${item.item_id}::${itemIdx}`,
-              orderId: order.order_id,
-              orderDate: order.order_date,
-              customerName: order.customer_snapshot?.name || '알수없음',
-              model: item.model_number,
-              material: item.material,
-              color: item.color,
-              size: item.size || '',
-              quantity: item.quantity || 1,
-              stoneMainText: item.stone_main_name ? `${item.stone_main_name} (${item.qty_main || 0}알)` : '',
-              stoneSubText: item.stone_sub_name ? `${item.stone_sub_name} (${item.qty_sub || 0}알)` : '',
-              note: item.note || '',
-              laborSingle,
-              totalAmount: item.calculated_price || 0,
-              imageUrl,
-              estimatedWeightG: item.estimated_weight_g || 0,
-              itemId: item.item_id,
-              stepWeights: item.step_weights
-            });
-          } catch (itemErr) {
-            console.error("JewelryWorkList item mapping error:", itemErr, item);
-          }
-        });
-      }
+          // 개당 공임비 (기본+추가+스톤공임)
+          const baseExtra = (item.labor_base || 0) + (item.labor_extra || 0);
+          const stoneLabor = ((item.labor_main || 0) * (item.qty_main || 0)) + ((item.labor_sub || 0) * (item.qty_sub || 0));
+          const laborSingle = baseExtra + stoneLabor;
+
+          workItems.push({
+            id: `work-item::${order.order_id}::${item.item_id}::${itemIdx}`,
+            orderId: order.order_id,
+            orderDate: order.order_date,
+            customerName: order.customer_snapshot?.name || '알수없음',
+            model: item.model_number,
+            material: item.material,
+            color: item.color,
+            size: item.size || '',
+            quantity: item.quantity || 1,
+            stoneMainText: item.stone_main_name ? `${item.stone_main_name} (${item.qty_main || 0}알)` : '',
+            stoneSubText: item.stone_sub_name ? `${item.stone_sub_name} (${item.qty_sub || 0}알)` : '',
+            note: item.note || '',
+            laborSingle,
+            totalAmount: item.calculated_price || 0,
+            imageUrl,
+            estimatedWeightG: item.estimated_weight_g || 0,
+            itemId: item.item_id,
+            stepWeights: item.step_weights
+          });
+        } catch (itemErr) {
+          console.error("JewelryWorkList item mapping error:", itemErr, item);
+        }
+      });
     } catch (orderErr) {
       console.error("JewelryWorkList order status check error:", orderErr, order);
     }
@@ -168,7 +168,7 @@ export const JewelryWorkList: React.FC = () => {
   };
 
   // 선택 완료 처리 (상태를 '출고대기'로 일괄 변경)
-  const handleCompleteWork = () => {
+  const handleCompleteWork = async () => {
     try {
       if (checkedItems.size === 0) {
         alert('완료 처리할 세공 품목을 선택해주세요.');
@@ -205,27 +205,28 @@ export const JewelryWorkList: React.FC = () => {
         return;
       }
 
-      const orderIds = new Set<string>();
+      const updates: { orderId: string, itemId: number }[] = [];
       checkedItems.forEach(rowId => {
         if (rowId.startsWith('work-item::')) {
           const parts = rowId.split('::');
           const orderId = parts[1];
-          if (orderId) {
-            orderIds.add(orderId);
+          const itemId = Number(parts[2]);
+          if (orderId && !isNaN(itemId)) {
+            updates.push({ orderId, itemId });
           }
         }
       });
 
-      if (orderIds.size === 0) {
-        alert('선택한 세공 품목에서 주문 ID를 찾지 못했습니다.');
+      if (updates.length === 0) {
+        alert('선택한 세공 품목 정보를 찾지 못했습니다.');
         return;
       }
 
-      const isConfirm = window.confirm(`선택한 품목이 포함된 ${orderIds.size}건의 주문을 '세공 완료(출고 대기)' 상태로 승격시키겠습니까?`);
+      const isConfirm = window.confirm(`선택한 ${updates.length}개 품목을 '세공 완료(출고 대기)' 상태로 승격시키겠습니까?`);
       if (!isConfirm) return;
 
       // 일괄 업데이트로 동시성 이슈 및 불필요한 fetchDb 중복 차단
-      updateMultipleOrderStatus(Array.from(orderIds), '출고대기');
+      await updateMultipleItemsStatus(updates, '출고대기');
 
       alert('선택한 품목들의 세공이 완료되어 출고 대기 단계로 이동되었습니다.');
       setCheckedItems(new Set());
@@ -242,42 +243,39 @@ export const JewelryWorkList: React.FC = () => {
   };
 
   // 개별 완료 처리 단축 버튼
-  const handleSingleComplete = (orderId: string) => {
+  const handleSingleComplete = async (orderId: string, itemId: number) => {
     try {
-      // 3단계 해리 무게 입력 여부 검증
-      const relatedItems = workItems.filter(w => w.orderId === orderId);
-      const incompleteItems: string[] = [];
+      // 해당 단일 품목의 3단계 해리 무게 입력 여부 검증
+      const item = workItems.find(w => w.orderId === orderId && w.itemId === itemId);
+      if (!item) {
+        alert('해당 품목을 찾을 수 없습니다.');
+        return;
+      }
       
-      relatedItems.forEach(item => {
-        const sw = item.stepWeights;
-        const s1Before = sw?.step1?.before || 0;
-        const s1After = sw?.step1?.after || 0;
-        const s2Before = sw?.step2?.before || 0;
-        const s2After = sw?.step2?.after || 0;
-        const s3Before = sw?.step3?.before || 0;
-        const s3After = sw?.step3?.after || 0;
+      const sw = item.stepWeights;
+      const s1Before = sw?.step1?.before || 0;
+      const s1After = sw?.step1?.after || 0;
+      const s2Before = sw?.step2?.before || 0;
+      const s2After = sw?.step2?.after || 0;
+      const s3Before = sw?.step3?.before || 0;
+      const s3After = sw?.step3?.after || 0;
 
-        const isComplete = (
-          s1Before > 0 && s1After > 0 &&
-          s2Before > 0 && s2After > 0 &&
-          s3Before > 0 && s3After > 0
-        );
+      const isComplete = (
+        s1Before > 0 && s1After > 0 &&
+        s2Before > 0 && s2After > 0 &&
+        s3Before > 0 && s3After > 0
+      );
 
-        if (!isComplete) {
-          incompleteItems.push(`모델: ${item.model}`);
-        }
-      });
-
-      if (incompleteItems.length > 0) {
-        alert(`단계별(1~3단계) 해리 무게가 모두 입력되지 않았습니다. 3단계까지 입력 완료해야 출고 대기로 이동할 수 있습니다:\n\n${incompleteItems.join('\n')}`);
+      if (!isComplete) {
+        alert(`단계별(1~3단계) 해리 무게가 모두 입력되지 않았습니다. 3단계까지 입력 완료해야 출고 대기로 이동할 수 있습니다:\n\n모델: ${item.model}`);
         return;
       }
 
-      const isConfirm = window.confirm("해당 주문 건의 세공 작업을 완료하고 출고 대기 상태로 변경하시겠습니까?");
+      const isConfirm = window.confirm("해당 품목의 세공 작업을 완료하고 출고 대기 상태로 변경하시겠습니까?");
       if (!isConfirm) return;
 
       // 일괄 업데이트 API 활용
-      updateMultipleOrderStatus([orderId], '출고대기');
+      await updateMultipleItemsStatus([{ orderId, itemId }], '출고대기');
       alert('출고 대기 단계로 이동되었습니다.');
       fetchDb();
 
@@ -706,7 +704,7 @@ export const JewelryWorkList: React.FC = () => {
                     {/* 액션 (완료 단축버튼) */}
                     <td style={{ padding: '6px 4px', textAlign: 'center', verticalAlign: 'middle' }}>
                       <button
-                        onClick={() => handleSingleComplete(row.orderId)}
+                        onClick={() => handleSingleComplete(row.orderId, row.itemId)}
                         className="btn-primary"
                         style={{
                           padding: '4px 8px',

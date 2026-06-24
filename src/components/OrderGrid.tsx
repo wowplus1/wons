@@ -38,7 +38,7 @@ export const OrderGrid: React.FC = () => {
     const top = window.screen.height / 2 - h / 2;
     
     window.open(
-      `/?popup=catalog_select&grade=${grade}&row=${rowIndex}`,
+      `./?popup=catalog_select&grade=${grade}&row=${rowIndex}`,
       `catalog_select_popup_${rowIndex}`,
       `width=${w},height=${h},top=${top},left=${left},resizable=yes,scrollbars=yes`
     );
@@ -589,7 +589,7 @@ export const OrderGrid: React.FC = () => {
                         <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>알수 (보조)</label>
                         <input
                           type="number"
-                          value={item.qty_sub || 0}
+                          value={item.qty_sub === 0 ? '' : item.qty_sub}
                           disabled={item.division === '결제'}
                           onChange={(e) => updateOrderItem(index, { qty_sub: parseInt(e.target.value) || 0 })}
                           onKeyDown={(e) => handleKeyDown(e, index, 'qty_sub')}
@@ -611,7 +611,7 @@ export const OrderGrid: React.FC = () => {
                         <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>알수 (메인)</label>
                         <input
                           type="number"
-                          value={item.qty_main || 0}
+                          value={item.qty_main === 0 ? '' : item.qty_main}
                           disabled={item.division === '결제'}
                           onChange={(e) => updateOrderItem(index, { qty_main: parseInt(e.target.value) || 0 })}
                           onKeyDown={(e) => handleKeyDown(e, index, 'qty_main')}
@@ -634,7 +634,7 @@ export const OrderGrid: React.FC = () => {
                         <input
                           type="number"
                           step="0.001"
-                          value={item.stone_weight_ea || 0}
+                          value={item.stone_weight_ea === 0 ? '' : item.stone_weight_ea}
                           disabled={item.division === '결제'}
                           onChange={(e) => updateOrderItem(index, { stone_weight_ea: parseFloat(e.target.value) || 0 })}
                           onKeyDown={(e) => handleKeyDown(e, index, 'stone_weight_ea')}
@@ -661,7 +661,7 @@ export const OrderGrid: React.FC = () => {
                         </label>
                         <input
                           type="number"
-                          value={item.labor_base || 0}
+                          value={item.labor_base === 0 ? '' : item.labor_base}
                           onChange={(e) => updateOrderItem(index, { labor_base: parseInt(e.target.value) || 0 })}
                           onKeyDown={(e) => handleKeyDown(e, index, 'labor_base')}
                           className="input-field"
@@ -674,7 +674,7 @@ export const OrderGrid: React.FC = () => {
                         <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>추가 공임</label>
                         <input
                           type="number"
-                          value={item.labor_extra || 0}
+                          value={item.labor_extra === 0 ? '' : item.labor_extra}
                           disabled={item.division === '결제'}
                           onChange={(e) => updateOrderItem(index, { labor_extra: parseInt(e.target.value) || 0 })}
                           onKeyDown={(e) => handleKeyDown(e, index, 'labor_extra')}
@@ -696,7 +696,7 @@ export const OrderGrid: React.FC = () => {
                         <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>공임 (중심)</label>
                         <input
                           type="number"
-                          value={item.labor_main || 0}
+                          value={item.labor_main === 0 ? '' : item.labor_main}
                           disabled={item.division === '결제'}
                           onChange={(e) => updateOrderItem(index, { labor_main: parseInt(e.target.value) || 0 })}
                           onKeyDown={(e) => handleKeyDown(e, index, 'labor_main')}
@@ -718,7 +718,7 @@ export const OrderGrid: React.FC = () => {
                         <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>공임 (보조)</label>
                         <input
                           type="number"
-                          value={item.labor_sub || 0}
+                          value={item.labor_sub === 0 ? '' : item.labor_sub}
                           disabled={item.division === '결제'}
                           onChange={(e) => updateOrderItem(index, { labor_sub: parseInt(e.target.value) || 0 })}
                           onKeyDown={(e) => handleKeyDown(e, index, 'labor_sub')}

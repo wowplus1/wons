@@ -424,7 +424,7 @@ export const CatalogRegisterForm: React.FC = () => {
               공임 및 원가 설정
             </span>
             <div className="catalog-stone-table-wrapper">
-              <table className="catalog-stone-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left' }}>
+              <table className="catalog-stone-table labor-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left' }}>
                 <thead>
                   <tr style={{ borderBottom: '2px solid var(--border-color)', color: 'var(--text-main)', background: 'rgba(255, 255, 255, 0.04)', height: '28px' }}>
                     <th style={{ padding: '6px 8px' }}>구분</th>
@@ -476,7 +476,7 @@ export const CatalogRegisterForm: React.FC = () => {
               기본 세팅 스톤 정보 (스톤 1~7행 설정)
             </span>
             <div className="catalog-stone-table-wrapper">
-              <table className="catalog-stone-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left' }}>
+              <table className="catalog-stone-table stones-spec-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left' }}>
                 <thead>
                   <tr style={{ borderBottom: '2px solid var(--border-color)', color: 'var(--text-main)', background: 'rgba(255, 255, 255, 0.04)', height: '28px' }}>
                     <th style={{ padding: '6px 4px', width: '50px', textAlign: 'center' }}>구분</th>
@@ -554,7 +554,7 @@ export const CatalogRegisterForm: React.FC = () => {
                 </tbody>
               </table>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px', marginTop: '10px', background: 'rgba(255,255,255,0.02)', padding: '8px', borderRadius: '4px', fontSize: '12px', alignItems: 'center', border: '1px solid rgba(255,255,255,0.05)' }}>
+            <div className="catalog-summary-bar" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px', marginTop: '10px', background: 'rgba(255,255,255,0.02)', padding: '8px', borderRadius: '4px', fontSize: '12px', alignItems: 'center', border: '1px solid rgba(255,255,255,0.05)' }}>
               <div>알수 소계: <strong>{totalStonesQty} 개</strong></div>
               <div>중량 소계: <strong>{totalStonesWeight.toFixed(5)} g</strong></div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -575,7 +575,7 @@ export const CatalogRegisterForm: React.FC = () => {
             <textarea value={note} onChange={e => setNote(e.target.value)} className="input-field" style={{ width: '100%', height: '50px', resize: 'vertical', fontSize: '12px', padding: '6px' }} placeholder="제품 메모" />
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid var(--border-color)', paddingTop: '12px' }}>
+          <div className="catalog-form-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid var(--border-color)', paddingTop: '12px' }}>
             <button type="button" onClick={() => window.close()} className="btn-primary" style={{ padding: '6px 12px', background: 'rgba(255,255,255,0.03)', color: 'var(--text-muted)', border: '1px solid var(--border-color)', boxShadow: 'none' }}>
               닫기
             </button>
