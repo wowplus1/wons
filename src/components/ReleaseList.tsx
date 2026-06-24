@@ -480,7 +480,7 @@ export const ReleaseList: React.FC = () => {
 
                     {/* 세공 손실 (혜리) */}
                     <td style={{ padding: '8px 6px', verticalAlign: 'middle', color: 'var(--text-main)' }}>
-                      {row.division === '결제' || (row.division === '판매' && row.model === '디자인출력') ? (
+                      {row.division === '결제' || row.model === '디자인출력' ? (
                         <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '11px', fontStyle: 'italic' }}>
                           {row.model === '디자인출력' ? '디자인출력 (해리 없음)' : '결제 구분 (해리 없음)'}
                         </div>
