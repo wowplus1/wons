@@ -22,6 +22,7 @@ interface WorkItemRow {
   imageUrl: string;
   estimatedWeightG: number;
   itemId: number;
+  division?: string;
   stepWeights?: {
     step1?: { before: number; after: number };
     step2?: { before: number; after: number };
@@ -131,6 +132,7 @@ export const JewelryWorkList: React.FC = () => {
             imageUrl,
             estimatedWeightG: item.estimated_weight_g || 0,
             itemId: item.item_id,
+            division: item.division,
             stepWeights: item.step_weights
           });
         } catch (itemErr) {
@@ -180,6 +182,10 @@ export const JewelryWorkList: React.FC = () => {
       checkedItems.forEach(rowId => {
         const item = workItems.find(w => w.id === rowId);
         if (item) {
+          // 구분이 결제일 경우 해리 무게 검증 생략
+          if (item.division === '결제') {
+            return;
+          }
           const sw = item.stepWeights;
           const s1Before = sw?.step1?.before || 0;
           const s1After = sw?.step1?.after || 0;
@@ -252,23 +258,26 @@ export const JewelryWorkList: React.FC = () => {
         return;
       }
       
-      const sw = item.stepWeights;
-      const s1Before = sw?.step1?.before || 0;
-      const s1After = sw?.step1?.after || 0;
-      const s2Before = sw?.step2?.before || 0;
-      const s2After = sw?.step2?.after || 0;
-      const s3Before = sw?.step3?.before || 0;
-      const s3After = sw?.step3?.after || 0;
+      // 구분이 결제일 경우 해리 무게 검증 생략
+      if (item.division !== '결제') {
+        const sw = item.stepWeights;
+        const s1Before = sw?.step1?.before || 0;
+        const s1After = sw?.step1?.after || 0;
+        const s2Before = sw?.step2?.before || 0;
+        const s2After = sw?.step2?.after || 0;
+        const s3Before = sw?.step3?.before || 0;
+        const s3After = sw?.step3?.after || 0;
 
-      const isComplete = (
-        s1Before > 0 && s1After > 0 &&
-        s2Before > 0 && s2After > 0 &&
-        s3Before > 0 && s3After > 0
-      );
+        const isComplete = (
+          s1Before > 0 && s1After > 0 &&
+          s2Before > 0 && s2After > 0 &&
+          s3Before > 0 && s3After > 0
+        );
 
-      if (!isComplete) {
-        alert(`단계별(1~3단계) 해리 무게가 모두 입력되지 않았습니다. 3단계까지 입력 완료해야 출고 대기로 이동할 수 있습니다:\n\n모델: ${item.model}`);
-        return;
+        if (!isComplete) {
+          alert(`단계별(1~3단계) 해리 무게가 모두 입력되지 않았습니다. 3단계까지 입력 완료해야 출고 대기로 이동할 수 있습니다:\n\n모델: ${item.model}`);
+          return;
+        }
       }
 
       const isConfirm = window.confirm("해당 품목의 세공 작업을 완료하고 출고 대기 상태로 변경하시겠습니까?");
@@ -592,7 +601,11 @@ export const JewelryWorkList: React.FC = () => {
 
                     {/* 단계별 세공 무게 (손실) */}
                     <td style={{ padding: '8px 6px', verticalAlign: 'middle' }}>
-                      {(() => {
+                      {row.division === '결제' ? (
+                        <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '11px', fontStyle: 'italic' }}>
+                          결제 구분 (해리 없음)
+                        </div>
+                      ) : (() => {
                         const sw = row.stepWeights;
                         const hasWeights = sw && (
                           (sw.step1?.before || sw.step1?.after || 
