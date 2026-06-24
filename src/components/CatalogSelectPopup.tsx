@@ -74,6 +74,50 @@ export const CatalogSelectPopup: React.FC = () => {
 
       {/* List */}
       <div style={{ overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', paddingRight: '4px' }}>
+        {/* 디자인출력 가상 선택 카드 (상시 노출) */}
+        <div 
+          onClick={() => handleSelectCatalogItem('디자인출력')}
+          style={{
+            padding: '8px',
+            border: '1px solid #3b82f6',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            display: 'flex',
+            gap: '10px',
+            alignItems: 'center',
+            transition: 'background 0.2s',
+            background: 'rgba(59, 130, 246, 0.08)'
+          }}
+          className="stone-select-item"
+        >
+          <div style={{ 
+            width: '40px', 
+            height: '40px', 
+            borderRadius: '4px', 
+            background: 'rgba(59, 130, 246, 0.15)', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            fontSize: '11px', 
+            color: '#3b82f6', 
+            fontWeight: '700' 
+          }}>
+            디자인
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontWeight: '700', color: '#3b82f6', fontSize: '12px' }}>디자인출력 (3D 디자인 의뢰 모델)</span>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>가상모델</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>제조사: 자체</span>
+              <span style={{ fontWeight: '700', color: 'var(--text-muted)', fontSize: '12px' }}>
+                기본공임/기타설명만 기입
+              </span>
+            </div>
+          </div>
+        </div>
+
         {/* 임시제품 가상 선택 카드 (상시 노출) */}
         <div 
           onClick={() => handleSelectCatalogItem('임시제품')}
