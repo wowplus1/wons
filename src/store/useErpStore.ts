@@ -56,6 +56,7 @@ interface ErpState {
   updateMultipleItemsPaymentStatus: (updates: { orderId: string, itemId: number }[], status: '결제완료' | '결제전' | '보류') => Promise<void>;
   updateItemStepWeights: (orderId: string, itemId: number, stepWeights: any) => Promise<void>;
   updateItemActualWeight: (orderId: string, itemId: number, actualWeightG: number) => Promise<void>;
+  updateItemStepWeightsAndActualWeight: (orderId: string, itemId: number, stepWeights: any, actualWeightG?: number) => Promise<void>;
   deleteOrder: (orderId: string) => Promise<void>;
   deleteTransaction: (transactionId: string) => Promise<void>;
   saveCatalogItem: (item: CatalogItem) => Promise<void>;
@@ -852,6 +853,140 @@ export const useErpStore = create<ErpState>((set, get) => ({
       await get().fetchDb();
     } catch (error) {
       console.error("updateItemActualWeight error: ", error);
+    }
+  },
+
+  updateItemStepWeightsAndActualWeight: async (orderId: string, itemId: number, stepWeights: any, actualWeightG?: number) => {
+    try {
+      const order = get().orders.find(o => o.order_id === orderId);
+      if (!order) return;
+
+      // 1. 기존 주문 롤백 수행
+      await get().deleteOrder(orderId);
+
+      // 2. 롤백 완료 후 최신화된 스토어 데이터 기반으로 갱신 데이터 준비
+      const item = order.items.find(i => i.item_id === itemId);
+      if (item) {
+        // step_weights와 actual_weight_g를 동시에 갱신!
+        item.step_weights = stepWeights;
+        if (actualWeightG !== undefined && actualWeightG > 0) {
+          item.actual_weight_g = actualWeightG;
+          const mat = item.material || '14K';
+          const sellRate = mat === '14K' ? order.gold_rate_snapshot.sell_14k_per_g 
+                          : mat === '18K' ? order.gold_rate_snapshot.sell_18k_per_g
+                          : mat === '24K' ? order.gold_rate_snapshot.sell_24k_per_g
+                          : 0;
+          
+          const goldCost = actualWeightG * sellRate;
+          const baseLabor = item.labor_base || 0;
+          const extraLabor = item.labor_extra || 0;
+          const mainStoneLabor = (item.labor_main || 0) * (item.qty_main || 0);
+          const subStoneLabor = (item.labor_sub || 0) * (item.qty_sub || 0);
+          const totalLaborCost = baseLabor + extraLabor + mainStoneLabor + subStoneLabor;
+          
+          item.calculated_price = Math.round((goldCost + totalLaborCost) * item.quantity);
+        }
+      }
+
+      // 재집계
+      order.total_amount = order.items.reduce((sum, i) => {
+        const sign = i.division === '판매' ? 1 : -1;
+        return sum + ((i.calculated_price || 0) * sign);
+      }, 0);
+
+      const customersSnap = await getDocs(collection(db, 'customers'));
+      const customerDetail = customersSnap.docs.find(d => d.id === order.customer_snapshot.customer_id)?.data() as Customer;
+      const lossRate = order.customer_snapshot.loss_rate || customerDetail?.loss_rate || 0;
+      const lossMultiplier = (1 + lossRate / 100);
+
+      order.total_gold_weight_24k_g = parseFloat(order.items.reduce((sum, i) => {
+        const sign = i.division === '판매' ? 1 : -1;
+        const multiplier = i.material === '14K' ? (0.585 * lossMultiplier) 
+                         : i.material === '18K' ? (0.750 * lossMultiplier) 
+                         : 1.0;
+        const wt = i.actual_weight_g !== undefined ? i.actual_weight_g : (i.estimated_weight_g || 0);
+        return sum + (wt * i.quantity * multiplier * sign);
+      }, 0).toFixed(3));
+
+      // 3. 롤백된 자리에 재생성
+      const batch = writeBatch(db);
+      batch.set(doc(db, 'orders', orderId), order);
+
+      if (customerDetail) {
+        const customerDocRef = doc(db, 'customers', order.customer_snapshot.customer_id);
+        const isWeightTrade = customerDetail.trade_type === 'weight';
+        let nextAmount = customerDetail.receivable_amount;
+
+        order.items.forEach(i => {
+          const division = i.division || '판매';
+          const itemAmount = i.calculated_price || 0;
+          const baseLabor = i.labor_base || 0;
+          const extraLabor = i.labor_extra || 0;
+          const mainStoneLabor = (i.labor_main || 0) * (i.qty_main || 0);
+          const subStoneLabor = (i.labor_sub || 0) * (i.qty_sub || 0);
+          const totalLaborCost = (baseLabor + extraLabor + mainStoneLabor + subStoneLabor) * i.quantity;
+
+          if (division === '판매') {
+            if (isWeightTrade) {
+              nextAmount += totalLaborCost;
+            } else {
+              nextAmount += itemAmount;
+            }
+          } else if (division === '결제' || division === '반품') {
+            if (isWeightTrade) {
+              nextAmount = Math.max(0, nextAmount - totalLaborCost);
+            } else {
+              nextAmount = Math.max(0, nextAmount - itemAmount);
+            }
+          } else if (division === 'DC') {
+            nextAmount = Math.max(0, nextAmount - itemAmount);
+          }
+        });
+
+        batch.update(customerDocRef, {
+          receivable_amount: nextAmount,
+          updated_at: new Date().toISOString()
+        });
+
+        if (isWeightTrade) {
+          let goldDiff = 0;
+          order.items.forEach((i, itemIdx) => {
+            const division = i.division || '판매';
+            const purityMultiplier = i.material === '14K' ? (0.585 * lossMultiplier) 
+                                   : i.material === '18K' ? (0.750 * lossMultiplier) 
+                                   : 1.0;
+            const wt = i.actual_weight_g !== undefined ? i.actual_weight_g : (i.estimated_weight_g || 0);
+            const itemGoldWeight24k = wt * i.quantity * purityMultiplier;
+            if (itemGoldWeight24k <= 0) return;
+
+            const txId = `TX-${orderId}-${itemIdx}`;
+            const tx: GoldTransaction = {
+              transaction_id: txId,
+              customer_id: order.customer_snapshot.customer_id,
+              type: division === '판매' ? 'out' : 'in',
+              gold_type: '24K',
+              weight_g: parseFloat(itemGoldWeight24k.toFixed(3)),
+              note: `${division} 등록: ${orderId} (행 ${itemIdx + 1})`,
+              created_at: new Date().toISOString(),
+              created_by: 'system'
+            };
+
+            batch.set(doc(db, 'gold_transactions', txId), tx);
+            const goldSign = division === '판매' ? 1 : -1;
+            goldDiff += itemGoldWeight24k * goldSign;
+          });
+
+          const nextGold = parseFloat((customerDetail.gold_balance_24k_g + goldDiff).toFixed(3));
+          batch.update(customerDocRef, {
+            gold_balance_24k_g: nextGold
+          });
+        }
+      }
+
+      await batch.commit();
+      await get().fetchDb();
+    } catch (error) {
+      console.error("updateItemStepWeightsAndActualWeight error: ", error);
     }
   },
 
