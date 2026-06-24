@@ -394,10 +394,11 @@ export const useErpStore = create<ErpState>((set, get) => ({
         .filter(i => (i.division === '결제' || i.division === 'DC' || i.model_number) && i.calculated_price !== undefined)
         .map(i => {
           const division = i.division || '판매';
+          const defaultStatus = (division === '결제' || division === 'DC') ? '출고대기' : '접수';
           return {
             ...i,
             division,
-            status: '접수',
+            status: defaultStatus,
             model_number: i.model_number || division,
             manufacturer: i.manufacturer || (division === '결제' || division === 'DC' ? '자체' : 'JP')
           };
