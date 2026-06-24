@@ -15,7 +15,7 @@ export const CatalogManager: React.FC = () => {
     const top = isMobile ? 0 : window.screen.height / 2 - h / 2;
     
     window.open(
-      '/?popup=catalog', 
+      './?popup=catalog', 
       'catalog_register_popup', 
       isMobile 
         ? `width=${w},height=${h},top=0,left=0,resizable=yes,scrollbars=yes`
@@ -32,7 +32,7 @@ export const CatalogManager: React.FC = () => {
     const top = isMobile ? 0 : window.screen.height / 2 - h / 2;
     
     window.open(
-      `/?popup=catalog_detail&model=${encodeURIComponent(modelNumber)}`, 
+      `./?popup=catalog_detail&model=${encodeURIComponent(modelNumber)}`, 
       `catalog_detail_popup_${modelNumber.replace(/[^a-zA-Z0-9가-힣]/g, '_')}`, 
       isMobile 
         ? `width=${w},height=${h},top=0,left=0,resizable=yes,scrollbars=yes`

@@ -48,6 +48,7 @@ interface ErpState {
   addGoldPayment: (customerId: string, weightG: number, note: string) => Promise<void>;
   updateOrderStatus: (orderId: string, status: Order['status']) => Promise<void>;
   updateMultipleOrderStatus: (orderIds: string[], status: Order['status']) => Promise<void>;
+  updateMultipleItemsStatus: (updates: { orderId: string, itemId: number }[], status: Order['status']) => Promise<void>;
   addStone: (stone: Stone) => Promise<void>;
   saveCustomer: (customer: Customer) => Promise<void>;
   deleteCustomer: (customerId: string) => Promise<void>;
@@ -83,22 +84,20 @@ export const useErpStore = create<ErpState>((set, get) => ({
   fetchDb: async () => {
     set({ loading: true });
     try {
-      const ratesSnap = await getDocs(collection(db, 'gold_rates'));
+      const [ratesSnap, stonesSnap, customersSnap, catalogSnap, ordersSnap, txSnap] = await Promise.all([
+        getDocs(collection(db, 'gold_rates')),
+        getDocs(collection(db, 'stones')),
+        getDocs(collection(db, 'customers')),
+        getDocs(collection(db, 'catalog')),
+        getDocs(collection(db, 'orders')),
+        getDocs(collection(db, 'gold_transactions'))
+      ]);
+
       const goldRates = ratesSnap.docs.map(d => d.data() as GoldRates);
-
-      const stonesSnap = await getDocs(collection(db, 'stones'));
       const stones = stonesSnap.docs.map(d => d.data() as Stone);
-
-      const customersSnap = await getDocs(collection(db, 'customers'));
       const customers = customersSnap.docs.map(d => d.data() as Customer);
-
-      const catalogSnap = await getDocs(collection(db, 'catalog'));
       const catalog = catalogSnap.docs.map(d => d.data() as CatalogItem);
-
-      const ordersSnap = await getDocs(collection(db, 'orders'));
       const orders = ordersSnap.docs.map(d => d.data() as Order);
-
-      const txSnap = await getDocs(collection(db, 'gold_transactions'));
       const transactions = txSnap.docs.map(d => d.data() as GoldTransaction);
 
       // Sort rates by date descending, grab today
@@ -365,6 +364,7 @@ export const useErpStore = create<ErpState>((set, get) => ({
           return {
             ...i,
             division,
+            status: '접수',
             model_number: i.model_number || division,
             manufacturer: i.manufacturer || (division === '결제' || division === 'DC' ? '자체' : 'JP')
           };
@@ -599,6 +599,40 @@ export const useErpStore = create<ErpState>((set, get) => ({
       await get().fetchDb();
     } catch (error) {
       console.error("updateMultipleOrderStatus error: ", error);
+    }
+  },
+
+  updateMultipleItemsStatus: async (updates: { orderId: string, itemId: number }[], status: Order['status']) => {
+    try {
+      const batch = writeBatch(db);
+      const grouped: { [orderId: string]: number[] } = {};
+      updates.forEach(({ orderId, itemId }) => {
+        if (!grouped[orderId]) grouped[orderId] = [];
+        grouped[orderId].push(itemId);
+      });
+
+      for (const orderId of Object.keys(grouped)) {
+        const order = get().orders.find(o => o.order_id === orderId);
+        if (order) {
+          const itemIds = grouped[orderId];
+          const items = order.items.map(i => {
+            const currentItemStatus = i.status || order.status || '접수';
+            return itemIds.includes(i.item_id)
+              ? { ...i, status }
+              : { ...i, status: currentItemStatus };
+          });
+          
+          // 하위 호환성 및 편의성을 위해, 모든 아이템 상태가 동일하면 주문 자체 status도 맞춰줍니다.
+          const allItemsSameStatus = items.every(i => i.status === status);
+          const orderStatusUpdate = allItemsSameStatus ? { items, status } : { items };
+          
+          batch.update(doc(db, 'orders', orderId), orderStatusUpdate);
+        }
+      }
+      await batch.commit();
+      await get().fetchDb();
+    } catch (error) {
+      console.error("updateMultipleItemsStatus error: ", error);
     }
   },
 

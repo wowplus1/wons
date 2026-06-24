@@ -32,7 +32,7 @@ export const StoneManager: React.FC = () => {
     const top = window.screen.height / 2 - h / 2;
     
     window.open(
-      '/?popup=stone', 
+      './?popup=stone', 
       'stone_register_popup', 
       `width=${w},height=${h},top=${top},left=${left},resizable=yes,scrollbars=yes`
     );

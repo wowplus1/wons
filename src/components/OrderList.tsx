@@ -30,7 +30,7 @@ interface RowData {
 }
 
 export const OrderList: React.FC = () => {
-  const { orders, customers, transactions, updateMultipleOrderStatus, setActiveTab, deleteOrder, deleteTransaction, startEditOrder } = useErpStore();
+  const { orders, customers, transactions, updateMultipleItemsStatus, setActiveTab, deleteOrder, deleteTransaction, startEditOrder } = useErpStore();
   const [filterCustomer, setFilterCustomer] = useState('');
   const [filterType, setFilterType] = useState<'전체' | '판매' | '결제' | '반품' | 'DC'>('전체');
   const [checkedRows, setCheckedRows] = useState<Set<string>>(new Set());
@@ -55,7 +55,7 @@ export const OrderList: React.FC = () => {
     const top = window.screen.height / 2 - h / 2;
 
     window.open(
-      `/?popup=invoice&orderId=${orderId}`,
+      `./?popup=invoice&orderId=${orderId}`,
       `invoice_popup_${orderId}`,
       `width=${w},height=${h},top=${top},left=${left},resizable=yes,scrollbars=yes`
     );
@@ -68,7 +68,7 @@ export const OrderList: React.FC = () => {
     const top = window.screen.height / 2 - h / 2;
     
     window.open(
-      `/?popup=catalog_detail&model=${encodeURIComponent(modelNumber)}`, 
+      `./?popup=catalog_detail&model=${encodeURIComponent(modelNumber)}`, 
       `catalog_detail_popup_${modelNumber.replace(/[^a-zA-Z0-9가-힣]/g, '_')}`, 
       `width=${w},height=${h},top=${top},left=${left},resizable=yes,scrollbars=yes`
     );
@@ -124,8 +124,7 @@ export const OrderList: React.FC = () => {
 
   // 1. Map order items to sales rows
   orders.forEach(order => {
-    // 세공 진행 중('공장발주'), 출고대기('출고대기'), 출고완료('출고완료') 상태인 주문 품목은 주문내역 대장에서 제외합니다.
-    if (!order || order.status === '공장발주' || order.status === '출고대기' || order.status === '출고완료') return;
+    if (!order) return;
 
     const cId = order.customer_snapshot?.customer_id;
     const customer = cId ? customers.find(c => c.customer_id === cId) : undefined;
@@ -133,6 +132,9 @@ export const OrderList: React.FC = () => {
 
     const itemsList = order.items || [];
     itemsList.forEach((item, itemIdx) => {
+      // 품목별 상태 체크 (구버전 데이터 대응 포함)
+      const itemStatus = item.status || order.status || '접수';
+      if (itemStatus === '공장발주' || itemStatus === '출고대기' || itemStatus === '출고완료') return;
       const qty = item.quantity || 1;
       const pureGoldWeightG = item.estimated_weight_g || 0;
       const weightGoldDon = pureGoldWeightG / 3.75;
@@ -263,76 +265,77 @@ export const OrderList: React.FC = () => {
     setCheckedRows(next);
   };
 
-  const handleSendToWorkList = () => {
+  const handleSendToWorkList = async () => {
     try {
       if (checkedRows.size === 0) {
         alert('보내기 처리할 항목을 선택해주세요.');
         return;
       }
 
-      // 선택된 행들의 ID로부터 orderId 추출하여 중복 없이 셋에 담기
-      const orderIds = new Set<string>();
+      // 선택된 행들로부터 orderId와 itemId 리스트 추출
+      const updates: { orderId: string, itemId: number }[] = [];
       checkedRows.forEach(rowId => {
         if (rowId.startsWith('order-item::')) {
           const parts = rowId.split('::');
-          const orderId = parts[1]; // parts[0]='order-item', parts[1]=orderId, parts[2]=itemId, parts[3]=itemIdx
-          if (orderId) {
-            orderIds.add(orderId);
+          const orderId = parts[1];
+          const itemId = parseInt(parts[2]);
+          if (orderId && !isNaN(itemId)) {
+            updates.push({ orderId, itemId });
           }
         }
       });
 
-      if (orderIds.size === 0) {
-        alert('선택한 항목에서 주문 ID 정보를 찾을 수 없습니다. (ID 형식 불일치)');
+      if (updates.length === 0) {
+        alert('선택한 항목에서 품목 정보를 찾을 수 없습니다.');
         return;
       }
 
-      // 각 주문서를 분석하여 세공 대상(판매, 반품) 품목 포함 여부에 따라 상태 업데이트 분류
-      const craftOrderIds: string[] = [];
-      const releaseOrderIds: string[] = [];
+      // 품목별 성격에 따라 세공 대상(판매, 반품)과 정산 대상(결제, DC) 분류
+      const craftUpdates: typeof updates = [];
+      const releaseUpdates: typeof updates = [];
 
-      orderIds.forEach(orderId => {
-        const orderObj = orders.find(o => o.order_id === orderId);
+      updates.forEach(up => {
+        const orderObj = orders.find(o => o.order_id === up.orderId);
         if (orderObj) {
-          const hasCraftItem = orderObj.items.some(item => item.division === '판매' || item.division === '반품');
-          if (hasCraftItem) {
-            craftOrderIds.push(orderId);
-          } else {
-            releaseOrderIds.push(orderId);
+          const item = orderObj.items.find(i => i.item_id === up.itemId);
+          if (item) {
+            const isCraft = item.division === '판매' || item.division === '반품';
+            if (isCraft) {
+              craftUpdates.push(up);
+            } else {
+              releaseUpdates.push(up);
+            }
           }
         }
       });
 
       // 사용자 확인 및 피드백 메시지 구성
-      let confirmMessage = `선택한 품목이 포함된 ${orderIds.size}건의 주문을 전송하시겠습니까?`;
-      if (craftOrderIds.length > 0 && releaseOrderIds.length > 0) {
-        confirmMessage = `선택한 주문 중 세공이 필요한 제품 주문 ${craftOrderIds.length}건은 [세공 작업]으로 보내고,\n결제/DC로만 구성된 정산 주문 ${releaseOrderIds.length}건은 세공 없이 바로 [출고 대기]로 보냅니다. 진행하시겠습니까?`;
-      } else if (releaseOrderIds.length > 0) {
-        confirmMessage = `선택한 주문 ${releaseOrderIds.length}건은 결제/DC로만 구성되어 있어 세공 없이 바로 [출고 대기]로 보냅니다. 진행하시겠습니까?`;
+      let confirmMessage = `선택한 ${updates.length}개 품목을 전송하시겠습니까?`;
+      if (craftUpdates.length > 0 && releaseUpdates.length > 0) {
+        confirmMessage = `선택한 품목 중 세공이 필요한 제품 ${craftUpdates.length}개는 [세공 작업]으로 보내고,\n결제/DC 정산 품목 ${releaseUpdates.length}개는 세공 없이 바로 [출고 대기]로 보냅니다. 진행하시겠습니까?`;
+      } else if (releaseUpdates.length > 0) {
+        confirmMessage = `선택한 품목 ${releaseUpdates.length}개는 결제/DC로만 구성되어 있어 세공 없이 바로 [출고 대기]로 보냅니다. 진행하시겠습니까?`;
       }
 
       const isConfirm = window.confirm(confirmMessage);
       if (!isConfirm) return;
 
       // 상태 업데이트 실행
-      if (craftOrderIds.length > 0) {
-        updateMultipleOrderStatus(craftOrderIds, '공장발주');
+      if (craftUpdates.length > 0) {
+        await updateMultipleItemsStatus(craftUpdates, '공장발주');
       }
-      if (releaseOrderIds.length > 0) {
-        updateMultipleOrderStatus(releaseOrderIds, '출고대기');
+      if (releaseUpdates.length > 0) {
+        await updateMultipleItemsStatus(releaseUpdates, '출고대기');
       }
 
-      alert(`선택한 주문 품목들의 전송이 완료되었습니다.\n\n- 세공 작업(공장발주) 이동: ${craftOrderIds.length}건\n- 출고 대기 이동 (결제/DC 전용): ${releaseOrderIds.length}건`);
+      alert(`선택한 품목들의 전송이 완료되었습니다.\n\n- 세공 작업(공장발주) 이동: ${craftUpdates.length}개\n- 출고 대기 이동 (결제/DC 전용): ${releaseUpdates.length}개`);
       
       // 선택 상태 비우기
       setCheckedRows(new Set());
       
-      // Zustand 스토어 데이터 동기화 강제 트리거
-      useErpStore.getState().fetchDb();
-      
       // 상태 전파가 완료된 후 적절한 탭으로 화면 전환
       setTimeout(() => {
-        if (craftOrderIds.length > 0) {
+        if (craftUpdates.length > 0) {
           setActiveTab('work_list');
         } else {
           setActiveTab('release_list');

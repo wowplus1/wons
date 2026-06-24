@@ -979,6 +979,56 @@ select.excel-input {
   }
 }
 
+/* 모바일 입력 필드 포커스 시 자동 화면 확대 방지 (iOS/Safari 표준 대응) */
+@media (max-width: 768px) {
+  input, select, textarea, .input-field, .excel-input {
+    font-size: 16px !important;
+  }
+}
+
+/* 회전 스피너 애니메이션 (데이터 동기화용) */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* 카탈로그 상품등록 화면 모바일 테이블 가로 스크롤 최소폭 이원화 */
+@media (max-width: 768px) {
+  .catalog-stone-table.labor-table {
+    min-width: 750px !important;
+  }
+  .catalog-stone-table.stones-spec-table {
+    min-width: 1150px !important;
+  }
+
+  /* 카탈로그 요약 바 모바일 최적화 */
+  .catalog-summary-bar {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    font-size: 11px !important;
+    padding: 10px !important;
+  }
+  .catalog-summary-bar > div:last-child {
+    grid-column: span 2;
+    text-align: center;
+  }
+
+  /* 카탈로그 하단 저장 액션 툴바 모바일 수직 배치 */
+  .catalog-form-actions {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+  }
+  .catalog-form-actions button {
+    width: 100% !important;
+    justify-content: center !important;
+    padding: 10px !important;
+  }
+}
+
 
 
 

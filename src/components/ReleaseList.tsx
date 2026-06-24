@@ -27,7 +27,7 @@ interface ReleaseItemRow {
 }
 
 export const ReleaseList: React.FC = () => {
-  const { orders, catalog, customers, updateMultipleOrderStatus, updateItemActualWeight, updateItemStepWeights, fetchDb, setActiveTab } = useErpStore();
+  const { orders, catalog, customers, updateMultipleItemsStatus, updateItemActualWeight, updateItemStepWeights, fetchDb, setActiveTab } = useErpStore();
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
   const [showPrice, setShowPrice] = useState<boolean>(true);
 
@@ -94,46 +94,46 @@ export const ReleaseList: React.FC = () => {
 
   orders.forEach(order => {
     try {
-      const orderStatus = (order.status || '').trim();
-      if (orderStatus === '출고대기') {
-        const itemsList = order.items || [];
-        itemsList.forEach((item, itemIdx) => {
-          try {
-            const catalogItem = catalog.find(c => c.model_number === item.model_number);
-            const imageUrl = catalogItem?.images?.[0] || '';
+      const itemsList = order.items || [];
+      itemsList.forEach((item, itemIdx) => {
+        try {
+          const itemStatus = item.status || order.status || '접수';
+          if (itemStatus !== '출고대기') return;
 
-            // 개당 공임비 (기본+추가+스톤공임)
-            const baseExtra = (item.labor_base || 0) + (item.labor_extra || 0);
-            const stoneLabor = ((item.labor_main || 0) * (item.qty_main || 0)) + ((item.labor_sub || 0) * (item.qty_sub || 0));
-            const laborSingle = baseExtra + stoneLabor;
+          const catalogItem = catalog.find(c => c.model_number === item.model_number);
+          const imageUrl = catalogItem?.images?.[0] || '';
 
-            releaseItems.push({
-              id: `release-item::${order.order_id}::${item.item_id}::${itemIdx}`,
-              orderId: order.order_id,
-              orderDate: order.order_date,
-              customerName: order.customer_snapshot?.name || '알수없음',
-              customerId: order.customer_snapshot?.customer_id || '',
-              model: item.model_number,
-              material: item.material,
-              color: item.color,
-              size: item.size || '',
-              quantity: item.quantity || 1,
-              stoneMainText: item.stone_main_name ? `${item.stone_main_name} (${item.qty_main || 0}알)` : '',
-              stoneSubText: item.stone_sub_name ? `${item.stone_sub_name} (${item.qty_sub || 0}알)` : '',
-              note: item.note || '',
-              laborSingle,
-              totalAmount: item.calculated_price || 0,
-              imageUrl,
-              estimatedWeightG: item.estimated_weight_g || 0,
-              itemId: item.item_id,
-              actualWeightG: item.actual_weight_g,
-              stepWeights: item.step_weights
-            });
-          } catch (itemErr) {
-            console.error("ReleaseList item mapping error:", itemErr, item);
-          }
-        });
-      }
+          // 개당 공임비 (기본+추가+스톤공임)
+          const baseExtra = (item.labor_base || 0) + (item.labor_extra || 0);
+          const stoneLabor = ((item.labor_main || 0) * (item.qty_main || 0)) + ((item.labor_sub || 0) * (item.qty_sub || 0));
+          const laborSingle = baseExtra + stoneLabor;
+
+          releaseItems.push({
+            id: `release-item::${order.order_id}::${item.item_id}::${itemIdx}`,
+            orderId: order.order_id,
+            orderDate: order.order_date,
+            customerName: order.customer_snapshot?.name || '알수없음',
+            customerId: order.customer_snapshot?.customer_id || '',
+            model: item.model_number,
+            material: item.material,
+            color: item.color,
+            size: item.size || '',
+            quantity: item.quantity || 1,
+            stoneMainText: item.stone_main_name ? `${item.stone_main_name} (${item.qty_main || 0}알)` : '',
+            stoneSubText: item.stone_sub_name ? `${item.stone_sub_name} (${item.qty_sub || 0}알)` : '',
+            note: item.note || '',
+            laborSingle,
+            totalAmount: item.calculated_price || 0,
+            imageUrl,
+            estimatedWeightG: item.estimated_weight_g || 0,
+            itemId: item.item_id,
+            actualWeightG: item.actual_weight_g,
+            stepWeights: item.step_weights
+          });
+        } catch (itemErr) {
+          console.error("ReleaseList item mapping error:", itemErr, item);
+        }
+      });
     } catch (orderErr) {
       console.error("ReleaseList order status check error:", orderErr, order);
     }
@@ -164,35 +164,36 @@ export const ReleaseList: React.FC = () => {
     setCheckedItems(next);
   };
 
-  // 일괄 출고 완료 처리 (상태를 '출고완료'로 변경)
-  const handleCompleteRelease = () => {
+  // 일괄 출고 완료
+  const handleCompleteRelease = async () => {
     try {
       if (checkedItems.size === 0) {
-        alert('출고 완료 처리할 품목을 선택해주세요.');
+        alert('출고 처리할 품목을 선택해주세요.');
         return;
       }
 
-      const orderIds = new Set<string>();
+      const updates: { orderId: string, itemId: number }[] = [];
       checkedItems.forEach(rowId => {
         if (rowId.startsWith('release-item::')) {
           const parts = rowId.split('::');
           const orderId = parts[1];
-          if (orderId) {
-            orderIds.add(orderId);
+          const itemId = Number(parts[2]);
+          if (orderId && !isNaN(itemId)) {
+            updates.push({ orderId, itemId });
           }
         }
       });
 
-      if (orderIds.size === 0) {
-        alert('선택한 품목에서 주문 ID를 찾지 못했습니다.');
+      if (updates.length === 0) {
+        alert('선택한 품목 정보를 찾지 못했습니다.');
         return;
       }
 
-      const isConfirm = window.confirm(`선택한 품목이 포함된 ${orderIds.size}건의 주문을 '출고 완료' 상태로 전향하겠습니까?`);
+      const isConfirm = window.confirm(`선택한 ${updates.length}개 품목을 '출고 완료' 상태로 변경하시겠습니까?`);
       if (!isConfirm) return;
 
-      updateMultipleOrderStatus(Array.from(orderIds), '출고완료');
-      alert('선택한 주문들이 최종 출고 완료 처리되었습니다.');
+      await updateMultipleItemsStatus(updates, '출고완료');
+      alert('선택한 품목들이 최종 출고 완료 처리되었습니다.');
       setCheckedItems(new Set());
       fetchDb();
 
@@ -207,12 +208,12 @@ export const ReleaseList: React.FC = () => {
   };
 
   // 개별 출고 완료
-  const handleSingleRelease = (orderId: string) => {
+  const handleSingleRelease = async (orderId: string, itemId: number) => {
     try {
-      const isConfirm = window.confirm("해당 주문 건을 최종 출고 완료 상태로 변경하시겠습니까?");
+      const isConfirm = window.confirm("해당 품목을 최종 출고 완료 상태로 변경하시겠습니까?");
       if (!isConfirm) return;
 
-      updateMultipleOrderStatus([orderId], '출고완료');
+      await updateMultipleItemsStatus([{ orderId, itemId }], '출고완료');
       alert('출고 완료 처리되었습니다.');
       fetchDb();
 
@@ -598,7 +599,7 @@ export const ReleaseList: React.FC = () => {
                     <td style={{ padding: '6px 4px', textAlign: 'center', verticalAlign: 'middle' }}>
                       <button
                         type="button"
-                        onClick={() => handleSingleRelease(row.orderId)}
+                        onClick={() => handleSingleRelease(row.orderId, row.itemId)}
                         className="btn-primary"
                         style={{
                           padding: '4px 8px',

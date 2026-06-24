@@ -20,7 +20,7 @@ import { CompletedLedger } from './components/CompletedLedger';
 import { LayoutDashboard, ShoppingCart, BookOpen, RefreshCw, Coins, Gem, Users, FileText, Package, FileCheck, Menu, X } from 'lucide-react';
 
 function App() {
-  const { fetchDb, updateGoldRate, currentRates, activeTab, setActiveTab } = useErpStore();
+  const { fetchDb, updateGoldRate, currentRates, activeTab, setActiveTab, loading, customers } = useErpStore();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   // Detect pop-up status from URL query parameter
@@ -70,6 +70,29 @@ function App() {
 
   if (popupType === 'jewelry_work_list_print') {
     return <JewelryWorkListPrint />;
+  }
+
+  // 최초 데이터가 없을 때 로딩 중이면, 고급스러운 로딩 오버레이 출력
+  const isInitialLoading = loading && customers.length === 0;
+
+  if (isInitialLoading) {
+    return (
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100vh',
+        background: 'var(--bg-base)',
+        color: 'var(--text-main)',
+        gap: '16px'
+      }}>
+        <RefreshCw className="animate-spin" size={32} style={{ color: 'var(--primary)' }} />
+        <span style={{ fontSize: '14px', fontWeight: '600', letterSpacing: '0.5px' }}>
+          실시간 클라우드 데이터 동기화 중...
+        </span>
+      </div>
+    );
   }
 
   // Simulate daily gold market rate changes (front-end playground helper)
