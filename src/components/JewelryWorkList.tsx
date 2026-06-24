@@ -182,8 +182,8 @@ export const JewelryWorkList: React.FC = () => {
       checkedItems.forEach(rowId => {
         const item = workItems.find(w => w.id === rowId);
         if (item) {
-          // 구분이 결제일 경우 해리 무게 검증 생략
-          if (item.division === '결제') {
+          // 구분이 결제이거나 판매 중 디자인출력 모델일 경우 해리 무게 검증 생략
+          if (item.division === '결제' || (item.division === '판매' && item.model === '디자인출력')) {
             return;
           }
           const sw = item.stepWeights;
@@ -258,8 +258,9 @@ export const JewelryWorkList: React.FC = () => {
         return;
       }
       
-      // 구분이 결제일 경우 해리 무게 검증 생략
-      if (item.division !== '결제') {
+      // 구분이 결제이거나 판매 중 디자인출력 모델일 경우 해리 무게 검증 생략
+      const isBypass = item.division === '결제' || (item.division === '판매' && item.model === '디자인출력');
+      if (!isBypass) {
         const sw = item.stepWeights;
         const s1Before = sw?.step1?.before || 0;
         const s1After = sw?.step1?.after || 0;
@@ -601,9 +602,9 @@ export const JewelryWorkList: React.FC = () => {
 
                     {/* 단계별 세공 무게 (손실) */}
                     <td style={{ padding: '8px 6px', verticalAlign: 'middle' }}>
-                      {row.division === '결제' ? (
+                      {row.division === '결제' || (row.division === '판매' && row.model === '디자인출력') ? (
                         <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '11px', fontStyle: 'italic' }}>
-                          결제 구분 (해리 없음)
+                          {row.model === '디자인출력' ? '디자인출력 (해리 없음)' : '결제 구분 (해리 없음)'}
                         </div>
                       ) : (() => {
                         const sw = row.stepWeights;
