@@ -385,7 +385,7 @@ export const OrderGrid: React.FC = () => {
                         <input
                           type="text"
                           value={item.manufacturer || ''}
-                          disabled={item.division === '결제'}
+                          disabled={item.division === '결제' || item.model_number === '디자인출력'}
                           onChange={(e) => updateOrderItem(index, { manufacturer: e.target.value })}
                           onKeyDown={(e) => handleKeyDown(e, index, 'manufacturer')}
                           className="input-field"
@@ -394,10 +394,10 @@ export const OrderGrid: React.FC = () => {
                             height: '32px', 
                             padding: '4px 8px', 
                             fontSize: '12px',
-                            cursor: item.division === '결제' ? 'not-allowed' : 'text',
-                            opacity: item.division === '결제' ? 0.6 : 1
+                            cursor: (item.division === '결제' || item.model_number === '디자인출력') ? 'not-allowed' : 'text',
+                            opacity: (item.division === '결제' || item.model_number === '디자인출력') ? 0.6 : 1
                           }}
-                          required={item.division !== '결제' && item.division !== 'DC'}
+                          required={item.division !== '결제' && item.division !== 'DC' && item.model_number !== '디자인출력'}
                         />
                       </div>
 
@@ -408,7 +408,7 @@ export const OrderGrid: React.FC = () => {
                           type="number"
                           min="1"
                           value={item.quantity || 1}
-                          disabled={item.division === '결제'}
+                          disabled={item.division === '결제' || item.model_number === '디자인출력'}
                           onChange={(e) => updateOrderItem(index, { quantity: parseInt(e.target.value) || 1 })}
                           onKeyDown={(e) => handleKeyDown(e, index, 'quantity')}
                           className="input-field"
@@ -418,8 +418,8 @@ export const OrderGrid: React.FC = () => {
                             padding: '4px 8px', 
                             fontSize: '12px', 
                             textAlign: 'center',
-                            cursor: item.division === '결제' ? 'not-allowed' : 'text',
-                            opacity: item.division === '결제' ? 0.6 : 1
+                            cursor: (item.division === '결제' || item.model_number === '디자인출력') ? 'not-allowed' : 'text',
+                            opacity: (item.division === '결제' || item.model_number === '디자인출력') ? 0.6 : 1
                           }}
                           required
                         />
@@ -430,7 +430,7 @@ export const OrderGrid: React.FC = () => {
                         <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>색상</label>
                         <select
                           value={item.color || 'YG'}
-                          disabled={item.division === '결제'}
+                          disabled={item.division === '결제' || item.model_number === '디자인출력'}
                           onChange={(e) => updateOrderItem(index, { color: e.target.value })}
                           onKeyDown={(e) => handleKeyDown(e, index, 'color')}
                           className="input-field"
@@ -439,8 +439,8 @@ export const OrderGrid: React.FC = () => {
                             height: '32px', 
                             padding: '4px 8px', 
                             fontSize: '12px',
-                            cursor: item.division === '결제' ? 'not-allowed' : 'default',
-                            opacity: item.division === '결제' ? 0.6 : 1
+                            cursor: (item.division === '결제' || item.model_number === '디자인출력') ? 'not-allowed' : 'default',
+                            opacity: (item.division === '결제' || item.model_number === '디자인출력') ? 0.6 : 1
                           }}
                         >
                           <option value="YG">YG</option>
@@ -454,7 +454,7 @@ export const OrderGrid: React.FC = () => {
                         <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>재질</label>
                         <select
                           value={item.material || '14K'}
-                          disabled={item.division === '결제'}
+                          disabled={item.division === '결제' || item.model_number === '디자인출력'}
                           onChange={(e) => updateOrderItem(index, { material: e.target.value })}
                           onKeyDown={(e) => handleKeyDown(e, index, 'material')}
                           className="input-field"
@@ -463,8 +463,8 @@ export const OrderGrid: React.FC = () => {
                             height: '32px', 
                             padding: '4px 8px', 
                             fontSize: '12px',
-                            cursor: item.division === '결제' ? 'not-allowed' : 'default',
-                            opacity: item.division === '결제' ? 0.6 : 1
+                            cursor: (item.division === '결제' || item.model_number === '디자인출력') ? 'not-allowed' : 'default',
+                            opacity: (item.division === '결제' || item.model_number === '디자인출력') ? 0.6 : 1
                           }}
                         >
                           <option value="14K">14K</option>
@@ -491,19 +491,19 @@ export const OrderGrid: React.FC = () => {
                           display: 'flex', 
                           alignItems: 'center', 
                           gap: '6px', 
-                          background: item.division === '결제' ? 'rgba(0,0,0,0.08)' : 'rgba(0,0,0,0.15)', 
+                          background: (item.division === '결제' || item.model_number === '디자인출력') ? 'rgba(0,0,0,0.08)' : 'rgba(0,0,0,0.15)', 
                           border: '1px solid var(--border-color)', 
                           borderRadius: '6px', 
                           padding: '0 8px', 
                           height: '32px', 
                           boxSizing: 'border-box',
-                          opacity: item.division === '결제' ? 0.6 : 1
+                          opacity: (item.division === '결제' || item.model_number === '디자인출력') ? 0.6 : 1
                         }}>
                           <input
                             type="text"
                             value={item.stone_main_name || ''}
                             disabled
-                            placeholder={item.division === '결제' ? '선택 안 함' : '중심 스톤 선택'}
+                            placeholder={(item.division === '결제' || item.model_number === '디자인출력') ? '선택 안 함' : '중심 스톤 선택'}
                             style={{ 
                               flex: 1, 
                               border: 'none', 
@@ -511,22 +511,22 @@ export const OrderGrid: React.FC = () => {
                               color: 'var(--text-main)', 
                               fontSize: '12px', 
                               outline: 'none',
-                              cursor: item.division === '결제' ? 'not-allowed' : 'default'
+                              cursor: (item.division === '결제' || item.model_number === '디자인출력') ? 'not-allowed' : 'default'
                             }}
                           />
                           <button 
                             type="button" 
-                            disabled={item.division === '결제'}
+                            disabled={item.division === '결제' || item.model_number === '디자인출력'}
                             onClick={() => setStoneModalTarget({ rowIndex: index, type: 'main' })}
                             style={{ 
                               background: 'transparent', 
                               border: 'none', 
                               color: 'var(--primary)', 
-                              cursor: item.division === '결제' ? 'not-allowed' : 'pointer', 
+                              cursor: (item.division === '결제' || item.model_number === '디자인출력') ? 'not-allowed' : 'pointer', 
                               padding: '2px', 
                               display: 'flex', 
                               alignItems: 'center',
-                              opacity: item.division === '결제' ? 0.4 : 1
+                              opacity: (item.division === '결제' || item.model_number === '디자인출력') ? 0.4 : 1
                             }}
                           >
                             <Search size={14} />
@@ -541,19 +541,19 @@ export const OrderGrid: React.FC = () => {
                           display: 'flex', 
                           alignItems: 'center', 
                           gap: '6px', 
-                          background: item.division === '결제' ? 'rgba(0,0,0,0.08)' : 'rgba(0,0,0,0.15)', 
+                          background: (item.division === '결제' || item.model_number === '디자인출력') ? 'rgba(0,0,0,0.08)' : 'rgba(0,0,0,0.15)', 
                           border: '1px solid var(--border-color)', 
                           borderRadius: '6px', 
                           padding: '0 8px', 
                           height: '32px', 
                           boxSizing: 'border-box',
-                          opacity: item.division === '결제' ? 0.6 : 1
+                          opacity: (item.division === '결제' || item.model_number === '디자인출력') ? 0.6 : 1
                         }}>
                           <input
                             type="text"
                             value={item.stone_sub_name || ''}
                             disabled
-                            placeholder={item.division === '결제' ? '선택 안 함' : '보조 스톤 선택'}
+                            placeholder={(item.division === '결제' || item.model_number === '디자인출력') ? '선택 안 함' : '보조 스톤 선택'}
                             style={{ 
                               flex: 1, 
                               border: 'none', 
@@ -561,22 +561,22 @@ export const OrderGrid: React.FC = () => {
                               color: 'var(--text-main)', 
                               fontSize: '12px', 
                               outline: 'none',
-                              cursor: item.division === '결제' ? 'not-allowed' : 'default'
+                              cursor: (item.division === '결제' || item.model_number === '디자인출력') ? 'not-allowed' : 'default'
                             }}
                           />
                           <button 
                             type="button" 
-                            disabled={item.division === '결제'}
+                            disabled={item.division === '결제' || item.model_number === '디자인출력'}
                             onClick={() => setStoneModalTarget({ rowIndex: index, type: 'sub' })}
                             style={{ 
                               background: 'transparent', 
                               border: 'none', 
                               color: 'var(--primary)', 
-                              cursor: item.division === '결제' ? 'not-allowed' : 'pointer', 
+                              cursor: (item.division === '결제' || item.model_number === '디자인출력') ? 'not-allowed' : 'pointer', 
                               padding: '2px', 
                               display: 'flex', 
                               alignItems: 'center',
-                              opacity: item.division === '결제' ? 0.4 : 1
+                              opacity: (item.division === '결제' || item.model_number === '디자인출력') ? 0.4 : 1
                             }}
                           >
                             <Search size={14} />
@@ -590,7 +590,7 @@ export const OrderGrid: React.FC = () => {
                         <input
                           type="number"
                           value={item.qty_sub === 0 ? '' : item.qty_sub}
-                          disabled={item.division === '결제'}
+                          disabled={item.division === '결제' || item.model_number === '디자인출력'}
                           onChange={(e) => updateOrderItem(index, { qty_sub: parseInt(e.target.value) || 0 })}
                           onKeyDown={(e) => handleKeyDown(e, index, 'qty_sub')}
                           className="input-field"
@@ -600,8 +600,8 @@ export const OrderGrid: React.FC = () => {
                             padding: '4px 8px', 
                             fontSize: '12px', 
                             textAlign: 'center',
-                            cursor: item.division === '결제' ? 'not-allowed' : 'text',
-                            opacity: item.division === '결제' ? 0.6 : 1
+                            cursor: (item.division === '결제' || item.model_number === '디자인출력') ? 'not-allowed' : 'text',
+                            opacity: (item.division === '결제' || item.model_number === '디자인출력') ? 0.6 : 1
                           }}
                         />
                       </div>
@@ -612,7 +612,7 @@ export const OrderGrid: React.FC = () => {
                         <input
                           type="number"
                           value={item.qty_main === 0 ? '' : item.qty_main}
-                          disabled={item.division === '결제'}
+                          disabled={item.division === '결제' || item.model_number === '디자인출력'}
                           onChange={(e) => updateOrderItem(index, { qty_main: parseInt(e.target.value) || 0 })}
                           onKeyDown={(e) => handleKeyDown(e, index, 'qty_main')}
                           className="input-field"
@@ -622,8 +622,8 @@ export const OrderGrid: React.FC = () => {
                             padding: '4px 8px', 
                             fontSize: '12px', 
                             textAlign: 'center',
-                            cursor: item.division === '결제' ? 'not-allowed' : 'text',
-                            opacity: item.division === '결제' ? 0.6 : 1
+                            cursor: (item.division === '결제' || item.model_number === '디자인출력') ? 'not-allowed' : 'text',
+                            opacity: (item.division === '결제' || item.model_number === '디자인출력') ? 0.6 : 1
                           }}
                         />
                       </div>
@@ -635,7 +635,7 @@ export const OrderGrid: React.FC = () => {
                           type="number"
                           step="0.001"
                           value={item.stone_weight_ea === 0 ? '' : item.stone_weight_ea}
-                          disabled={item.division === '결제'}
+                          disabled={item.division === '결제' || item.model_number === '디자인출력'}
                           onChange={(e) => updateOrderItem(index, { stone_weight_ea: parseFloat(e.target.value) || 0 })}
                           onKeyDown={(e) => handleKeyDown(e, index, 'stone_weight_ea')}
                           className="input-field"
@@ -645,8 +645,8 @@ export const OrderGrid: React.FC = () => {
                             padding: '4px 8px', 
                             fontSize: '12px', 
                             textAlign: 'right',
-                            cursor: item.division === '결제' ? 'not-allowed' : 'text',
-                            opacity: item.division === '결제' ? 0.6 : 1
+                            cursor: (item.division === '결제' || item.model_number === '디자인출력') ? 'not-allowed' : 'text',
+                            opacity: (item.division === '결제' || item.model_number === '디자인출력') ? 0.6 : 1
                           }}
                         />
                       </div>
@@ -657,7 +657,7 @@ export const OrderGrid: React.FC = () => {
                       {/* 공임단가 기본 */}
                       <div style={{ gridColumn: 'span 5' }}>
                         <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>
-                          {item.division === '결제' ? '공임비(결제금액)' : '기본 공임'}
+                          {item.model_number === '디자인출력' ? '디자인 비용' : item.division === '결제' ? '공임비(결제금액)' : '기본 공임'}
                         </label>
                         <input
                           type="number"
@@ -675,7 +675,7 @@ export const OrderGrid: React.FC = () => {
                         <input
                           type="number"
                           value={item.labor_extra === 0 ? '' : item.labor_extra}
-                          disabled={item.division === '결제'}
+                          disabled={item.division === '결제' || item.model_number === '디자인출력'}
                           onChange={(e) => updateOrderItem(index, { labor_extra: parseInt(e.target.value) || 0 })}
                           onKeyDown={(e) => handleKeyDown(e, index, 'labor_extra')}
                           className="input-field"
@@ -685,8 +685,8 @@ export const OrderGrid: React.FC = () => {
                             padding: '4px 8px', 
                             fontSize: '12px', 
                             textAlign: 'right',
-                            cursor: item.division === '결제' ? 'not-allowed' : 'text',
-                            opacity: item.division === '결제' ? 0.6 : 1
+                            cursor: (item.division === '결제' || item.model_number === '디자인출력') ? 'not-allowed' : 'text',
+                            opacity: (item.division === '결제' || item.model_number === '디자인출력') ? 0.6 : 1
                           }}
                         />
                       </div>
@@ -697,7 +697,7 @@ export const OrderGrid: React.FC = () => {
                         <input
                           type="number"
                           value={item.labor_main === 0 ? '' : item.labor_main}
-                          disabled={item.division === '결제'}
+                          disabled={item.division === '결제' || item.model_number === '디자인출력'}
                           onChange={(e) => updateOrderItem(index, { labor_main: parseInt(e.target.value) || 0 })}
                           onKeyDown={(e) => handleKeyDown(e, index, 'labor_main')}
                           className="input-field"
@@ -707,8 +707,8 @@ export const OrderGrid: React.FC = () => {
                             padding: '4px 8px', 
                             fontSize: '12px', 
                             textAlign: 'right',
-                            cursor: item.division === '결제' ? 'not-allowed' : 'text',
-                            opacity: item.division === '결제' ? 0.6 : 1
+                            cursor: (item.division === '결제' || item.model_number === '디자인출력') ? 'not-allowed' : 'text',
+                            opacity: (item.division === '결제' || item.model_number === '디자인출력') ? 0.6 : 1
                           }}
                         />
                       </div>
@@ -740,7 +740,7 @@ export const OrderGrid: React.FC = () => {
                         <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>공임 급</label>
                         <select
                           value={item.grade || 3}
-                          disabled={item.division === '결제'}
+                          disabled={item.division === '결제' || item.model_number === '디자인출력'}
                           onChange={(e) => updateOrderItem(index, { grade: parseInt(e.target.value) || 3 })}
                           onKeyDown={(e) => handleKeyDown(e, index, 'grade')}
                           className="input-field"
@@ -750,8 +750,8 @@ export const OrderGrid: React.FC = () => {
                             padding: '4px 8px', 
                             fontSize: '12px', 
                             textAlign: 'center',
-                            cursor: item.division === '결제' ? 'not-allowed' : 'default',
-                            opacity: item.division === '결제' ? 0.6 : 1
+                            cursor: (item.division === '결제' || item.model_number === '디자인출력') ? 'not-allowed' : 'default',
+                            opacity: (item.division === '결제' || item.model_number === '디자인출력') ? 0.6 : 1
                           }}
                         >
                           <option value={3}>일반</option>
@@ -773,9 +773,9 @@ export const OrderGrid: React.FC = () => {
                         <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>사이즈</label>
                         <input
                           type="text"
-                          placeholder={item.division === '결제' ? '입력 안 함' : '예: 12호'}
+                          placeholder={(item.division === '결제' || item.model_number === '디자인출력') ? '입력 안 함' : '예: 12호'}
                           value={item.size || ''}
-                          disabled={item.division === '결제'}
+                          disabled={item.division === '결제' || item.model_number === '디자인출력'}
                           onChange={(e) => updateOrderItem(index, { size: e.target.value })}
                           onKeyDown={(e) => handleKeyDown(e, index, 'size')}
                           className="input-field"
@@ -784,8 +784,8 @@ export const OrderGrid: React.FC = () => {
                             height: '32px', 
                             padding: '4px 8px', 
                             fontSize: '12px',
-                            cursor: item.division === '결제' ? 'not-allowed' : 'text',
-                            opacity: item.division === '결제' ? 0.6 : 1
+                            cursor: (item.division === '결제' || item.model_number === '디자인출력') ? 'not-allowed' : 'text',
+                            opacity: (item.division === '결제' || item.model_number === '디자인출력') ? 0.6 : 1
                           }}
                         />
                       </div>
@@ -810,7 +810,7 @@ export const OrderGrid: React.FC = () => {
                         <input
                           type="date"
                           value={item.release_date || ''}
-                          disabled={item.division === '결제'}
+                          disabled={item.division === '결제' || item.model_number === '디자인출력'}
                           onChange={(e) => updateOrderItem(index, { release_date: e.target.value })}
                           onKeyDown={(e) => handleKeyDown(e, index, 'release_date')}
                           className="input-field"
@@ -819,8 +819,8 @@ export const OrderGrid: React.FC = () => {
                             height: '32px', 
                             padding: '4px 8px', 
                             fontSize: '12px',
-                            cursor: item.division === '결제' ? 'not-allowed' : 'default',
-                            opacity: item.division === '결제' ? 0.6 : 1
+                            cursor: (item.division === '결제' || item.model_number === '디자인출력') ? 'not-allowed' : 'default',
+                            opacity: (item.division === '결제' || item.model_number === '디자인출력') ? 0.6 : 1
                           }}
                         />
                       </div>

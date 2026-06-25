@@ -50,6 +50,16 @@ export const CompletedLedger: React.FC = () => {
     }
   };
 
+  const handleRevertToUnpaid = async (orderId: string, itemId: number) => {
+    if (window.confirm(`선택하신 품목을 '결제전(미수)' 상태로 되돌리시겠습니까?\n되돌린 후 미수금 장부 대장으로 자동 이동합니다.`)) {
+      await updateMultipleItemsPaymentStatus([{ orderId, itemId }], '결제전');
+      alert('결제전 미수 상태로 복구되었습니다.');
+      setTimeout(() => {
+        setActiveTab('unpaid_ledger');
+      }, 50);
+    }
+  };
+
   const handlePrintInvoice = (orderId: string) => {
     const w = 1150;
     const h = 850;
@@ -623,24 +633,45 @@ export const CompletedLedger: React.FC = () => {
 
                     {/* 되돌리기 */}
                     <td style={{ padding: '4px', textAlign: 'center' }}>
-                      <button
-                        onClick={() => handleRevertToReleaseReady(row.orderId, row.itemId)}
-                        className="btn-primary"
-                        style={{
-                          background: 'rgba(245, 158, 11, 0.15)',
-                          color: '#f59e0b',
-                          border: '1px solid rgba(245, 158, 11, 0.3)',
-                          borderRadius: '4px',
-                          padding: '2px 6px',
-                          fontSize: '11px',
-                          fontWeight: 'bold',
-                          cursor: 'pointer',
-                          boxShadow: 'none'
-                        }}
-                        title="출고대기 상태로 되돌리기"
-                      >
-                        ← 출고대기
-                      </button>
+                      {activeTab === 'unpaid_ledger' ? (
+                        <button
+                          onClick={() => handleRevertToReleaseReady(row.orderId, row.itemId)}
+                          className="btn-primary"
+                          style={{
+                            background: 'rgba(245, 158, 11, 0.15)',
+                            color: '#f59e0b',
+                            border: '1px solid rgba(245, 158, 11, 0.3)',
+                            borderRadius: '4px',
+                            padding: '2px 6px',
+                            fontSize: '11px',
+                            fontWeight: 'bold',
+                            cursor: 'pointer',
+                            boxShadow: 'none'
+                          }}
+                          title="출고대기 상태로 되돌리기"
+                        >
+                          ← 출고대기
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleRevertToUnpaid(row.orderId, row.itemId)}
+                          className="btn-primary"
+                          style={{
+                            background: 'rgba(59, 130, 246, 0.15)',
+                            color: '#3b82f6',
+                            border: '1px solid rgba(59, 130, 246, 0.3)',
+                            borderRadius: '4px',
+                            padding: '2px 6px',
+                            fontSize: '11px',
+                            fontWeight: 'bold',
+                            cursor: 'pointer',
+                            boxShadow: 'none'
+                          }}
+                          title="미수대장(결제전) 상태로 되돌리기"
+                        >
+                          ← 미수대장
+                        </button>
+                      )}
                     </td>
                   </tr>
                 );

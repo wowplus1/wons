@@ -186,7 +186,30 @@ export const useErpStore = create<ErpState>((set, get) => ({
     }
 
     if (selectedCustomer) {
-      if (item.model_number === '임시제품') {
+      if (item.model_number === '디자인출력') {
+        if (isModelChanged) {
+          item.manufacturer = '자체';
+          item.color = '';
+          item.material = '';
+          item.quantity = 1;
+          item.qty_main = 0;
+          item.qty_sub = 0;
+          item.stone_main_id = '';
+          item.stone_main_name = '';
+          item.stone_sub_id = '';
+          item.stone_sub_name = '';
+          item.labor_main = 0;
+          item.labor_sub = 0;
+          item.stone_weight_ea = 0;
+          item.labor_extra = 0;
+          item.size = '';
+          item.labor_base = 0;
+          
+          const date = new Date();
+          date.setDate(date.getDate() + 7);
+          item.release_date = date.toISOString().split('T')[0];
+        }
+      } else if (item.model_number === '임시제품') {
         if (isModelChanged) {
           item.manufacturer = 'JP';
           item.material = item.material || '14K';
@@ -294,6 +317,15 @@ export const useErpStore = create<ErpState>((set, get) => ({
           extra_labor_fee: extraLabor
         };
         item.stones = [];
+      } else if (item.model_number === '디자인출력') {
+        const baseLabor = item.labor_base || 0;
+        item.calculated_price = Math.round(baseLabor * (item.quantity || 1));
+        item.estimated_weight_g = 0;
+        item.labor_fee_snapshot = {
+          base_labor_fee: baseLabor,
+          extra_labor_fee: 0
+        };
+        item.stones = [];
       } else if (item.model_number) {
         const catalogItem = get().catalog.find(c => c.model_number === item.model_number);
         const baseWeight = catalogItem?.base_weight || 0;
@@ -362,10 +394,11 @@ export const useErpStore = create<ErpState>((set, get) => ({
         .filter(i => (i.division === '결제' || i.division === 'DC' || i.model_number) && i.calculated_price !== undefined)
         .map(i => {
           const division = i.division || '판매';
+          const defaultStatus = (division === '결제' || division === 'DC') ? '출고대기' : '접수';
           return {
             ...i,
             division,
-            status: '접수',
+            status: defaultStatus,
             model_number: i.model_number || division,
             manufacturer: i.manufacturer || (division === '결제' || division === 'DC' ? '자체' : 'JP')
           };

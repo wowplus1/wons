@@ -1,23 +1,44 @@
 // src/App.tsx
-import { useEffect, useState } from 'react';
+import { useEffect, useState, lazy, Suspense } from 'react';
 import { useErpStore } from './store/useErpStore';
-import { Dashboard } from './components/Dashboard';
-import { OrderGrid } from './components/OrderGrid';
-import { CatalogManager } from './components/CatalogManager';
-import { RatesManager } from './components/RatesManager';
-import { StoneManager } from './components/StoneManager';
-import { StoneRegisterForm } from './components/StoneRegisterForm';
-import { CatalogRegisterForm } from './components/CatalogRegisterForm';
-import { CatalogDetailView } from './components/CatalogDetailView';
-import { CatalogSelectPopup } from './components/CatalogSelectPopup';
-import { CustomerManager } from './components/CustomerManager';
-import { InvoicePrintView } from './components/InvoicePrintView';
-import { OrderList } from './components/OrderList';
-import { JewelryWorkList } from './components/JewelryWorkList';
-import { JewelryWorkListPrint } from './components/JewelryWorkListPrint';
-import { ReleaseList } from './components/ReleaseList';
-import { CompletedLedger } from './components/CompletedLedger';
 import { LayoutDashboard, ShoppingCart, BookOpen, RefreshCw, Coins, Gem, Users, FileText, Package, FileCheck, Menu, X } from 'lucide-react';
+
+// Lazy loaded components
+const Dashboard = lazy(() => import('./components/Dashboard').then(m => ({ default: m.Dashboard })));
+const OrderGrid = lazy(() => import('./components/OrderGrid').then(m => ({ default: m.OrderGrid })));
+const CatalogManager = lazy(() => import('./components/CatalogManager').then(m => ({ default: m.CatalogManager })));
+const RatesManager = lazy(() => import('./components/RatesManager').then(m => ({ default: m.RatesManager })));
+const StoneManager = lazy(() => import('./components/StoneManager').then(m => ({ default: m.StoneManager })));
+const StoneRegisterForm = lazy(() => import('./components/StoneRegisterForm').then(m => ({ default: m.StoneRegisterForm })));
+const CatalogRegisterForm = lazy(() => import('./components/CatalogRegisterForm').then(m => ({ default: m.CatalogRegisterForm })));
+const CatalogDetailView = lazy(() => import('./components/CatalogDetailView').then(m => ({ default: m.CatalogDetailView })));
+const CatalogSelectPopup = lazy(() => import('./components/CatalogSelectPopup').then(m => ({ default: m.CatalogSelectPopup })));
+const CustomerManager = lazy(() => import('./components/CustomerManager').then(m => ({ default: m.CustomerManager })));
+const InvoicePrintView = lazy(() => import('./components/InvoicePrintView').then(m => ({ default: m.InvoicePrintView })));
+const OrderList = lazy(() => import('./components/OrderList').then(m => ({ default: m.OrderList })));
+const JewelryWorkList = lazy(() => import('./components/JewelryWorkList').then(m => ({ default: m.JewelryWorkList })));
+const JewelryWorkListPrint = lazy(() => import('./components/JewelryWorkListPrint').then(m => ({ default: m.JewelryWorkListPrint })));
+const ReleaseList = lazy(() => import('./components/ReleaseList').then(m => ({ default: m.ReleaseList })));
+const CompletedLedger = lazy(() => import('./components/CompletedLedger').then(m => ({ default: m.CompletedLedger })));
+
+// 고급스러운 로딩 대체 UI
+const LoadingFallback = () => (
+  <div style={{
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: '100%',
+    minHeight: '200px',
+    color: 'var(--text-muted)',
+    gap: '12px'
+  }}>
+    <RefreshCw className="animate-spin" size={24} style={{ color: 'var(--primary)' }} />
+    <span style={{ fontSize: '13px', fontWeight: '500', letterSpacing: '0.5px' }}>
+      화면을 불러오는 중...
+    </span>
+  </div>
+);
 
 function App() {
   const { fetchDb, updateGoldRate, currentRates, activeTab, setActiveTab, loading, customers } = useErpStore();
@@ -49,27 +70,27 @@ function App() {
 
   // Render popup forms directly if matching URL query parameter is found
   if (popupType === 'stone') {
-    return <StoneRegisterForm />;
+    return <Suspense fallback={<LoadingFallback />}><StoneRegisterForm /></Suspense>;
   }
 
   if (popupType === 'catalog') {
-    return <CatalogRegisterForm />;
+    return <Suspense fallback={<LoadingFallback />}><CatalogRegisterForm /></Suspense>;
   }
 
   if (popupType === 'catalog_detail') {
-    return <CatalogDetailView />;
+    return <Suspense fallback={<LoadingFallback />}><CatalogDetailView /></Suspense>;
   }
 
   if (popupType === 'catalog_select') {
-    return <CatalogSelectPopup />;
+    return <Suspense fallback={<LoadingFallback />}><CatalogSelectPopup /></Suspense>;
   }
 
   if (popupType === 'invoice') {
-    return <InvoicePrintView />;
+    return <Suspense fallback={<LoadingFallback />}><InvoicePrintView /></Suspense>;
   }
 
   if (popupType === 'jewelry_work_list_print') {
-    return <JewelryWorkListPrint />;
+    return <Suspense fallback={<LoadingFallback />}><JewelryWorkListPrint /></Suspense>;
   }
 
   // 최초 데이터가 없을 때 로딩 중이면, 고급스러운 로딩 오버레이 출력
@@ -424,16 +445,18 @@ function App() {
 
       {/* Main Feature Rendering Panel */}
       <main style={{ flex: 1, overflowY: 'auto' }}>
-        {activeTab === 'customers' && <CustomerManager />}
-        {activeTab === 'dashboard' && <Dashboard />}
-        {activeTab === 'order' && <OrderGrid />}
-        {activeTab === 'orders' && <OrderList />}
-        {activeTab === 'catalog' && <CatalogManager />}
-        {activeTab === 'rates' && <RatesManager />}
-        {activeTab === 'stones' && <StoneManager />}
-        {activeTab === 'work_list' && <JewelryWorkList />}
-        {activeTab === 'release_list' && <ReleaseList />}
-        {(activeTab === 'unpaid_ledger' || activeTab === 'paid_ledger' || activeTab === 'hold_ledger') && <CompletedLedger />}
+        <Suspense fallback={<LoadingFallback />}>
+          {activeTab === 'customers' && <CustomerManager />}
+          {activeTab === 'dashboard' && <Dashboard />}
+          {activeTab === 'order' && <OrderGrid />}
+          {activeTab === 'orders' && <OrderList />}
+          {activeTab === 'catalog' && <CatalogManager />}
+          {activeTab === 'rates' && <RatesManager />}
+          {activeTab === 'stones' && <StoneManager />}
+          {activeTab === 'work_list' && <JewelryWorkList />}
+          {activeTab === 'release_list' && <ReleaseList />}
+          {(activeTab === 'unpaid_ledger' || activeTab === 'paid_ledger' || activeTab === 'hold_ledger') && <CompletedLedger />}
+        </Suspense>
       </main>
 
       {/* Bottom Footer Info */}
