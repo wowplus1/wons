@@ -92,55 +92,59 @@ export const ReleaseList: React.FC = () => {
   }, [fetchDb]);
 
   // 1. 현재 '출고대기' 상태인 주문에서 가공 품목('판매' 및 '반품') 필터링하여 테이블 행 구축
-  const releaseItems: ReleaseItemRow[] = [];
+  const releaseItems = React.useMemo(() => {
+    const items: ReleaseItemRow[] = [];
 
-  orders.forEach(order => {
-    try {
-      const itemsList = order.items || [];
-      itemsList.forEach((item, itemIdx) => {
-        try {
-          const itemStatus = item.status || order.status || '접수';
-          if (itemStatus !== '출고대기') return;
+    orders.forEach(order => {
+      try {
+        const itemsList = order.items || [];
+        itemsList.forEach((item, itemIdx) => {
+          try {
+            const itemStatus = item.status || order.status || '접수';
+            if (itemStatus !== '출고대기') return;
 
-          const catalogItem = catalog.find(c => c.model_number === item.model_number);
-          const imageUrl = catalogItem?.images?.[0] || '';
+            const catalogItem = catalog.find(c => c.model_number === item.model_number);
+            const imageUrl = catalogItem?.images?.[0] || '';
 
-          // 개당 공임비 (기본+추가+스톤공임)
-          const baseExtra = (item.labor_base || 0) + (item.labor_extra || 0);
-          const stoneLabor = ((item.labor_main || 0) * (item.qty_main || 0)) + ((item.labor_sub || 0) * (item.qty_sub || 0));
-          const laborSingle = baseExtra + stoneLabor;
+            // 개당 공임비 (기본+추가+스톤공임)
+            const baseExtra = (item.labor_base || 0) + (item.labor_extra || 0);
+            const stoneLabor = ((item.labor_main || 0) * (item.qty_main || 0)) + ((item.labor_sub || 0) * (item.qty_sub || 0));
+            const laborSingle = baseExtra + stoneLabor;
 
-          releaseItems.push({
-            id: `release-item::${order.order_id}::${item.item_id}::${itemIdx}`,
-            orderId: order.order_id,
-            orderDate: order.order_date,
-            customerName: order.customer_snapshot?.name || '알수없음',
-            customerId: order.customer_snapshot?.customer_id || '',
-            model: item.model_number,
-            material: item.material,
-            color: item.color,
-            size: item.size || '',
-            quantity: item.quantity || 1,
-            stoneMainText: item.stone_main_name ? `${item.stone_main_name} (${item.qty_main || 0}알)` : '',
-            stoneSubText: item.stone_sub_name ? `${item.stone_sub_name} (${item.qty_sub || 0}알)` : '',
-            note: item.note || '',
-            laborSingle,
-            totalAmount: item.calculated_price || 0,
-            imageUrl,
-            estimatedWeightG: item.estimated_weight_g || 0,
-            itemId: item.item_id,
-            actualWeightG: item.actual_weight_g,
-            division: item.division,
-            stepWeights: item.step_weights
-          });
-        } catch (itemErr) {
-          console.error("ReleaseList item mapping error:", itemErr, item);
-        }
-      });
-    } catch (orderErr) {
-      console.error("ReleaseList order status check error:", orderErr, order);
-    }
-  });
+            items.push({
+              id: `release-item::${order.order_id}::${item.item_id}::${itemIdx}`,
+              orderId: order.order_id,
+              orderDate: order.order_date,
+              customerName: order.customer_snapshot?.name || '알수없음',
+              customerId: order.customer_snapshot?.customer_id || '',
+              model: item.model_number,
+              material: item.material,
+              color: item.color,
+              size: item.size || '',
+              quantity: item.quantity || 1,
+              stoneMainText: item.stone_main_name ? `${item.stone_main_name} (${item.qty_main || 0}알)` : '',
+              stoneSubText: item.stone_sub_name ? `${item.stone_sub_name} (${item.qty_sub || 0}알)` : '',
+              note: item.note || '',
+              laborSingle,
+              totalAmount: item.calculated_price || 0,
+              imageUrl,
+              estimatedWeightG: item.estimated_weight_g || 0,
+              itemId: item.item_id,
+              actualWeightG: item.actual_weight_g,
+              division: item.division,
+              stepWeights: item.step_weights
+            });
+          } catch (itemErr) {
+            console.error("ReleaseList item mapping error:", itemErr, item);
+          }
+        });
+      } catch (orderErr) {
+        console.error("ReleaseList order status check error:", orderErr, order);
+      }
+    });
+
+    return items;
+  }, [orders, catalog]);
 
   // 체크박스 제어
   const isAllChecked = releaseItems.length > 0 && releaseItems.every(r => checkedItems.has(r.id));

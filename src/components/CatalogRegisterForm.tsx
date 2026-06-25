@@ -265,9 +265,29 @@ export const CatalogRegisterForm: React.FC = () => {
       model_number: modelNo.toUpperCase().trim(),
       category: category || 'Ring',
       is_set: isSet || false,
-      materials: [baseMaterial || '14K'],
+      materials: (() => {
+        const currentMat = baseMaterial || '14K';
+        if (existingItem && existingItem.materials) {
+          return existingItem.materials.includes(currentMat)
+            ? existingItem.materials
+            : [...existingItem.materials, currentMat];
+        }
+        return [currentMat];
+      })(),
       base_labor_fees: baseLaborFeesMap,
       extra_labor_fee: parseFloat(laborFees.find(lf => lf.type === '추가1')?.grade2 || '0') || 0,
+      labor_fees_v2: {
+        ...(existingItem?.labor_fees_v2 || {}),
+        [baseMaterial]: laborFees.map(lf => ({
+          type: lf.type,
+          color: lf.color,
+          cost: parseFloat(lf.cost) || 0,
+          grade_1: parseFloat(lf.grade1) || 0,
+          grade_2: parseFloat(lf.grade2) || 0,
+          grade_3: parseFloat(lf.grade3) || 0,
+          grade_4: parseFloat(lf.grade4) || 0,
+        }))
+      },
       default_stones: defaultStonesMap,
       images: images.length > 0 ? images : ['https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=150'],
       created_at: existingItem?.created_at || new Date().toISOString(),

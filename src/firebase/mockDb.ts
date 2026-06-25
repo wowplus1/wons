@@ -87,6 +87,17 @@ export interface CatalogItem {
   sold_qty?: number;
   note?: string;
   manual_deduction_weight?: number;
+  labor_fees_v2?: {
+    [material: string]: {
+      type: string;        // '기본', '추가1', '추가2', '추가3'
+      color: string;       // 'YG', 'WG', 'RG', '' (전체색상)
+      cost: number;        // 구매원가
+      grade_1: number;
+      grade_2: number;
+      grade_3: number;
+      grade_4: number;
+    }[];
+  };
 }
 
 export interface OrderItem {
@@ -98,6 +109,7 @@ export interface OrderItem {
   color: string;            // 색상 (YG, WG, RG)
   material: string;         // 재질 (14K, 18K, 24K, Silver)
   status?: '접수' | '공장발주' | '출고대기' | '출고완료' | '보류'; // 품목 개별 상태
+  labor_cost?: number;      // 공임 구매원가 추가
   
   // 스톤 종류 (마스터 연동용 ID 및 명칭)
   stone_main_id: string;    // 중심 스톤 ID

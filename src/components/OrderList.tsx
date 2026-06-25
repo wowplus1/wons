@@ -11,6 +11,7 @@ interface RowData {
   customerName: string;
   customerId: string;
   orderId?: string;
+  itemId?: number;
   transactionId?: string;
   serialNo?: string;
   tradeNo: string;
@@ -30,7 +31,7 @@ interface RowData {
 }
 
 export const OrderList: React.FC = () => {
-  const { orders, customers, transactions, updateMultipleItemsStatus, setActiveTab, deleteOrder, deleteTransaction, startEditOrder } = useErpStore();
+  const { orders, customers, transactions, updateMultipleItemsStatus, setActiveTab, deleteOrder, deleteOrderItem, deleteTransaction, startEditOrder } = useErpStore();
   const [filterCustomer, setFilterCustomer] = useState('');
   const [filterType, setFilterType] = useState<'전체' | '판매' | '결제' | '반품' | 'DC'>('전체');
   const [checkedRows, setCheckedRows] = useState<Set<string>>(new Set());
@@ -39,7 +40,10 @@ export const OrderList: React.FC = () => {
     const isConfirm = window.confirm(`선택한 [${row.type}] 데이터를 완전히 삭제하시겠습니까?\n삭제된 정보는 즉시 거래처의 미수금 및 순금 미수량에서 복구(역산)처리 됩니다.`);
     if (!isConfirm) return;
 
-    if (row.orderId) {
+    if (row.orderId && row.itemId !== undefined) {
+      deleteOrderItem(row.orderId, row.itemId);
+      alert('선택하신 개별 품목 데이터가 완전히 삭제되었습니다.');
+    } else if (row.orderId) {
       deleteOrder(row.orderId);
       alert('해당 주문서 데이터가 완전히 삭제되었습니다.');
     } else if (row.transactionId) {
@@ -76,168 +80,175 @@ export const OrderList: React.FC = () => {
 
   // Compile all rows (Orders + Gold Payments)
   // 거래처별 거래(주문서 및 수동 결제) 횟수를 순차적으로 매기기 위한 맵 계산
-  const customerEvents: { [customerId: string]: { id: string; date: string }[] } = {};
+  const allRows = React.useMemo(() => {
+    const customerEvents: { [customerId: string]: { id: string; date: string }[] } = {};
 
-  // 1) 주문서(Order) 추가 (동일 주문서 안의 아이템들은 하나의 거래 이벤트)
-  orders.forEach(order => {
-    const cId = order.customer_snapshot?.customer_id;
-    if (!cId) return;
-    if (!customerEvents[cId]) {
-      customerEvents[cId] = [];
-    }
-    // 동일한 주문서 ID가 이미 들어가 있는지 확인하여 중복 방지
-    if (!customerEvents[cId].some(e => e.id === order.order_id)) {
-      customerEvents[cId].push({
-        id: order.order_id,
-        date: order.order_date
-      });
-    }
-  });
-
-  // 2) 수동으로 입력한 결제(Transaction) 추가 (system 생성 제외)
-  transactions.forEach(tx => {
-    if (tx.created_by === 'system') return;
-    const cId = tx.customer_id;
-    if (!cId) return;
-    if (!customerEvents[cId]) {
-      customerEvents[cId] = [];
-    }
-    if (!customerEvents[cId].some(e => e.id === tx.transaction_id)) {
-      customerEvents[cId].push({
-        id: tx.transaction_id,
-        date: tx.created_at
-      });
-    }
-  });
-
-  // 3) 거래처별로 시간순(date 오름차순) 정렬 후 거래No (1부터 차례대로) 부여
-  const tradeNoMap: { [customerId: string]: { [eventId: string]: number } } = {};
-  Object.keys(customerEvents).forEach(cId => {
-    const sorted = [...customerEvents[cId]].sort((a, b) => a.date.localeCompare(b.date));
-    tradeNoMap[cId] = {};
-    sorted.forEach((event, index) => {
-      tradeNoMap[cId][event.id] = index + 1;
+    // 1) 주문서(Order) 추가 (동일 주문서 안의 아이템들은 하나의 거래 이벤트)
+    orders.forEach(order => {
+      const cId = order.customer_snapshot?.customer_id;
+      if (!cId) return;
+      if (!customerEvents[cId]) {
+        customerEvents[cId] = [];
+      }
+      // 동일한 주문서 ID가 이미 들어가 있는지 확인하여 중복 방지
+      if (!customerEvents[cId].some(e => e.id === order.order_id)) {
+        customerEvents[cId].push({
+          id: order.order_id,
+          date: order.order_date
+        });
+      }
     });
-  });
 
-  const allRows: RowData[] = [];
+    // 2) 수동으로 입력한 결제(Transaction) 추가 (system 생성 제외)
+    transactions.forEach(tx => {
+      if (tx.created_by === 'system') return;
+      const cId = tx.customer_id;
+      if (!cId) return;
+      if (!customerEvents[cId]) {
+        customerEvents[cId] = [];
+      }
+      if (!customerEvents[cId].some(e => e.id === tx.transaction_id)) {
+        customerEvents[cId].push({
+          id: tx.transaction_id,
+          date: tx.created_at
+        });
+      }
+    });
 
-  // 1. Map order items to sales rows
-  orders.forEach(order => {
-    if (!order) return;
+    // 3) 거래처별로 시간순(date 오름차순) 정렬 후 거래No (1부터 차례대로) 부여
+    const tradeNoMap: { [customerId: string]: { [eventId: string]: number } } = {};
+    Object.keys(customerEvents).forEach(cId => {
+      const sorted = [...customerEvents[cId]].sort((a, b) => a.date.localeCompare(b.date));
+      tradeNoMap[cId] = {};
+      sorted.forEach((event, index) => {
+        tradeNoMap[cId][event.id] = index + 1;
+      });
+    });
 
-    const cId = order.customer_snapshot?.customer_id;
-    const customer = cId ? customers.find(c => c.customer_id === cId) : undefined;
-    const lossRate = order.customer_snapshot?.loss_rate || customer?.loss_rate || 0;
+    const rows: RowData[] = [];
 
-    const itemsList = order.items || [];
-    itemsList.forEach((item, itemIdx) => {
-      // 품목별 상태 체크 (구버전 데이터 대응 포함)
-      const itemStatus = item.status || order.status || '접수';
-      if (itemStatus === '공장발주' || itemStatus === '출고대기' || itemStatus === '출고완료') return;
-      const qty = item.quantity || 1;
-      const pureGoldWeightG = item.estimated_weight_g || 0;
-      const weightGoldDon = pureGoldWeightG / 3.75;
+    // 1. Map order items to sales rows
+    orders.forEach(order => {
+      if (!order) return;
 
-      const purity = item.material === '14K' ? 0.585 : item.material === '18K' ? 0.750 : 1.0;
-      const singleGoldSalesDon = Math.floor((weightGoldDon * purity * (1 + lossRate / 100)) * 1000) / 1000;
-      const weightPureGoldDon = singleGoldSalesDon * qty;
+      const cId = order.customer_snapshot?.customer_id;
+      const customer = cId ? customers.find(c => c.customer_id === cId) : undefined;
+      const lossRate = order.customer_snapshot?.loss_rate || customer?.loss_rate || 0;
 
-      const baseLabor = item.labor_base || 0;
-      const extraLabor = item.labor_extra || 0;
+      const itemsList = order.items || [];
+      itemsList.forEach((item, itemIdx) => {
+        // 품목별 상태 체크 (구버전 데이터 대응 포함)
+        const itemStatus = item.status || order.status || '접수';
+        if (itemStatus === '공장발주' || itemStatus === '출고대기' || itemStatus === '출고완료') return;
+        const qty = item.quantity || 1;
+        const pureGoldWeightG = item.estimated_weight_g || 0;
+        const weightGoldDon = pureGoldWeightG / 3.75;
 
-      const mainStoneLabor = (item.labor_main || 0) * (item.qty_main || 0);
-      const subStoneLabor = (item.labor_sub || 0) * (item.qty_sub || 0);
+        const purity = item.material === '14K' ? 0.585 : item.material === '18K' ? 0.750 : 1.0;
+        const singleGoldSalesDon = Math.floor((weightGoldDon * purity * (1 + lossRate / 100)) * 1000) / 1000;
+        const weightPureGoldDon = singleGoldSalesDon * qty;
 
-      const laborBaseExtra = baseLabor + extraLabor;
-      const laborStone = mainStoneLabor + subStoneLabor;
-      const totalAmount = (laborBaseExtra + laborStone) * qty;
+        const baseLabor = item.labor_base || 0;
+        const extraLabor = item.labor_extra || 0;
 
-      const serialNo = order.order_id.replace(/[^0-9]/g, '').slice(-8) || order.order_id.slice(-8);
-      
+        const mainStoneLabor = (item.labor_main || 0) * (item.qty_main || 0);
+        const subStoneLabor = (item.labor_sub || 0) * (item.qty_sub || 0);
+
+        const laborBaseExtra = baseLabor + extraLabor;
+        const laborStone = mainStoneLabor + subStoneLabor;
+        const totalAmount = (laborBaseExtra + laborStone) * qty;
+
+        const serialNo = order.order_id.replace(/[^0-9]/g, '').slice(-8) || order.order_id.slice(-8);
+        
+        // 거래처별 계산된 누적 거래No 가져오기
+        const tradeNoVal = cId ? (tradeNoMap[cId]?.[order.order_id] || 1) : 1;
+        const tradeNo = String(tradeNoVal);
+
+        // Map models to match the specific costs in the user image
+        let purchasePrice = 20000;
+        if (item.model_number === '650M-런블') purchasePrice = 97400;
+        else if (item.model_number === '벨R-562') purchasePrice = 22000;
+        else if (item.model_number === '벨M-549') purchasePrice = 150800;
+        else if (item.model_number.includes('JP출력')) purchasePrice = 20000;
+
+        rows.push({
+          id: `order-item::${order.order_id}::${item.item_id}::${itemIdx}`,
+          date: order.order_date,
+          dateDisplay: (() => {
+            try {
+              const d = new Date(order.order_date);
+              return isNaN(d.getTime()) ? '-' : d.toISOString().slice(5, 10);
+            } catch {
+              return '-';
+            }
+          })(),
+          type: item.division || '판매',
+          customerName: order.customer_snapshot?.name || '알수없음',
+          customerId: cId || '',
+          orderId: order.order_id,
+          itemId: item.item_id,
+          serialNo,
+          tradeNo,
+          model: item.model_number,
+          material: item.material,
+          color: item.color,
+          note: item.note || '',
+          weightGoldDon,
+          weightPureGoldDon,
+          purchasePrice,
+          laborBaseExtra,
+          laborStone,
+          stoneQty: item.qty_main || undefined,
+          quantity: qty,
+          totalAmount
+        });
+      });
+    });
+
+    // 2. Map gold transactions to payment rows (Exclude system generated transactions to avoid duplication)
+    transactions.forEach((tx, txIdx) => {
+      if (tx.created_by === 'system') return;
+
+      const customer = customers.find(c => c.customer_id === tx.customer_id);
+      const dateDisplay = new Date(tx.created_at).toISOString().slice(5, 10); // MM-DD
+
+      const weightGoldDon = tx.weight_g / 3.75;
+      const purity = tx.gold_type === '14K' ? 0.585 : tx.gold_type === '18K' ? 0.750 : 1.0;
+      const weightPureGoldDon = weightGoldDon * purity;
+
       // 거래처별 계산된 누적 거래No 가져오기
-      const tradeNoVal = cId ? (tradeNoMap[cId]?.[order.order_id] || 1) : 1;
+      const tradeNoVal = tradeNoMap[tx.customer_id]?.[tx.transaction_id] || 1;
       const tradeNo = String(tradeNoVal);
 
-      // Map models to match the specific costs in the user image
-      let purchasePrice = 20000;
-      if (item.model_number === '650M-런블') purchasePrice = 97400;
-      else if (item.model_number === '벨R-562') purchasePrice = 22000;
-      else if (item.model_number === '벨M-549') purchasePrice = 150800;
-      else if (item.model_number.includes('JP출력')) purchasePrice = 20000;
-
-      allRows.push({
-        id: `order-item::${order.order_id}::${item.item_id}::${itemIdx}`,
-        date: order.order_date,
-        dateDisplay: (() => {
-          try {
-            const d = new Date(order.order_date);
-            return isNaN(d.getTime()) ? '-' : d.toISOString().slice(5, 10);
-          } catch {
-            return '-';
-          }
-        })(),
-        type: item.division || '판매',
-        customerName: order.customer_snapshot?.name || '알수없음',
-        customerId: cId || '',
-        orderId: order.order_id,
-        serialNo,
+      rows.push({
+        id: `tx-${tx.transaction_id}-${txIdx}`,
+        date: tx.created_at,
+        dateDisplay,
+        type: '결제',
+        customerName: customer?.name || '알수없음',
+        customerId: tx.customer_id,
+        transactionId: tx.transaction_id,
         tradeNo,
-        model: item.model_number,
-        material: item.material,
-        color: item.color,
-        note: item.note || '',
+        model: '결제',
+        material: tx.gold_type || '24K',
+        note: tx.note || '',
         weightGoldDon,
         weightPureGoldDon,
-        purchasePrice,
-        laborBaseExtra,
-        laborStone,
-        stoneQty: item.qty_main || undefined,
-        quantity: qty,
-        totalAmount
+        quantity: 1
       });
     });
-  });
 
-  // 2. Map gold transactions to payment rows (Exclude system generated transactions to avoid duplication)
-  transactions.forEach((tx, txIdx) => {
-    if (tx.created_by === 'system') return;
-
-    const customer = customers.find(c => c.customer_id === tx.customer_id);
-    const dateDisplay = new Date(tx.created_at).toISOString().slice(5, 10); // MM-DD
-
-    const weightGoldDon = tx.weight_g / 3.75;
-    const purity = tx.gold_type === '14K' ? 0.585 : tx.gold_type === '18K' ? 0.750 : 1.0;
-    const weightPureGoldDon = weightGoldDon * purity;
-
-    // 거래처별 계산된 누적 거래No 가져오기
-    const tradeNoVal = tradeNoMap[tx.customer_id]?.[tx.transaction_id] || 1;
-    const tradeNo = String(tradeNoVal);
-
-    allRows.push({
-      id: `tx-${tx.transaction_id}-${txIdx}`,
-      date: tx.created_at,
-      dateDisplay,
-      type: '결제',
-      customerName: customer?.name || '알수없음',
-      customerId: tx.customer_id,
-      transactionId: tx.transaction_id,
-      tradeNo,
-      model: '결제',
-      material: tx.gold_type || '24K',
-      note: tx.note || '',
-      weightGoldDon,
-      weightPureGoldDon,
-      quantity: 1
-    });
-  });
+    return rows;
+  }, [orders, transactions, customers]);
 
   // Filter & Search Logic (Sorted by Date descending - newest first)
-  const filteredRows = allRows.filter(row => {
-    const matchCustomer = row.customerName.toLowerCase().includes(filterCustomer.toLowerCase());
-    const matchType = filterType === '전체' || row.type === filterType;
-    return matchCustomer && matchType;
-  }).sort((a, b) => b.date.localeCompare(a.date));
+  const filteredRows = React.useMemo(() => {
+    return allRows.filter(row => {
+      const matchCustomer = row.customerName.toLowerCase().includes(filterCustomer.toLowerCase());
+      const matchType = filterType === '전체' || row.type === filterType;
+      return matchCustomer && matchType;
+    }).sort((a, b) => b.date.localeCompare(a.date));
+  }, [allRows, filterCustomer, filterType]);
 
   // 체크박스 제어 로직
   const selectableRows = filteredRows;

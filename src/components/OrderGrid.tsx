@@ -69,7 +69,7 @@ export const OrderGrid: React.FC = () => {
     addOrderItem({ 
       item_id: currentOrderItems.length + 1, 
       quantity: 1,
-      grade: 3, // 기본은 '일반'(3등급)으로 설정
+      grade: selectedCustomerForOrder.grade || 3, // 거래처 등급 상속
       material: '14K',
       color: 'YG',
       manufacturer: 'JP',
@@ -93,7 +93,7 @@ export const OrderGrid: React.FC = () => {
       }
     }, 50);
   };
-
+ 
   const handleCustomerChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const customer = customers.find(c => c.customer_id === e.target.value) || null;
     selectCustomer(customer);
@@ -103,7 +103,7 @@ export const OrderGrid: React.FC = () => {
       addOrderItem({ 
         item_id: 1, 
         quantity: 1, 
-        grade: 3, // 기본은 '일반'(3등급)으로 설정
+        grade: customer.grade || 3, // 거래처 등급 상속
         material: '14K',
         color: 'YG',
         manufacturer: 'JP',

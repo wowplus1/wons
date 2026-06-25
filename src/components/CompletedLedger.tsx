@@ -87,134 +87,140 @@ export const CompletedLedger: React.FC = () => {
   };
 
   // Compile tradeNoMap (거래처별 누적 차수 계산)
-  const customerEvents: { [customerId: string]: { id: string; date: string }[] } = {};
+  const completedRows = React.useMemo(() => {
+    const customerEvents: { [customerId: string]: { id: string; date: string }[] } = {};
 
-  orders.forEach(order => {
-    const cId = order.customer_snapshot?.customer_id;
-    if (!cId) return;
-    if (!customerEvents[cId]) {
-      customerEvents[cId] = [];
-    }
-    if (!customerEvents[cId].some(e => e.id === order.order_id)) {
-      customerEvents[cId].push({
-        id: order.order_id,
-        date: order.order_date
-      });
-    }
-  });
-
-  transactions.forEach(tx => {
-    if (tx.created_by === 'system') return;
-    const cId = tx.customer_id;
-    if (!cId) return;
-    if (!customerEvents[cId]) {
-      customerEvents[cId] = [];
-    }
-    if (!customerEvents[cId].some(e => e.id === tx.transaction_id)) {
-      customerEvents[cId].push({
-        id: tx.transaction_id,
-        date: tx.created_at
-      });
-    }
-  });
-
-  const tradeNoMap: { [customerId: string]: { [eventId: string]: number } } = {};
-  Object.keys(customerEvents).forEach(cId => {
-    const sorted = [...customerEvents[cId]].sort((a, b) => a.date.localeCompare(b.date));
-    tradeNoMap[cId] = {};
-    sorted.forEach((event, index) => {
-      tradeNoMap[cId][event.id] = index + 1;
+    orders.forEach(order => {
+      const cId = order.customer_snapshot?.customer_id;
+      if (!cId) return;
+      if (!customerEvents[cId]) {
+        customerEvents[cId] = [];
+      }
+      if (!customerEvents[cId].some(e => e.id === order.order_id)) {
+        customerEvents[cId].push({
+          id: order.order_id,
+          date: order.order_date
+        });
+      }
     });
-  });
 
-  const completedRows: LedgerRowData[] = [];
+    transactions.forEach(tx => {
+      if (tx.created_by === 'system') return;
+      const cId = tx.customer_id;
+      if (!cId) return;
+      if (!customerEvents[cId]) {
+        customerEvents[cId] = [];
+      }
+      if (!customerEvents[cId].some(e => e.id === tx.transaction_id)) {
+        customerEvents[cId].push({
+          id: tx.transaction_id,
+          date: tx.created_at
+        });
+      }
+    });
 
-  // 개별 품목의 status가 '출고완료'인 품목들만 수집
-  orders.forEach(order => {
-    if (!order) return;
-
-    const cId = order.customer_snapshot?.customer_id;
-    const customer = cId ? customers.find(c => c.customer_id === cId) : undefined;
-    const lossRate = order.customer_snapshot?.loss_rate || customer?.loss_rate || 0;
-
-    const itemsList = order.items || [];
-    itemsList.forEach((item, itemIdx) => {
-      const itemStatus = item.status || order.status || '접수';
-      if (itemStatus !== '출고완료') return;
-      const division = item.division || '판매';
-
-      const qty = item.quantity || 1;
-      const pureGoldWeightG = item.estimated_weight_g || 0;
-      const weightGoldDon = pureGoldWeightG / 3.75;
-
-      const purity = item.material === '14K' ? 0.585 : item.material === '18K' ? 0.750 : 1.0;
-      const singleGoldSalesDon = Math.floor((weightGoldDon * purity * (1 + lossRate / 100)) * 1000) / 1000;
-      const weightPureGoldDon = singleGoldSalesDon * qty;
-
-      const baseLabor = item.labor_base || 0;
-      const extraLabor = item.labor_extra || 0;
-      const mainStoneLabor = (item.labor_main || 0) * (item.qty_main || 0);
-      const subStoneLabor = (item.labor_sub || 0) * (item.qty_sub || 0);
-
-      const laborBaseExtra = baseLabor + extraLabor;
-      const laborStone = mainStoneLabor + subStoneLabor;
-      const totalAmount = (laborBaseExtra + laborStone) * qty;
-
-      const serialNo = order.order_id.replace(/[^0-9]/g, '').slice(-8) || order.order_id.slice(-8);
-      const tradeNoVal = cId ? (tradeNoMap[cId]?.[order.order_id] || 1) : 1;
-      const tradeNo = String(tradeNoVal);
-
-      // 매입 단가 임시 매핑
-      let purchasePrice = 20000;
-      if (item.model_number === '650M-런블') purchasePrice = 97400;
-      else if (item.model_number === '벨R-562') purchasePrice = 22000;
-      else if (item.model_number === '벨M-549') purchasePrice = 150800;
-      else if (item.model_number.includes('JP출력')) purchasePrice = 20000;
-
-      completedRows.push({
-        id: `completed-item::${order.order_id}::${item.item_id}::${itemIdx}`,
-        date: order.order_date,
-        dateDisplay: (() => {
-          try {
-            const d = new Date(order.order_date);
-            return isNaN(d.getTime()) ? '-' : d.toISOString().slice(5, 10);
-          } catch {
-            return '-';
-          }
-        })(),
-        type: division,
-        customerName: order.customer_snapshot?.name || '알수없음',
-        customerId: cId || '',
-        orderId: order.order_id,
-        itemId: item.item_id,
-        paymentStatus: item.payment_status || '결제전',
-        serialNo,
-        tradeNo,
-        model: item.model_number,
-        material: item.material,
-        color: item.color,
-        note: item.note || '',
-        weightGoldDon,
-        weightPureGoldDon,
-        purchasePrice,
-        laborBaseExtra,
-        laborStone,
-        stoneQty: item.qty_main || undefined,
-        quantity: qty,
-        totalAmount
+    const tradeNoMap: { [customerId: string]: { [eventId: string]: number } } = {};
+    Object.keys(customerEvents).forEach(cId => {
+      const sorted = [...customerEvents[cId]].sort((a, b) => a.date.localeCompare(b.date));
+      tradeNoMap[cId] = {};
+      sorted.forEach((event, index) => {
+        tradeNoMap[cId][event.id] = index + 1;
       });
     });
-  });
+
+    const rows: LedgerRowData[] = [];
+
+    // 개별 품목의 status가 '출고완료'인 품목들만 수집
+    orders.forEach(order => {
+      if (!order) return;
+
+      const cId = order.customer_snapshot?.customer_id;
+      const customer = cId ? customers.find(c => c.customer_id === cId) : undefined;
+      const lossRate = order.customer_snapshot?.loss_rate || customer?.loss_rate || 0;
+
+      const itemsList = order.items || [];
+      itemsList.forEach((item, itemIdx) => {
+        const itemStatus = item.status || order.status || '접수';
+        if (itemStatus !== '출고완료') return;
+        const division = item.division || '판매';
+
+        const qty = item.quantity || 1;
+        const pureGoldWeightG = item.estimated_weight_g || 0;
+        const weightGoldDon = pureGoldWeightG / 3.75;
+
+        const purity = item.material === '14K' ? 0.585 : item.material === '18K' ? 0.750 : 1.0;
+        const singleGoldSalesDon = Math.floor((weightGoldDon * purity * (1 + lossRate / 100)) * 1000) / 1000;
+        const weightPureGoldDon = singleGoldSalesDon * qty;
+
+        const baseLabor = item.labor_base || 0;
+        const extraLabor = item.labor_extra || 0;
+        const mainStoneLabor = (item.labor_main || 0) * (item.qty_main || 0);
+        const subStoneLabor = (item.labor_sub || 0) * (item.qty_sub || 0);
+
+        const laborBaseExtra = baseLabor + extraLabor;
+        const laborStone = mainStoneLabor + subStoneLabor;
+        const totalAmount = (laborBaseExtra + laborStone) * qty;
+
+        const serialNo = order.order_id.replace(/[^0-9]/g, '').slice(-8) || order.order_id.slice(-8);
+        const tradeNoVal = cId ? (tradeNoMap[cId]?.[order.order_id] || 1) : 1;
+        const tradeNo = String(tradeNoVal);
+
+        // 매입 단가 임시 매핑
+        let purchasePrice = 20000;
+        if (item.model_number === '650M-런블') purchasePrice = 97400;
+        else if (item.model_number === '벨R-562') purchasePrice = 22000;
+        else if (item.model_number === '벨M-549') purchasePrice = 150800;
+        else if (item.model_number.includes('JP출력')) purchasePrice = 20000;
+
+        rows.push({
+          id: `completed-item::${order.order_id}::${item.item_id}::${itemIdx}`,
+          date: order.order_date,
+          dateDisplay: (() => {
+            try {
+              const d = new Date(order.order_date);
+              return isNaN(d.getTime()) ? '-' : d.toISOString().slice(5, 10);
+            } catch {
+              return '-';
+            }
+          })(),
+          type: division,
+          customerName: order.customer_snapshot?.name || '알수없음',
+          customerId: cId || '',
+          orderId: order.order_id,
+          itemId: item.item_id,
+          paymentStatus: item.payment_status || '결제전',
+          serialNo,
+          tradeNo,
+          model: item.model_number,
+          material: item.material,
+          color: item.color,
+          note: item.note || '',
+          weightGoldDon,
+          weightPureGoldDon,
+          purchasePrice,
+          laborBaseExtra,
+          laborStone,
+          stoneQty: item.qty_main || undefined,
+          quantity: qty,
+          totalAmount
+        });
+      });
+    });
+
+    return rows;
+  }, [orders, transactions, customers]);
 
   // Filter by search text, type and activeTab
-  const filteredRows = completedRows.filter(row => {
-    const matchCustomer = row.customerName.toLowerCase().includes(filterCustomer.toLowerCase());
-    const matchType = filterType === '전체' || row.type === filterType;
-    const matchSubTab = activeTab === 'unpaid_ledger' ? row.paymentStatus === '결제전' 
-                      : activeTab === 'paid_ledger' ? row.paymentStatus === '결제완료'
-                      : row.paymentStatus === '보류';
-    return matchCustomer && matchType && matchSubTab;
-  }).sort((a, b) => b.date.localeCompare(a.date));
+  const filteredRows = React.useMemo(() => {
+    return completedRows.filter(row => {
+      const matchCustomer = row.customerName.toLowerCase().includes(filterCustomer.toLowerCase());
+      const matchType = filterType === '전체' || row.type === filterType;
+      const matchSubTab = activeTab === 'unpaid_ledger' ? row.paymentStatus === '결제전' 
+                        : activeTab === 'paid_ledger' ? row.paymentStatus === '결제완료'
+                        : row.paymentStatus === '보류';
+      return matchCustomer && matchType && matchSubTab;
+    }).sort((a, b) => b.date.localeCompare(a.date));
+  }, [completedRows, filterCustomer, filterType, activeTab]);
 
   // Selection Checkbox Handlers
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {

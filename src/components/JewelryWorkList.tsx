@@ -96,53 +96,57 @@ export const JewelryWorkList: React.FC = () => {
   }, [fetchDb]);
 
   // 1. 현재 '공장발주' 상태인 주문에서 가공 품목('판매' 및 '반품') 필터링하여 테이블 행 데이터 구축
-  const workItems: WorkItemRow[] = [];
-  
-  orders.forEach(order => {
-    try {
-      const itemsList = order.items || [];
-      itemsList.forEach((item, itemIdx) => {
-        try {
-          const itemStatus = item.status || order.status || '접수';
-          if (itemStatus !== '공장발주') return;
+  const workItems = React.useMemo(() => {
+    const items: WorkItemRow[] = [];
 
-          const catalogItem = catalog.find(c => c.model_number === item.model_number);
-          const imageUrl = catalogItem?.images?.[0] || '';
+    orders.forEach(order => {
+      try {
+        const itemsList = order.items || [];
+        itemsList.forEach((item, itemIdx) => {
+          try {
+            const itemStatus = item.status || order.status || '접수';
+            if (itemStatus !== '공장발주') return;
 
-          // 개당 공임비 (기본+추가+스톤공임)
-          const baseExtra = (item.labor_base || 0) + (item.labor_extra || 0);
-          const stoneLabor = ((item.labor_main || 0) * (item.qty_main || 0)) + ((item.labor_sub || 0) * (item.qty_sub || 0));
-          const laborSingle = baseExtra + stoneLabor;
+            const catalogItem = catalog.find(c => c.model_number === item.model_number);
+            const imageUrl = catalogItem?.images?.[0] || '';
 
-          workItems.push({
-            id: `work-item::${order.order_id}::${item.item_id}::${itemIdx}`,
-            orderId: order.order_id,
-            orderDate: order.order_date,
-            customerName: order.customer_snapshot?.name || '알수없음',
-            model: item.model_number,
-            material: item.material,
-            color: item.color,
-            size: item.size || '',
-            quantity: item.quantity || 1,
-            stoneMainText: item.stone_main_name ? `${item.stone_main_name} (${item.qty_main || 0}알)` : '',
-            stoneSubText: item.stone_sub_name ? `${item.stone_sub_name} (${item.qty_sub || 0}알)` : '',
-            note: item.note || '',
-            laborSingle,
-            totalAmount: item.calculated_price || 0,
-            imageUrl,
-            estimatedWeightG: item.estimated_weight_g || 0,
-            itemId: item.item_id,
-            division: item.division,
-            stepWeights: item.step_weights
-          });
-        } catch (itemErr) {
-          console.error("JewelryWorkList item mapping error:", itemErr, item);
-        }
-      });
-    } catch (orderErr) {
-      console.error("JewelryWorkList order status check error:", orderErr, order);
-    }
-  });
+            // 개당 공임비 (기본+추가+스톤공임)
+            const baseExtra = (item.labor_base || 0) + (item.labor_extra || 0);
+            const stoneLabor = ((item.labor_main || 0) * (item.qty_main || 0)) + ((item.labor_sub || 0) * (item.qty_sub || 0));
+            const laborSingle = baseExtra + stoneLabor;
+
+            items.push({
+              id: `work-item::${order.order_id}::${item.item_id}::${itemIdx}`,
+              orderId: order.order_id,
+              orderDate: order.order_date,
+              customerName: order.customer_snapshot?.name || '알수없음',
+              model: item.model_number,
+              material: item.material,
+              color: item.color,
+              size: item.size || '',
+              quantity: item.quantity || 1,
+              stoneMainText: item.stone_main_name ? `${item.stone_main_name} (${item.qty_main || 0}알)` : '',
+              stoneSubText: item.stone_sub_name ? `${item.stone_sub_name} (${item.qty_sub || 0}알)` : '',
+              note: item.note || '',
+              laborSingle,
+              totalAmount: item.calculated_price || 0,
+              imageUrl,
+              estimatedWeightG: item.estimated_weight_g || 0,
+              itemId: item.item_id,
+              division: item.division,
+              stepWeights: item.step_weights
+            });
+          } catch (itemErr) {
+            console.error("JewelryWorkList item mapping error:", itemErr, item);
+          }
+        });
+      } catch (orderErr) {
+        console.error("JewelryWorkList order status check error:", orderErr, order);
+      }
+    });
+
+    return items;
+  }, [orders, catalog]);
 
   // 체크박스 제어 로직
   const isAllChecked = workItems.length > 0 && workItems.every(r => checkedItems.has(r.id));

@@ -110,13 +110,13 @@ export const CatalogManager: React.FC = () => {
                   카테고리: <strong>{item.category}</strong>
                 </div>
                 <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                  중량: <strong>{mainMaterial}[{pureGoldWeight.toFixed(2)}]</strong>
+                  중량: <strong>{item.materials.join(', ')}[{pureGoldWeight.toFixed(2)}]</strong>
                 </div>
                 <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
                   스톤: <strong>{totalStonesWeight.toFixed(3)} g</strong>
                 </div>
                 <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                  공임(14K 1등급): <strong>{(item.base_labor_fees['14K']?.grade_1 || 0).toLocaleString()}원</strong>
+                  공임({mainMaterial} 1등급): <strong>{(item.base_labor_fees[mainMaterial]?.grade_1 || 0).toLocaleString()}원</strong>
                 </div>
                 {item.default_stones && item.default_stones.length > 0 && (
                   <div style={{ fontSize: '12px', color: 'var(--primary)', marginTop: '4px', borderTop: '1px dashed var(--border-color)', paddingTop: '4px' }}>

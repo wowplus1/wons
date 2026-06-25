@@ -161,7 +161,7 @@ export const CatalogDetailView: React.FC = () => {
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed var(--border-color)', paddingBottom: '6px' }}>
               <span style={{ color: 'var(--text-muted)' }}>표준 중량:</span>
-              <strong>{mainMaterial}[{pureGoldWeight.toFixed(2)}] g</strong>
+              <strong>{item.materials.join(', ')}[{pureGoldWeight.toFixed(2)}] g</strong>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed var(--border-color)', paddingBottom: '6px' }}>
               <span style={{ color: 'var(--text-muted)' }}>스톤 중량:</span>
@@ -194,7 +194,7 @@ export const CatalogDetailView: React.FC = () => {
                 [{mainMaterial}] 등급별 공임비 분석
               </div>
               {[1, 2, 3, 4].map(g => {
-                const baseCost = materialLaborMap[`grade_${g}`] || 60000;
+                const baseCost = materialLaborMap[`grade_${g}`] ?? 60000;
                 const totalCost = baseCost + stoneLaborTotal;
                 return (
                   <div key={g} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 8px', borderBottom: g < 4 ? '1px solid var(--border-color)' : 'none', background: 'rgba(255,255,255,0.01)', fontSize: '11px' }}>
@@ -230,7 +230,7 @@ export const CatalogDetailView: React.FC = () => {
               </div>
               {/* 표준중량 */}
               <div style={{ borderRight: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '8px', textAlign: 'center', gap: '4px' }}>
-                <span style={{ fontWeight: '600' }}>{mainMaterial}[{pureGoldWeight.toFixed(2)}]</span>
+                <span style={{ fontWeight: '600' }}>{item.materials.join(', ')}[{pureGoldWeight.toFixed(2)}]</span>
                 <span style={{ color: 'var(--danger)', fontSize: '12px', fontWeight: '700' }} title="스톤 중량">
                   스톤: {totalStonesWeight.toFixed(3)} g
                 </span>
@@ -252,7 +252,7 @@ export const CatalogDetailView: React.FC = () => {
                   </thead>
                   <tbody>
                     {[1, 2, 3, 4].map(g => {
-                      const baseCost = materialLaborMap[`grade_${g}`] || 60000;
+                      const baseCost = materialLaborMap[`grade_${g}`] ?? 60000;
                       const totalCost = baseCost + stoneLaborTotal;
                       return (
                         <tr key={g} style={{ borderBottom: g < 4 ? '1px solid var(--border-color)' : 'none' }}>
