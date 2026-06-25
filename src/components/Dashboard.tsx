@@ -6,6 +6,12 @@ import { TrendingUp, Layers, DollarSign } from 'lucide-react';
 export const Dashboard: React.FC = () => {
   const { currentRates, totalReceivable, totalGoldBalance24k, orders } = useErpStore();
 
+  // 당월 매출 및 주문 건수 동적 계산
+  const now = new Date();
+  const currentYearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const currentMonthOrders = (orders || []).filter(o => o.order_date && o.order_date.startsWith(currentYearMonth));
+  const currentMonthRevenue = currentMonthOrders.reduce((sum, o) => sum + (o.total_amount || 0), 0);
+
   // Material inventory statistics mock definition
   // Calculate materials weight summary from actual orders for demonstrative statistics
   const materialStats = {
@@ -182,7 +188,20 @@ export const Dashboard: React.FC = () => {
           <div>
             <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '500' }}>당월 신규 주문 접수 건수</div>
             <div style={{ fontSize: '24px', fontWeight: '700', fontFamily: 'var(--font-title)', color: '#10b981', marginTop: '4px' }}>
-              {orders.length} 건
+              {currentMonthOrders.length} 건
+            </div>
+          </div>
+        </div>
+
+        {/* Metric 4: Current Month Revenue */}
+        <div className="glass-panel" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div style={{ padding: '12px', borderRadius: '10px', background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6' }}>
+            <DollarSign size={24} />
+          </div>
+          <div>
+            <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '500' }}>당월 신규 주문 매출 총액</div>
+            <div style={{ fontSize: '24px', fontWeight: '700', fontFamily: 'var(--font-title)', color: '#3b82f6', marginTop: '4px' }}>
+              {currentMonthRevenue.toLocaleString()} 원
             </div>
           </div>
         </div>
