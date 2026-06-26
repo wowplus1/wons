@@ -92,7 +92,7 @@ interface ErpState {
   editingOrderId: string | null;
   
   // Actions
-  fetchDb: () => Promise<void>;
+  fetchDb: (targetCollections?: ('gold_rates' | 'stones' | 'customers' | 'catalog' | 'orders' | 'gold_transactions')[]) => Promise<void>;
   setActiveTab: (tab: 'customers' | 'dashboard' | 'order' | 'ledger' | 'catalog' | 'rates' | 'stones' | 'orders' | 'work_list' | 'release_list' | 'unpaid_ledger' | 'paid_ledger' | 'hold_ledger') => void;
   startEditOrder: (orderId: string) => void;
   cancelEditOrder: () => void;
@@ -141,44 +141,47 @@ export const useErpStore = create<ErpState>((set, get) => ({
 
   setActiveTab: (tab) => set({ activeTab: tab }),
 
-  fetchDb: async () => {
+  fetchDb: async (targetCollections) => {
     set({ loading: true });
     try {
-      const [ratesSnap, stonesSnap, customersSnap, catalogSnap, ordersSnap, txSnap] = await Promise.all([
-        getDocs(collection(db, 'gold_rates')),
-        getDocs(collection(db, 'stones')),
-        getDocs(collection(db, 'customers')),
-        getDocs(collection(db, 'catalog')),
-        getDocs(collection(db, 'orders')),
-        getDocs(collection(db, 'gold_transactions'))
-      ]);
+      const collectionsToFetch = targetCollections || [
+        'gold_rates',
+        'stones',
+        'customers',
+        'catalog',
+        'orders',
+        'gold_transactions'
+      ];
 
-      const goldRates = ratesSnap.docs.map(d => d.data() as GoldRates);
-      const stones = stonesSnap.docs.map(d => d.data() as Stone);
-      const customers = customersSnap.docs.map(d => d.data() as Customer);
-      const catalog = catalogSnap.docs.map(d => d.data() as CatalogItem);
-      const orders = ordersSnap.docs.map(d => d.data() as Order);
-      const transactions = txSnap.docs.map(d => d.data() as GoldTransaction);
+      const promises = collectionsToFetch.map(col => getDocs(collection(db, col)));
+      const results = await Promise.all(promises);
 
-      // Sort rates by date descending, grab today
-      const sortedRates = [...goldRates].sort((a, b) => b.date.localeCompare(a.date));
-      const currentRates = sortedRates[0] || null;
+      const updates: any = {};
 
-      // Calculate core metrics
-      const totalReceivable = customers.reduce((sum, c) => sum + c.receivable_amount, 0);
-      const totalGoldBalance24k = customers.reduce((sum, c) => sum + c.gold_balance_24k_g, 0);
+      collectionsToFetch.forEach((col, index) => {
+        const snap = results[index];
+        const data = snap.docs.map(d => d.data());
 
-      set({
-        goldRates,
-        stones,
-        customers,
-        catalog,
-        orders,
-        transactions,
-        currentRates,
-        totalReceivable,
-        totalGoldBalance24k,
+        if (col === 'gold_rates') {
+          updates.goldRates = data as GoldRates[];
+          const sortedRates = [...(data as GoldRates[])].sort((a, b) => b.date.localeCompare(a.date));
+          updates.currentRates = sortedRates[0] || null;
+        } else if (col === 'stones') {
+          updates.stones = data as Stone[];
+        } else if (col === 'customers') {
+          updates.customers = data as Customer[];
+          updates.totalReceivable = (data as Customer[]).reduce((sum, c) => sum + c.receivable_amount, 0);
+          updates.totalGoldBalance24k = (data as Customer[]).reduce((sum, c) => sum + c.gold_balance_24k_g, 0);
+        } else if (col === 'catalog') {
+          updates.catalog = data as CatalogItem[];
+        } else if (col === 'orders') {
+          updates.orders = data as Order[];
+        } else if (col === 'gold_transactions') {
+          updates.transactions = data as GoldTransaction[];
+        }
       });
+
+      set(updates);
     } catch (error) {
       console.error("fetchDb error: ", error);
     } finally {

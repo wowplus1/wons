@@ -1,5 +1,4 @@
-// src/components/CatalogSelectPopup.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useErpStore } from '../store/useErpStore';
 import { X } from 'lucide-react';
 
@@ -31,6 +30,23 @@ export const CatalogSelectPopup: React.FC = () => {
     c.category.toLowerCase().includes(searchText.toLowerCase()) ||
     (c.manufacturer && c.manufacturer.toLowerCase().includes(searchText.toLowerCase()))
   );
+
+  const [displayLimit, setDisplayLimit] = useState(30);
+
+  useEffect(() => {
+    setDisplayLimit(30);
+  }, [searchText]);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    if (target.scrollHeight - target.scrollTop <= target.clientHeight + 50) {
+      if (displayLimit < filteredCatalog.length) {
+        setDisplayLimit(prev => prev + 30);
+      }
+    }
+  };
+
+  const displayedCatalog = filteredCatalog.slice(0, displayLimit);
 
   return (
     <div style={{
@@ -73,7 +89,10 @@ export const CatalogSelectPopup: React.FC = () => {
       </div>
 
       {/* List */}
-      <div style={{ overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', paddingRight: '4px' }}>
+      <div 
+        onScroll={handleScroll}
+        style={{ overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', paddingRight: '4px' }}
+      >
         {/* 디자인출력 가상 선택 카드 (상시 노출) */}
         <div 
           onClick={() => handleSelectCatalogItem('디자인출력')}
@@ -162,8 +181,8 @@ export const CatalogSelectPopup: React.FC = () => {
           </div>
         </div>
 
-        {filteredCatalog.length > 0 ? (
-          filteredCatalog.map(c => {
+        {displayedCatalog.length > 0 ? (
+          displayedCatalog.map(c => {
             const price = c.base_labor_fees['14K']?.[`grade_${targetGrade}`] || 0;
             const hasImageError = imageErrors[c.model_number];
             return (
@@ -213,6 +232,12 @@ export const CatalogSelectPopup: React.FC = () => {
         ) : (
           <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px' }}>
             검색 조건에 맞는 카달로그 항목이 존재하지 않습니다.
+          </div>
+        )}
+
+        {filteredCatalog.length > displayLimit && (
+          <div style={{ textAlign: 'center', padding: '10px', fontSize: '11px', color: 'var(--text-muted)' }}>
+            아래로 스크롤하여 더 많은 모델 표시 ({displayLimit} / {filteredCatalog.length})
           </div>
         )}
       </div>

@@ -49,8 +49,22 @@ function App() {
   const popupType = queryParams.get('popup');
 
   useEffect(() => {
-    // Initialize DB and fetch
-    fetchDb();
+    // Initialize DB and fetch based on popupType
+    if (popupType === 'catalog_select') {
+      fetchDb(['catalog']);
+    } else if (popupType === 'stone') {
+      fetchDb(['stones']);
+    } else if (popupType === 'catalog') {
+      fetchDb(['catalog', 'stones']);
+    } else if (popupType === 'catalog_detail') {
+      fetchDb(['catalog', 'stones']);
+    } else if (popupType === 'invoice') {
+      fetchDb(['orders', 'customers', 'gold_rates', 'stones', 'gold_transactions']);
+    } else if (popupType === 'jewelry_work_list_print') {
+      fetchDb(['orders', 'catalog']);
+    } else {
+      fetchDb();
+    }
 
     // Listen for data update messages from child popup windows
     const handleMessage = (event: MessageEvent) => {
@@ -66,7 +80,7 @@ function App() {
     return () => {
       window.removeEventListener('message', handleMessage);
     };
-  }, [fetchDb]);
+  }, [fetchDb, popupType]);
 
   // Render popup forms directly if matching URL query parameter is found
   if (popupType === 'stone') {
