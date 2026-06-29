@@ -34,7 +34,7 @@ const LoadingFallback = () => (
     gap: '12px'
   }}>
     <RefreshCw className="animate-spin" size={24} style={{ color: 'var(--primary)' }} />
-    <span style={{ fontSize: '13px', fontWeight: '500', letterSpacing: '0.5px' }}>
+    <span style={{ fontSize: '16px', fontWeight: '500', letterSpacing: '0.5px' }}>
       화면을 불러오는 중...
     </span>
   </div>
@@ -123,7 +123,7 @@ function App() {
         gap: '16px'
       }}>
         <RefreshCw className="animate-spin" size={32} style={{ color: 'var(--primary)' }} />
-        <span style={{ fontSize: '14px', fontWeight: '600', letterSpacing: '0.5px' }}>
+        <span style={{ fontSize: '17px', fontWeight: '600', letterSpacing: '0.5px' }}>
           실시간 클라우드 데이터 동기화 중...
         </span>
       </div>
@@ -177,13 +177,13 @@ function App() {
       >
         {/* 모바일 전용 상단 타이틀 바 */}
         <div className="mobile-header-bar" style={{ display: 'none', width: '100%', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span className="gradient-text" style={{ fontFamily: 'var(--font-title)', fontWeight: '700', fontSize: '15px' }}>GOLDLINK B2B ERP</span>
+          <span className="gradient-text" style={{ fontFamily: 'var(--font-title)', fontWeight: '700', fontSize: '18px' }}>GOLDLINK B2B ERP</span>
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="menu-toggle-btn btn-primary"
             style={{
               padding: '6px 12px',
-              fontSize: '12px',
+              fontSize: '15px',
               background: isMenuOpen ? 'rgba(239, 68, 68, 0.1)' : 'rgba(212, 175, 55, 0.1)',
               color: isMenuOpen ? 'var(--danger)' : 'var(--primary)',
               border: isMenuOpen ? '1px solid rgba(239, 68, 68, 0.2)' : '1px solid rgba(212, 175, 55, 0.2)',
@@ -203,14 +203,14 @@ function App() {
           
           {/* 그룹 1: 모니터링 */}
           <div className="nav-group" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span className="nav-group-label" style={{ fontSize: '11px', color: 'rgba(212, 175, 55, 0.7)', fontWeight: '700', marginRight: '2px', borderRight: '1px solid rgba(255,255,255,0.15)', paddingRight: '8px', width: '64px', textAlign: 'right', display: 'inline-block' }}>모니터링</span>
+            <span className="nav-group-label" style={{ fontSize: '14px', color: 'rgba(212, 175, 55, 0.7)', fontWeight: '700', marginRight: '2px', borderRight: '1px solid rgba(255,255,255,0.15)', paddingRight: '8px', width: '64px', textAlign: 'right', display: 'inline-block' }}>모니터링</span>
             <div className="nav-buttons-container">
               <button
                 onClick={() => { setActiveTab('dashboard'); setIsMenuOpen(false); }}
                 className="btn-primary"
                 style={{
                   padding: '6px 12px',
-                  fontSize: '12px',
+                  fontSize: '15px',
                   boxShadow: 'none',
                   background: activeTab === 'dashboard' ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : 'transparent',
                   color: activeTab === 'dashboard' ? 'var(--text-inverse)' : 'var(--text-muted)',
@@ -227,14 +227,14 @@ function App() {
 
           {/* 그룹 2: 마스터 정보 */}
           <div className="nav-group" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span className="nav-group-label" style={{ fontSize: '11px', color: 'rgba(212, 175, 55, 0.7)', fontWeight: '700', marginRight: '2px', borderRight: '1px solid rgba(255,255,255,0.15)', paddingRight: '8px', width: '64px', textAlign: 'right', display: 'inline-block' }}>마스터 정보</span>
+            <span className="nav-group-label" style={{ fontSize: '14px', color: 'rgba(212, 175, 55, 0.7)', fontWeight: '700', marginRight: '2px', borderRight: '1px solid rgba(255,255,255,0.15)', paddingRight: '8px', width: '64px', textAlign: 'right', display: 'inline-block' }}>마스터 정보</span>
             <div className="nav-buttons-container">
               <button
                 onClick={() => { setActiveTab('customers'); setIsMenuOpen(false); }}
                 className="btn-primary"
                 style={{
                   padding: '6px 12px',
-                  fontSize: '12px',
+                  fontSize: '15px',
                   boxShadow: 'none',
                   background: activeTab === 'customers' ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : 'transparent',
                   color: activeTab === 'customers' ? 'var(--text-inverse)' : 'var(--text-muted)',
@@ -252,7 +252,7 @@ function App() {
                 className="btn-primary"
                 style={{
                   padding: '6px 12px',
-                  fontSize: '12px',
+                  fontSize: '15px',
                   boxShadow: 'none',
                   background: activeTab === 'catalog' ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : 'transparent',
                   color: activeTab === 'catalog' ? 'var(--text-inverse)' : 'var(--text-muted)',
@@ -270,7 +270,7 @@ function App() {
                 className="btn-primary"
                 style={{
                   padding: '6px 12px',
-                  fontSize: '12px',
+                  fontSize: '15px',
                   boxShadow: 'none',
                   background: activeTab === 'rates' ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : 'transparent',
                   color: activeTab === 'rates' ? 'var(--text-inverse)' : 'var(--text-muted)',
@@ -288,7 +288,7 @@ function App() {
                 className="btn-primary"
                 style={{
                   padding: '6px 12px',
-                  fontSize: '12px',
+                  fontSize: '15px',
                   boxShadow: 'none',
                   background: activeTab === 'stones' ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : 'transparent',
                   color: activeTab === 'stones' ? 'var(--text-inverse)' : 'var(--text-muted)',
@@ -305,14 +305,14 @@ function App() {
 
           {/* 그룹 3: 주요 공정 */}
           <div className="nav-group" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span className="nav-group-label" style={{ fontSize: '11px', color: 'rgba(212, 175, 55, 0.7)', fontWeight: '700', marginRight: '2px', borderRight: '1px solid rgba(255,255,255,0.15)', paddingRight: '8px', width: '64px', textAlign: 'right', display: 'inline-block' }}>주요 공정</span>
+            <span className="nav-group-label" style={{ fontSize: '14px', color: 'rgba(212, 175, 55, 0.7)', fontWeight: '700', marginRight: '2px', borderRight: '1px solid rgba(255,255,255,0.15)', paddingRight: '8px', width: '64px', textAlign: 'right', display: 'inline-block' }}>주요 공정</span>
             <div className="nav-buttons-container">
               <button
                 onClick={() => { setActiveTab('order'); setIsMenuOpen(false); }}
                 className="btn-primary"
                 style={{
                   padding: '6px 12px',
-                  fontSize: '12px',
+                  fontSize: '15px',
                   boxShadow: 'none',
                   background: activeTab === 'order' ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : 'transparent',
                   color: activeTab === 'order' ? 'var(--text-inverse)' : 'var(--text-muted)',
@@ -331,7 +331,7 @@ function App() {
                 className="btn-primary"
                 style={{
                   padding: '6px 12px',
-                  fontSize: '12px',
+                  fontSize: '15px',
                   boxShadow: 'none',
                   background: activeTab === 'orders' ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : 'transparent',
                   color: activeTab === 'orders' ? 'var(--text-inverse)' : 'var(--text-muted)',
@@ -349,7 +349,7 @@ function App() {
                 className="btn-primary"
                 style={{
                   padding: '6px 12px',
-                  fontSize: '12px',
+                  fontSize: '15px',
                   boxShadow: 'none',
                   background: activeTab === 'work_list' ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : 'transparent',
                   color: activeTab === 'work_list' ? 'var(--text-inverse)' : 'var(--text-muted)',
@@ -367,7 +367,7 @@ function App() {
                 className="btn-primary"
                 style={{
                   padding: '6px 12px',
-                  fontSize: '12px',
+                  fontSize: '15px',
                   boxShadow: 'none',
                   background: activeTab === 'release_list' ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : 'transparent',
                   color: activeTab === 'release_list' ? 'var(--text-inverse)' : 'var(--text-muted)',
@@ -385,7 +385,7 @@ function App() {
                 className="btn-primary"
                 style={{
                   padding: '6px 12px',
-                  fontSize: '12px',
+                  fontSize: '15px',
                   boxShadow: 'none',
                   background: activeTab === 'unpaid_ledger' ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : 'transparent',
                   color: activeTab === 'unpaid_ledger' ? 'var(--text-inverse)' : 'var(--text-muted)',
@@ -403,7 +403,7 @@ function App() {
                 className="btn-primary"
                 style={{
                   padding: '6px 12px',
-                  fontSize: '12px',
+                  fontSize: '15px',
                   boxShadow: 'none',
                   background: activeTab === 'paid_ledger' ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : 'transparent',
                   color: activeTab === 'paid_ledger' ? 'var(--text-inverse)' : 'var(--text-muted)',
@@ -421,7 +421,7 @@ function App() {
                 className="btn-primary"
                 style={{
                   padding: '6px 12px',
-                  fontSize: '12px',
+                  fontSize: '15px',
                   boxShadow: 'none',
                   background: activeTab === 'hold_ledger' ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : 'transparent',
                   color: activeTab === 'hold_ledger' ? 'var(--text-inverse)' : 'var(--text-muted)',
@@ -443,7 +443,7 @@ function App() {
             onClick={handleSimulateRateChange}
             className="btn-primary"
             style={{
-              fontSize: '11px',
+              fontSize: '14px',
               padding: '6px 12px',
               background: 'rgba(255, 255, 255, 0.03)',
               color: 'var(--text-muted)',
@@ -474,7 +474,7 @@ function App() {
       </main>
 
       {/* Bottom Footer Info */}
-      <footer style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)', padding: '0 8px' }}>
+      <footer style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: 'var(--text-muted)', padding: '0 8px' }}>
         <span>&copy; 2026 GOLDLINK B2B ERP System. All Rights Reserved.</span>
         <span>클라우드 동기화 상태: 온라인 (Local Mocking)</span>
       </footer>

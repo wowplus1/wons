@@ -359,11 +359,11 @@ export const OrderList: React.FC = () => {
   };
 
   return (
-    <div className="glass-panel animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '12px' }}>
+    <div className="glass-panel animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '15px' }}>
       
       {/* Header */}
       <div className="order-list-header">
-        <h2 style={{ fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <h2 style={{ fontSize: '19px', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <ShoppingBag size={18} style={{ color: 'var(--primary)' }} />
           <span className="gradient-text" style={{ fontFamily: 'var(--font-title)', fontWeight: '600' }}>Order & Transaction History Master</span>
           <span className="header-subtitle">(거래처 원장 명세서 원본 관리 대장)</span>
@@ -380,7 +380,7 @@ export const OrderList: React.FC = () => {
             value={filterCustomer}
             onChange={(e) => setFilterCustomer(e.target.value)}
             className="input-field"
-            style={{ padding: '5px 10px', fontSize: '12px' }}
+            style={{ padding: '5px 10px', fontSize: '15px' }}
           />
         </div>
 
@@ -390,7 +390,7 @@ export const OrderList: React.FC = () => {
             value={filterType}
             onChange={(e) => setFilterType(e.target.value as '전체' | '판매' | '결제' | '반품' | 'DC')}
             className="input-field"
-            style={{ padding: '5px 10px', fontSize: '12px' }}
+            style={{ padding: '5px 10px', fontSize: '15px' }}
           >
             <option value="전체">전체 구분</option>
             <option value="판매">판매 (주문)</option>
@@ -403,7 +403,7 @@ export const OrderList: React.FC = () => {
         {/* 세공리스트 출력 액션 버튼 */}
         <div className="filter-action-group">
           {checkedRows.size > 0 && (
-            <span style={{ fontSize: '11px', color: 'var(--primary)', fontWeight: 'bold' }}>
+            <span style={{ fontSize: '14px', color: 'var(--primary)', fontWeight: 'bold' }}>
               선택됨: {checkedRows.size}건
             </span>
           )}
@@ -412,7 +412,7 @@ export const OrderList: React.FC = () => {
             className="btn-primary"
             style={{
               padding: '6px 14px',
-              fontSize: '12px',
+              fontSize: '15px',
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
@@ -430,7 +430,7 @@ export const OrderList: React.FC = () => {
 
       {/* Table grid */}
       <div className="table-responsive" style={{ overflowX: 'auto' }}>
-        <table className="excel-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '1200px', fontSize: '11px', tableLayout: 'fixed' }}>
+        <table className="excel-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '1200px', fontSize: '14px', tableLayout: 'fixed' }}>
           <colgroup>
             <col style={{ width: '3%' }} />
             <col style={{ width: '3%' }} />
@@ -485,10 +485,10 @@ export const OrderList: React.FC = () => {
               <th rowSpan={2} style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>관리</th>
             </tr>
             <tr style={{ background: 'rgba(255, 255, 255, 0.03)', borderBottom: '2px solid var(--border-color)', color: 'var(--text-muted)' }}>
-              <th style={{ padding: '4px 4px', textAlign: 'center', border: '1px solid var(--border-color)', fontSize: '10px' }}>금</th>
-              <th style={{ padding: '4px 4px', textAlign: 'center', border: '1px solid var(--border-color)', fontSize: '10px' }}>순금</th>
-              <th style={{ padding: '4px 4px', textAlign: 'center', border: '1px solid var(--border-color)', fontSize: '10px' }}>기+추</th>
-              <th style={{ padding: '4px 4px', textAlign: 'center', border: '1px solid var(--border-color)', fontSize: '10px' }}>중+보</th>
+              <th style={{ padding: '4px 4px', textAlign: 'center', border: '1px solid var(--border-color)', fontSize: '13px' }}>금</th>
+              <th style={{ padding: '4px 4px', textAlign: 'center', border: '1px solid var(--border-color)', fontSize: '13px' }}>순금</th>
+              <th style={{ padding: '4px 4px', textAlign: 'center', border: '1px solid var(--border-color)', fontSize: '13px' }}>기+추</th>
+              <th style={{ padding: '4px 4px', textAlign: 'center', border: '1px solid var(--border-color)', fontSize: '13px' }}>중+보</th>
             </tr>
           </thead>
           <tbody>
@@ -551,7 +551,7 @@ export const OrderList: React.FC = () => {
                     <td style={{ padding: '6px 4px', fontWeight: '600' }}>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--text-main)' }}>
                         {row.customerName}
-                        <span style={{ color: isManualTx ? '#38bdf8' : '#a78bfa', fontSize: '9px' }}>◆</span>
+                        <span style={{ color: isManualTx ? '#38bdf8' : '#a78bfa', fontSize: '12px' }}>◆</span>
                       </span>
                     </td>
 
@@ -668,7 +668,7 @@ export const OrderList: React.FC = () => {
                             className="btn-primary"
                             style={{
                               padding: '2px 6px',
-                              fontSize: '10px',
+                              fontSize: '13px',
                               background: 'rgba(212, 175, 55, 0.15)',
                               border: '1px solid rgba(212, 175, 55, 0.4)',
                               color: 'var(--primary)',
@@ -681,7 +681,7 @@ export const OrderList: React.FC = () => {
                             수정
                           </button>
                         ) : (
-                          <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>-</span>
+                          <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>-</span>
                         )}
                         <button
                           type="button"
@@ -691,7 +691,7 @@ export const OrderList: React.FC = () => {
                             border: '1px solid rgba(239, 68, 68, 0.4)',
                             color: '#ef4444',
                             cursor: 'pointer',
-                            fontSize: '10px',
+                            fontSize: '13px',
                             fontWeight: 'bold',
                             padding: '2px 6px',
                             borderRadius: '3px',

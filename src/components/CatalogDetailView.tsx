@@ -73,12 +73,25 @@ export const CatalogDetailView: React.FC = () => {
   const pureGoldWeight = Math.max(0, (item.base_weight || 0) - totalDeductionWeight);
 
   // 1~4등급의 공임 단가 맵
-  const materialLaborMap = item.base_labor_fees[mainMaterial] || {
-    grade_1: 60000,
-    grade_2: 60000,
-    grade_3: 60000,
-    grade_4: 60000
-  };
+  const materialLaborMap = (() => {
+    if (item.labor_fees_v2 && item.labor_fees_v2[mainMaterial]) {
+      const baseFee = item.labor_fees_v2[mainMaterial].find(f => f.type === '기본');
+      if (baseFee) {
+        return {
+          grade_1: Number(baseFee.grade_1) || 0,
+          grade_2: Number(baseFee.grade_2) || 0,
+          grade_3: Number(baseFee.grade_3) || 0,
+          grade_4: Number(baseFee.grade_4) || 0
+        };
+      }
+    }
+    return item.base_labor_fees[mainMaterial] || {
+      grade_1: 60000,
+      grade_2: 60000,
+      grade_3: 60000,
+      grade_4: 60000
+    };
+  })();
 
   // 스톤 세팅 추가공임 계산
   const stoneQty = item.default_stones.reduce((sum, s) => sum + s.quantity, 0);
@@ -93,7 +106,7 @@ export const CatalogDetailView: React.FC = () => {
         
         {/* 상단 닫기/컨트롤 바 */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px', marginBottom: '12px' }}>
-          <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--primary)', letterSpacing: '0.05em' }}>
+          <span style={{ fontSize: '16px', fontWeight: '700', color: 'var(--primary)', letterSpacing: '0.05em' }}>
             GOLDLINK PRODUCT DETAIL
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -111,7 +124,7 @@ export const CatalogDetailView: React.FC = () => {
                 gap: '4px',
                 padding: '6px 12px',
                 borderRadius: '4px',
-                fontSize: '12px',
+                fontSize: '15px',
                 fontWeight: '600'
               }} 
               title="수정"
@@ -131,7 +144,7 @@ export const CatalogDetailView: React.FC = () => {
               }} 
               title="닫기"
             >
-              <X size={18} /> <span style={{ fontSize: '11px' }}>닫기</span>
+              <X size={18} /> <span style={{ fontSize: '14px' }}>닫기</span>
             </button>
           </div>
         </div>
@@ -150,10 +163,10 @@ export const CatalogDetailView: React.FC = () => {
 
         {/* 2. 상세 정보 테이블 Grid */}
         {isMobile ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '12px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-color)', borderRadius: '8px', marginBottom: '16px', fontSize: '12px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '12px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-color)', borderRadius: '8px', marginBottom: '16px', fontSize: '15px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed var(--border-color)', paddingBottom: '6px' }}>
               <span style={{ color: 'var(--text-muted)' }}>모델명:</span>
-              <strong style={{ fontSize: '14px', color: 'var(--primary)' }}>{item.model_number}</strong>
+              <strong style={{ fontSize: '17px', color: 'var(--primary)' }}>{item.model_number}</strong>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed var(--border-color)', paddingBottom: '6px' }}>
               <span style={{ color: 'var(--text-muted)' }}>분류:</span>
@@ -190,23 +203,13 @@ export const CatalogDetailView: React.FC = () => {
             
             {/* 등급별 공임비 */}
             <div style={{ marginTop: '8px', border: '1px solid var(--border-color)', borderRadius: '6px', overflow: 'hidden' }}>
-              <div style={{ background: 'rgba(212,175,55,0.1)', padding: '6px', fontWeight: 'bold', fontSize: '11px', textAlign: 'center', color: 'var(--primary)' }}>
+              <div style={{ background: 'rgba(212,175,55,0.1)', padding: '6px', fontWeight: 'bold', fontSize: '14px', textAlign: 'center', color: 'var(--primary)' }}>
                 [{mainMaterial}] 등급별 공임비 분석
               </div>
-              {[1, 2, 3, 4].map(g => {
-                const baseCost = materialLaborMap[`grade_${g}`] ?? 60000;
-                const totalCost = baseCost + stoneLaborTotal;
-                return (
-                  <div key={g} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 8px', borderBottom: g < 4 ? '1px solid var(--border-color)' : 'none', background: 'rgba(255,255,255,0.01)', fontSize: '11px' }}>
-                    <span>{g}등급 (기본 {baseCost.toLocaleString()} + 스톤 {stoneLaborTotal.toLocaleString()}):</span>
-                    <strong style={{ color: 'var(--primary)' }}>{totalCost.toLocaleString()}원</strong>
-                  </div>
-                );
-              })}
             </div>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', background: 'var(--border-color)', border: '1px solid var(--border-color)', borderRadius: '6px', overflow: 'hidden', marginBottom: '16px', fontSize: '11px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', background: 'var(--border-color)', border: '1px solid var(--border-color)', borderRadius: '6px', overflow: 'hidden', marginBottom: '16px', fontSize: '14px' }}>
             {/* Row 1 Header */}
             <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.2fr 1.2fr 2.4fr', background: 'rgba(212,175,55,0.05)', fontWeight: '700', color: 'var(--primary)', borderBottom: '1px solid var(--border-color)', textAlign: 'center', minHeight: '26px', alignItems: 'center' }}>
               <div style={{ borderRight: '1px solid var(--border-color)', padding: '6px' }}>모델명</div>
@@ -218,7 +221,7 @@ export const CatalogDetailView: React.FC = () => {
             {/* Row 1 Data & Nested Table */}
             <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.2fr 1.2fr 2.4fr', background: 'rgba(255,255,255,0.01)', minHeight: '120px' }}>
               {/* 모델명 */}
-              <div style={{ borderRight: '1px solid var(--border-color)', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '8px', fontSize: '13px', fontWeight: '800' }}>
+              <div style={{ borderRight: '1px solid var(--border-color)', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '8px', fontSize: '16px', fontWeight: '800' }}>
                 <a href="#" style={{ color: '#5b92e5', textDecoration: 'underline', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   {item.model_number}
                   <ExternalLink size={10} />
@@ -231,16 +234,16 @@ export const CatalogDetailView: React.FC = () => {
               {/* 표준중량 */}
               <div style={{ borderRight: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '8px', textAlign: 'center', gap: '4px' }}>
                 <span style={{ fontWeight: '600' }}>{item.materials.join(', ')}[{pureGoldWeight.toFixed(2)}]</span>
-                <span style={{ color: 'var(--danger)', fontSize: '12px', fontWeight: '700' }} title="스톤 중량">
+                <span style={{ color: 'var(--danger)', fontSize: '15px', fontWeight: '700' }} title="스톤 중량">
                   스톤: {totalStonesWeight.toFixed(3)} g
                 </span>
-                <span style={{ color: 'var(--primary)', fontSize: '12px', fontWeight: '700' }} title="합계 중량">
+                <span style={{ color: 'var(--primary)', fontSize: '15px', fontWeight: '700' }} title="합계 중량">
                   합계: {item.base_weight ? item.base_weight.toFixed(3) : '0.000'} g
                 </span>
               </div>
               {/* [14K] 공임 및 시세 Nested Table */}
               <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                <table style={{ width: '100%', height: '100%', borderCollapse: 'collapse', fontSize: '10px', textAlign: 'right' }}>
+                <table style={{ width: '100%', height: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'right' }}>
                   <thead>
                     <tr style={{ background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
                       <th style={{ padding: '4px', textAlign: 'center', borderRight: '1px solid var(--border-color)' }}>G</th>
@@ -252,7 +255,7 @@ export const CatalogDetailView: React.FC = () => {
                   </thead>
                   <tbody>
                     {[1, 2, 3, 4].map(g => {
-                      const baseCost = materialLaborMap[`grade_${g}`] ?? 60000;
+                      const baseCost = (materialLaborMap as any)[`grade_${g}`] ?? 60000;
                       const totalCost = baseCost + stoneLaborTotal;
                       return (
                         <tr key={g} style={{ borderBottom: g < 4 ? '1px solid var(--border-color)' : 'none' }}>
@@ -303,7 +306,7 @@ export const CatalogDetailView: React.FC = () => {
 
         {/* 3. 스톤 사양 테이블 */}
         <div style={{ marginBottom: '16px' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left', border: '1px solid var(--border-color)', borderRadius: '4px', overflow: 'hidden' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px', textAlign: 'left', border: '1px solid var(--border-color)', borderRadius: '4px', overflow: 'hidden' }}>
             <thead>
               <tr style={{ background: 'rgba(212,175,55,0.05)', color: 'var(--primary)', height: '26px' }}>
                 <th style={{ padding: '6px 10px', width: '40%', borderRight: '1px solid var(--border-color)' }}>스톤명</th>
@@ -353,7 +356,7 @@ export const CatalogDetailView: React.FC = () => {
 
         {/* 4. 관련제품 썸네일 그리드 */}
         <div>
-          <span style={{ fontSize: '11px', color: 'var(--primary)', fontWeight: '700', display: 'block', marginBottom: '8px', background: 'rgba(212,175,55,0.05)', padding: '6px 10px', borderRadius: '4px', border: '1px solid var(--border-color)' }}>
+          <span style={{ fontSize: '14px', color: 'var(--primary)', fontWeight: '700', display: 'block', marginBottom: '8px', background: 'rgba(212,175,55,0.05)', padding: '6px 10px', borderRadius: '4px', border: '1px solid var(--border-color)' }}>
             관련제품 목록
           </span>
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(4, 1fr)' : 'repeat(7, 1fr)', gap: '6px', padding: '4px' }}>

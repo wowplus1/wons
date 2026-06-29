@@ -237,14 +237,14 @@ export const ReleaseList: React.FC = () => {
 
 
   return (
-    <div className="glass-panel animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '12px' }}>
+    <div className="glass-panel animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '15px' }}>
       
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-        <h2 style={{ fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <h2 style={{ fontSize: '19px', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Package size={18} style={{ color: 'var(--primary)' }} />
           <span className="gradient-text" style={{ fontFamily: 'var(--font-title)', fontWeight: '600' }}>Release Management Center</span>
-          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>(주얼리 세공완료 출고 대기 대장)</span>
+          <span style={{ fontSize: '15px', color: 'var(--text-muted)' }}>(주얼리 세공완료 출고 대기 대장)</span>
         </h2>
       </div>
 
@@ -257,7 +257,7 @@ export const ReleaseList: React.FC = () => {
         display: 'flex',
         gap: '24px',
         alignItems: 'center',
-        fontSize: '11px',
+        fontSize: '14px',
         color: 'var(--text-main)'
       }}>
         <strong style={{ color: 'var(--primary)' }}>⚡ [실시간 출고 동기화 자가진단]</strong>
@@ -271,7 +271,7 @@ export const ReleaseList: React.FC = () => {
           style={{
             marginLeft: 'auto',
             padding: '2px 8px',
-            fontSize: '10px',
+            fontSize: '13px',
             background: 'rgba(255,255,255,0.05)',
             border: '1px solid var(--border-color)',
             borderRadius: '4px',
@@ -302,7 +302,7 @@ export const ReleaseList: React.FC = () => {
         {/* Action Buttons */}
         <div className="release-action-group" style={{ marginLeft: 'auto', display: 'flex', gap: '8px', alignItems: 'center' }}>
           {checkedItems.size > 0 && (
-            <span style={{ fontSize: '11px', color: 'var(--primary)', fontWeight: 'bold', marginRight: '8px' }}>
+            <span style={{ fontSize: '14px', color: 'var(--primary)', fontWeight: 'bold', marginRight: '8px' }}>
               선택됨: {checkedItems.size}건
             </span>
           )}
@@ -312,7 +312,7 @@ export const ReleaseList: React.FC = () => {
             className="btn-primary"
             style={{
               padding: '6px 14px',
-              fontSize: '12px',
+              fontSize: '15px',
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
@@ -330,7 +330,7 @@ export const ReleaseList: React.FC = () => {
 
       {/* Main Table Grid */}
       <div className="table-responsive" style={{ overflowX: 'auto' }}>
-        <table className="excel-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '1200px', fontSize: '11px', tableLayout: 'fixed' }}>
+        <table className="excel-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '1200px', fontSize: '14px', tableLayout: 'fixed' }}>
           <colgroup>
             <col style={{ width: '3%' }} />
             <col style={{ width: '3%' }} />
@@ -423,7 +423,7 @@ export const ReleaseList: React.FC = () => {
                         const cust = customers.find(c => c.customer_id === row.customerId);
                         if (!cust) return null;
                         return (
-                          <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px', lineHeight: '1.1' }}>
+                          <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '2px', lineHeight: '1.1' }}>
                             미수: {cust.receivable_amount.toLocaleString()}원 / 금: {cust.gold_balance_24k_g.toFixed(2)}g
                           </div>
                         );
@@ -439,7 +439,7 @@ export const ReleaseList: React.FC = () => {
                           style={{ maxWidth: '50px', maxHeight: '50px', objectFit: 'contain', borderRadius: '4px', display: 'block', margin: '0 auto', border: '1px solid var(--border-color)' }}
                         />
                       ) : (
-                        <div style={{ width: '40px', height: '40px', margin: '0 auto', background: 'rgba(255,255,255,0.03)', borderRadius: '4px', display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--text-muted)', fontSize: '8px' }}>
+                        <div style={{ width: '40px', height: '40px', margin: '0 auto', background: 'rgba(255,255,255,0.03)', borderRadius: '4px', display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--text-muted)', fontSize: '11px' }}>
                           No Image
                         </div>
                       )}
@@ -466,14 +466,14 @@ export const ReleaseList: React.FC = () => {
                     </td>
 
                     {/* 수량 */}
-                    <td style={{ padding: '6px 4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle', fontSize: '12px' }}>
+                    <td style={{ padding: '6px 4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle', fontSize: '15px' }}>
                       {row.quantity}
                     </td>
 
                     {/* 스톤 세팅 스펙 */}
                     <td style={{ padding: '6px 4px', lineHeight: '1.3', verticalAlign: 'middle' }}>
                       {row.stoneMainText && <div style={{ color: 'var(--text-main)' }}>{row.stoneMainText}</div>}
-                      {row.stoneSubText && <div style={{ color: 'var(--text-muted)', fontSize: '10px' }}>{row.stoneSubText}</div>}
+                      {row.stoneSubText && <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{row.stoneSubText}</div>}
                       {!row.stoneMainText && !row.stoneSubText && <span style={{ color: 'var(--text-muted)' }}>스톤 없음</span>}
                     </td>
 
@@ -485,7 +485,7 @@ export const ReleaseList: React.FC = () => {
                     {/* 세공 손실 (혜리) */}
                     <td style={{ padding: '8px 6px', verticalAlign: 'middle', color: 'var(--text-main)' }}>
                       {row.division === '결제' || row.model === '디자인출력' ? (
-                        <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '11px', fontStyle: 'italic' }}>
+                        <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '14px', fontStyle: 'italic' }}>
                           {row.model === '디자인출력' ? '디자인출력 (해리 없음)' : '결제 구분 (해리 없음)'}
                         </div>
                       ) : (() => {
@@ -505,7 +505,7 @@ export const ReleaseList: React.FC = () => {
                                 className="btn-primary"
                                 style={{
                                   padding: '4px 8px',
-                                  fontSize: '11px',
+                                  fontSize: '14px',
                                   background: 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)',
                                   color: 'var(--text-inverse)',
                                   border: 'none',
@@ -542,7 +542,7 @@ export const ReleaseList: React.FC = () => {
                         const totalLossPct = initialBefore > 0 ? ((totalLoss / initialBefore) * 100).toFixed(2) : '0.00';
 
                         return (
-                          <div style={{ fontSize: '11px', display: 'flex', flexDirection: 'column', gap: '3px', lineHeight: '1.2' }}>
+                          <div style={{ fontSize: '14px', display: 'flex', flexDirection: 'column', gap: '3px', lineHeight: '1.2' }}>
                             {before1 > 0 || after1 > 0 ? (
                               <div>1단계: {before1.toFixed(2)}g → {after1.toFixed(2)}g (해리 {loss1.toFixed(2)}g / {pct1}%)</div>
                             ) : null}
@@ -568,7 +568,7 @@ export const ReleaseList: React.FC = () => {
                                 onClick={() => handleOpenWeightModal(row)}
                                 style={{
                                   padding: '1px 6px',
-                                  fontSize: '10px',
+                                  fontSize: '13px',
                                   background: 'rgba(255,255,255,0.05)',
                                   border: '1px solid var(--border-color)',
                                   borderRadius: '3px',
@@ -601,7 +601,7 @@ export const ReleaseList: React.FC = () => {
 
                     {/* 상태 배지 */}
                     <td style={{ padding: '6px 4px', textAlign: 'center', verticalAlign: 'middle' }}>
-                      <span className="badge" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '3px 8px', borderRadius: '12px', fontSize: '10px', fontWeight: 'bold' }}>
+                      <span className="badge" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '3px 8px', borderRadius: '12px', fontSize: '13px', fontWeight: 'bold' }}>
                         출고 대기
                       </span>
                     </td>
@@ -614,7 +614,7 @@ export const ReleaseList: React.FC = () => {
                         className="btn-primary"
                         style={{
                           padding: '4px 8px',
-                          fontSize: '10px',
+                          fontSize: '13px',
                           background: 'rgba(245, 158, 11, 0.1)',
                           color: '#fbbf24',
                           border: '1px solid rgba(245, 158, 11, 0.3)',
@@ -630,9 +630,9 @@ export const ReleaseList: React.FC = () => {
               })
             ) : (
               <tr>
-                <td colSpan={20} style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '12px' }}>
+                <td colSpan={20} style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '15px' }}>
                   현재 출고 대기 중인 세공완료 품목이 없습니다.<br />
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>[주얼리 세공리스트] 탭에서 작업을 완료하시면 이곳으로 품목이 이동되어 최종 출고 처리를 진행할 수 있습니다.</span>
+                  <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>[주얼리 세공리스트] 탭에서 작업을 완료하시면 이곳으로 품목이 이동되어 최종 출고 처리를 진행할 수 있습니다.</span>
                 </td>
               </tr>
             )}
@@ -668,7 +668,7 @@ export const ReleaseList: React.FC = () => {
           }}>
             {/* 헤더 */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-              <h3 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Wrench size={16} style={{ color: 'var(--primary)' }} />
                 <span>단계별 세공 무게 입력 (손실/혜리 기록)</span>
               </h3>
@@ -686,10 +686,10 @@ export const ReleaseList: React.FC = () => {
               
               {/* 1단계 */}
               <div style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '12px' }}>
-                <div style={{ fontWeight: 'bold', color: 'var(--text-main)', marginBottom: '8px', fontSize: '12px' }}>1단계 공정</div>
+                <div style={{ fontWeight: 'bold', color: 'var(--text-main)', marginBottom: '8px', fontSize: '15px' }}>1단계 공정</div>
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '11px', color: 'var(--text-muted)' }}>작업 전 무게 (g)</label>
+                    <label style={{ fontSize: '14px', color: 'var(--text-muted)' }}>작업 전 무게 (g)</label>
                     <input
                       type="number"
                       step="0.01"
@@ -697,12 +697,12 @@ export const ReleaseList: React.FC = () => {
                       value={step1Before}
                       onChange={(e) => setStep1Before(e.target.value)}
                       className="input-field"
-                      style={{ width: '100%', fontSize: '12px', padding: '6px 8px' }}
+                      style={{ width: '100%', fontSize: '15px', padding: '6px 8px' }}
                     />
                   </div>
                   <span style={{ color: 'var(--text-muted)', marginTop: '14px' }}>→</span>
                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '11px', color: 'var(--text-muted)' }}>작업 후 무게 (g)</label>
+                    <label style={{ fontSize: '14px', color: 'var(--text-muted)' }}>작업 후 무게 (g)</label>
                     <input
                       type="number"
                       step="0.01"
@@ -714,7 +714,7 @@ export const ReleaseList: React.FC = () => {
                         setStep2Before(val);
                       }}
                       className="input-field"
-                      style={{ width: '100%', fontSize: '12px', padding: '6px 8px' }}
+                      style={{ width: '100%', fontSize: '15px', padding: '6px 8px' }}
                     />
                   </div>
                 </div>
@@ -722,10 +722,10 @@ export const ReleaseList: React.FC = () => {
 
               {/* 2단계 */}
               <div style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '12px' }}>
-                <div style={{ fontWeight: 'bold', color: 'var(--text-main)', marginBottom: '8px', fontSize: '12px' }}>2단계 공정</div>
+                <div style={{ fontWeight: 'bold', color: 'var(--text-main)', marginBottom: '8px', fontSize: '15px' }}>2단계 공정</div>
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '11px', color: 'var(--text-muted)' }}>작업 전 무게 (g)</label>
+                    <label style={{ fontSize: '14px', color: 'var(--text-muted)' }}>작업 전 무게 (g)</label>
                     <input
                       type="number"
                       step="0.01"
@@ -733,12 +733,12 @@ export const ReleaseList: React.FC = () => {
                       value={step2Before}
                       onChange={(e) => setStep2Before(e.target.value)}
                       className="input-field"
-                      style={{ width: '100%', fontSize: '12px', padding: '6px 8px' }}
+                      style={{ width: '100%', fontSize: '15px', padding: '6px 8px' }}
                     />
                   </div>
                   <span style={{ color: 'var(--text-muted)', marginTop: '14px' }}>→</span>
                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '11px', color: 'var(--text-muted)' }}>작업 후 무게 (g)</label>
+                    <label style={{ fontSize: '14px', color: 'var(--text-muted)' }}>작업 후 무게 (g)</label>
                     <input
                       type="number"
                       step="0.01"
@@ -750,7 +750,7 @@ export const ReleaseList: React.FC = () => {
                         setStep3Before(val);
                       }}
                       className="input-field"
-                      style={{ width: '100%', fontSize: '12px', padding: '6px 8px' }}
+                      style={{ width: '100%', fontSize: '15px', padding: '6px 8px' }}
                     />
                   </div>
                 </div>
@@ -758,10 +758,10 @@ export const ReleaseList: React.FC = () => {
 
               {/* 3단계 */}
               <div style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '12px' }}>
-                <div style={{ fontWeight: 'bold', color: 'var(--text-main)', marginBottom: '8px', fontSize: '12px' }}>3단계 공정</div>
+                <div style={{ fontWeight: 'bold', color: 'var(--text-main)', marginBottom: '8px', fontSize: '15px' }}>3단계 공정</div>
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '11px', color: 'var(--text-muted)' }}>작업 전 무게 (g)</label>
+                    <label style={{ fontSize: '14px', color: 'var(--text-muted)' }}>작업 전 무게 (g)</label>
                     <input
                       type="number"
                       step="0.01"
@@ -769,12 +769,12 @@ export const ReleaseList: React.FC = () => {
                       value={step3Before}
                       onChange={(e) => setStep3Before(e.target.value)}
                       className="input-field"
-                      style={{ width: '100%', fontSize: '12px', padding: '6px 8px' }}
+                      style={{ width: '100%', fontSize: '15px', padding: '6px 8px' }}
                     />
                   </div>
                   <span style={{ color: 'var(--text-muted)', marginTop: '14px' }}>→</span>
                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '11px', color: 'var(--text-muted)' }}>작업 후 무게 (g)</label>
+                    <label style={{ fontSize: '14px', color: 'var(--text-muted)' }}>작업 후 무게 (g)</label>
                     <input
                       type="number"
                       step="0.01"
@@ -782,7 +782,7 @@ export const ReleaseList: React.FC = () => {
                       value={step3After}
                       onChange={(e) => setStep3After(e.target.value)}
                       className="input-field"
-                      style={{ width: '100%', fontSize: '12px', padding: '6px 8px' }}
+                      style={{ width: '100%', fontSize: '15px', padding: '6px 8px' }}
                     />
                   </div>
                 </div>

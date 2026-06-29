@@ -316,7 +316,7 @@ export const useErpStore = create<ErpState>((set, get) => ({
             
             item.labor_base = laborBase;
             item.labor_cost = laborCost;
-            item.labor_extra = catalogItem.extra_labor_fee || 0;
+            item.labor_extra = 0;
             
             const dsMain = catalogItem.default_stones[0];
             const dsSub = catalogItem.default_stones[1];

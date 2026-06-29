@@ -78,12 +78,42 @@ export const CatalogRegisterForm: React.FC = () => {
         setSetClassification(matched.is_set ? 'Y' : 'N');
         
         const baseLabor = matched.base_labor_fees[mat] || matched.base_labor_fees['14K'] || { grade_1: 0, grade_2: 0, grade_3: 0, grade_4: 0 };
-        const updatedLaborFees = [
-          { type: '기본', color: 'YG', cost: '0', grade1: String(baseLabor.grade_1), grade2: String(baseLabor.grade_2), grade3: String(baseLabor.grade_3), grade4: String(baseLabor.grade_4) },
-          { type: '추가1', color: 'WG', cost: '0', grade1: String(matched.extra_labor_fee), grade2: String(matched.extra_labor_fee), grade3: String(matched.extra_labor_fee), grade4: String(matched.extra_labor_fee) },
-          { type: '추가2', color: 'RG', cost: '0', grade1: '0', grade2: '0', grade3: '0', grade4: '0' },
-          { type: '추가3', color: '', cost: '0', grade1: '0', grade2: '0', grade3: '0', grade4: '0' }
-        ];
+        
+        let updatedLaborFees = [];
+        if (matched.labor_fees_v2 && matched.labor_fees_v2[mat] && matched.labor_fees_v2[mat].length > 0) {
+          updatedLaborFees = matched.labor_fees_v2[mat].map(lf => ({
+            type: lf.type || '',
+            color: lf.color || '',
+            cost: String(lf.cost || 0),
+            grade1: String(lf.grade_1 || 0),
+            grade2: String(lf.grade_2 || 0),
+            grade3: String(lf.grade_3 || 0),
+            grade4: String(lf.grade_4 || 0)
+          }));
+          
+          const types = ['기본', '추가1', '추가2', '추가3'];
+          while (updatedLaborFees.length < 4) {
+            const currentIdx = updatedLaborFees.length;
+            const type = types[currentIdx] || `추가${currentIdx}`;
+            const defaultColor = type === '기본' ? 'YG' : type === '추가1' ? 'WG' : type === '추가2' ? 'RG' : '';
+            updatedLaborFees.push({
+              type,
+              color: defaultColor,
+              cost: '0',
+              grade1: '0',
+              grade2: '0',
+              grade3: '0',
+              grade4: '0'
+            });
+          }
+        } else {
+          updatedLaborFees = [
+            { type: '기본', color: 'YG', cost: '0', grade1: String(baseLabor.grade_1), grade2: String(baseLabor.grade_2), grade3: String(baseLabor.grade_3), grade4: String(baseLabor.grade_4) },
+            { type: '추가1', color: 'WG', cost: '0', grade1: String(matched.extra_labor_fee), grade2: String(matched.extra_labor_fee), grade3: String(matched.extra_labor_fee), grade4: String(matched.extra_labor_fee) },
+            { type: '추가2', color: 'RG', cost: '0', grade1: '0', grade2: '0', grade3: '0', grade4: '0' },
+            { type: '추가3', color: '', cost: '0', grade1: '0', grade2: '0', grade3: '0', grade4: '0' }
+          ];
+        }
         setLaborFees(updatedLaborFees);
 
         const updatedStoneRows = Array.from({ length: 7 }, (_, i) => {
@@ -289,7 +319,7 @@ export const CatalogRegisterForm: React.FC = () => {
         }))
       },
       default_stones: defaultStonesMap,
-      images: images.length > 0 ? images : ['https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=150'],
+      images: images.length > 0 ? images : [],
       created_at: existingItem?.created_at || new Date().toISOString(),
       manufacturer: manufacturer || '자체제작',
       manufacturer_code: manufacturerCode || '',
@@ -333,7 +363,7 @@ export const CatalogRegisterForm: React.FC = () => {
   return (
     <div style={{ padding: isMobile ? '8px' : '20px', background: 'var(--bg-base)', minHeight: '100vh', display: 'flex', justifyContent: 'center' }}>
       <div className="glass-panel" style={{ width: '100%', maxWidth: '980px', background: 'var(--bg-surface-solid)', border: '1px solid var(--primary)', height: 'fit-content', padding: isMobile ? '12px' : '20px' }}>
-        <h2 style={{ fontSize: '15px', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', marginBottom: '16px' }}>
+        <h2 style={{ fontSize: '18px', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', marginBottom: '16px' }}>
           <PackagePlus size={18} style={{ color: 'var(--primary)' }} />
           {isEditMode ? 'B2B 카다로그 상품 정보 수정 (새창)' : 'B2B 카다로그 상품 정보 등록 (새창)'}
         </h2>
@@ -342,21 +372,21 @@ export const CatalogRegisterForm: React.FC = () => {
           
           {/* Section 1: Model Info */}
           <div style={{ border: '1px solid var(--border-color)', borderRadius: '8px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <span style={{ fontSize: '12px', color: 'var(--primary)', fontWeight: '600', display: 'block', borderBottom: '1px dashed var(--border-color)', paddingBottom: '4px' }}>
+            <span style={{ fontSize: '15px', color: 'var(--primary)', fontWeight: '600', display: 'block', borderBottom: '1px dashed var(--border-color)', paddingBottom: '4px' }}>
               모델 기본 정보 설정
             </span>
             <div className="catalog-form-container" style={{ display: 'flex', gap: '16px' }}>
               <div className="catalog-form-section" style={{ width: isMobile ? '100%' : '180px', flexShrink: 0 }}>
-                <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>대표 사진 등록</label>
+                <label style={{ display: 'block', fontSize: '15px', color: 'var(--text-muted)', marginBottom: '4px' }}>대표 사진 등록</label>
                 <input type="file" accept="image/*" onChange={handleImageUpload} style={{ display: 'none' }} id="reg-catalog-file" />
-                <label htmlFor="reg-catalog-file" style={{ display: 'flex', height: '130px', border: '1px dashed var(--border-color)', borderRadius: '6px', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', fontSize: '12px', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.01)', overflow: 'hidden' }}>
+                <label htmlFor="reg-catalog-file" style={{ display: 'flex', height: '130px', border: '1px dashed var(--border-color)', borderRadius: '6px', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', fontSize: '15px', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.01)', overflow: 'hidden' }}>
                   {images.length > 0 ? (
                     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
                       <img src={images[0]} alt="업로드" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       <button 
                         type="button" 
                         onClick={(e) => { e.preventDefault(); e.stopPropagation(); setImages([]); }} 
-                        style={{ position: 'absolute', top: '4px', right: '4px', background: 'rgba(239, 68, 68, 0.9)', color: '#fff', border: 'none', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '10px', fontWeight: 'bold' }}
+                        style={{ position: 'absolute', top: '4px', right: '4px', background: 'rgba(239, 68, 68, 0.9)', color: '#fff', border: 'none', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' }}
                       >
                         ✕
                       </button>
@@ -364,39 +394,39 @@ export const CatalogRegisterForm: React.FC = () => {
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
                       <span>사진 등록</span>
-                      <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>터치하여 카메라/앨범</span>
+                      <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>터치하여 카메라/앨범</span>
                     </div>
                   )}
                 </label>
               </div>
               <div className="catalog-form-section" style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '10px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#a3a8b8', marginBottom: '2px', fontWeight: '500' }}>*제조사</label>
-                  <input type="text" value={manufacturer} onChange={e => setManufacturer(e.target.value)} className="input-field" style={{ width: '100%', padding: '5px 10px', fontSize: '12px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }} required />
+                  <label style={{ display: 'block', fontSize: '15px', color: '#a3a8b8', marginBottom: '2px', fontWeight: '500' }}>*제조사</label>
+                  <input type="text" value={manufacturer} onChange={e => setManufacturer(e.target.value)} className="input-field" style={{ width: '100%', padding: '5px 10px', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }} required />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#a3a8b8', marginBottom: '2px', fontWeight: '500' }}>제조코드(제조번호)</label>
-                  <input type="text" value={manufacturerCode} onChange={e => setManufacturerCode(e.target.value)} className="input-field" style={{ width: '100%', padding: '5px 10px', fontSize: '12px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }} />
+                  <label style={{ display: 'block', fontSize: '15px', color: '#a3a8b8', marginBottom: '2px', fontWeight: '500' }}>제조코드(제조번호)</label>
+                  <input type="text" value={manufacturerCode} onChange={e => setManufacturerCode(e.target.value)} className="input-field" style={{ width: '100%', padding: '5px 10px', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }} />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#a3a8b8', marginBottom: '2px', fontWeight: '500' }}>*모델번호</label>
-                  <input type="text" value={modelNo} onChange={e => setModelNo(e.target.value)} className="input-field" style={{ width: '100%', padding: '5px 10px', fontSize: '12px', border: '1px solid rgba(255,255,255,0.15)', background: isEditMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.2)', textTransform: 'uppercase' }} required disabled={isEditMode} />
+                  <label style={{ display: 'block', fontSize: '15px', color: '#a3a8b8', marginBottom: '2px', fontWeight: '500' }}>*모델번호</label>
+                  <input type="text" value={modelNo} onChange={e => setModelNo(e.target.value)} className="input-field" style={{ width: '100%', padding: '5px 10px', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: isEditMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.2)', textTransform: 'uppercase' }} required disabled={isEditMode} />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#a3a8b8', marginBottom: '2px', fontWeight: '500' }}>매입처</label>
-                  <input type="text" value={vendor} onChange={e => setVendor(e.target.value)} className="input-field" style={{ width: '100%', padding: '5px 10px', fontSize: '12px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }} />
+                  <label style={{ display: 'block', fontSize: '15px', color: '#a3a8b8', marginBottom: '2px', fontWeight: '500' }}>매입처</label>
+                  <input type="text" value={vendor} onChange={e => setVendor(e.target.value)} className="input-field" style={{ width: '100%', padding: '5px 10px', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }} />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#a3a8b8', marginBottom: '2px', fontWeight: '500' }}>관련제품(세트)번호</label>
-                  <input type="text" value={relatedSetNo} onChange={e => setRelatedSetNo(e.target.value)} className="input-field" style={{ width: '100%', padding: '5px 10px', fontSize: '12px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }} />
+                  <label style={{ display: 'block', fontSize: '15px', color: '#a3a8b8', marginBottom: '2px', fontWeight: '500' }}>관련제품(세트)번호</label>
+                  <input type="text" value={relatedSetNo} onChange={e => setRelatedSetNo(e.target.value)} className="input-field" style={{ width: '100%', padding: '5px 10px', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }} />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#a3a8b8', marginBottom: '2px', fontWeight: '500' }}>기본 중량(g)</label>
-                  <input type="number" step="0.01" value={baseWeight} onChange={e => setBaseWeight(e.target.value)} className="input-field" style={{ width: '100%', padding: '5px 10px', fontSize: '12px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)', textAlign: 'right' }} />
+                  <label style={{ display: 'block', fontSize: '15px', color: '#a3a8b8', marginBottom: '2px', fontWeight: '500' }}>기본 중량(g)</label>
+                  <input type="number" step="0.01" value={baseWeight} onChange={e => setBaseWeight(e.target.value)} className="input-field" style={{ width: '100%', padding: '5px 10px', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)', textAlign: 'right' }} />
                 </div>
                 <div style={{ gridColumn: isMobile ? 'auto' : 'span 2' }}>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#a3a8b8', marginBottom: '2px', fontWeight: '500' }}>*모델분류</label>
-                  <select value={category} onChange={e => { setCategory(e.target.value); if (e.target.value === 'Set') setIsSet(true); }} className="input-field" style={{ width: '100%', padding: '5px', fontSize: '12px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }}>
+                  <label style={{ display: 'block', fontSize: '15px', color: '#a3a8b8', marginBottom: '2px', fontWeight: '500' }}>*모델분류</label>
+                  <select value={category} onChange={e => { setCategory(e.target.value); if (e.target.value === 'Set') setIsSet(true); }} className="input-field" style={{ width: '100%', padding: '5px', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }}>
                     <option value="Ring">반지 (Ring)</option>
                     <option value="Necklace">목걸이 (Necklace)</option>
                     <option value="Earring">귀걸이 (Earring)</option>
@@ -407,30 +437,30 @@ export const CatalogRegisterForm: React.FC = () => {
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '10px', marginTop: '6px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#a3a8b8', marginBottom: '2px', fontWeight: '500' }}>기본재질</label>
-                <select value={baseMaterial} onChange={e => setBaseMaterial(e.target.value)} className="input-field" style={{ width: '100%', padding: '5px', fontSize: '12px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }}>
+                <label style={{ display: 'block', fontSize: '15px', color: '#a3a8b8', marginBottom: '2px', fontWeight: '500' }}>기본재질</label>
+                <select value={baseMaterial} onChange={e => setBaseMaterial(e.target.value)} className="input-field" style={{ width: '100%', padding: '5px', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }}>
                   <option value="14K">14K</option>
                   <option value="18K">18K</option>
                   <option value="24K">순금</option>
                 </select>
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#a3a8b8', marginBottom: '2px', fontWeight: '500' }}>세트구분</label>
-                <select value={setClassification} onChange={e => { setSetClassification(e.target.value); setIsSet(e.target.value === 'Y'); }} className="input-field" style={{ width: '100%', padding: '5px', fontSize: '12px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }}>
+                <label style={{ display: 'block', fontSize: '15px', color: '#a3a8b8', marginBottom: '2px', fontWeight: '500' }}>세트구분</label>
+                <select value={setClassification} onChange={e => { setSetClassification(e.target.value); setIsSet(e.target.value === 'Y'); }} className="input-field" style={{ width: '100%', padding: '5px', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }}>
                   <option value="N">N: 단품</option>
                   <option value="Y">Y: 세트</option>
                 </select>
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#a3a8b8', marginBottom: '2px', fontWeight: '500' }}>공개여부</label>
-                <select value={publicYn} onChange={e => setPublicYn(e.target.value)} className="input-field" style={{ width: '100%', padding: '5px', fontSize: '12px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }}>
+                <label style={{ display: 'block', fontSize: '15px', color: '#a3a8b8', marginBottom: '2px', fontWeight: '500' }}>공개여부</label>
+                <select value={publicYn} onChange={e => setPublicYn(e.target.value)} className="input-field" style={{ width: '100%', padding: '5px', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }}>
                   <option value="Y">Y: 공개</option>
                   <option value="N">N: 비공개</option>
                 </select>
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#a3a8b8', marginBottom: '2px', fontWeight: '500' }}>단종여부</label>
-                <select value={discontinuedYn} onChange={e => setDiscontinuedYn(e.target.value)} className="input-field" style={{ width: '100%', padding: '5px', fontSize: '12px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }}>
+                <label style={{ display: 'block', fontSize: '15px', color: '#a3a8b8', marginBottom: '2px', fontWeight: '500' }}>단종여부</label>
+                <select value={discontinuedYn} onChange={e => setDiscontinuedYn(e.target.value)} className="input-field" style={{ width: '100%', padding: '5px', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }}>
                   <option value="N">N: 정상</option>
                   <option value="Y">Y: 단종</option>
                 </select>
@@ -440,11 +470,11 @@ export const CatalogRegisterForm: React.FC = () => {
 
           {/* Section 2: Labor Setting */}
           <div style={{ border: '1px solid var(--border-color)', borderRadius: '8px', padding: '12px' }}>
-            <span style={{ fontSize: '12px', color: 'var(--primary)', fontWeight: '600', display: 'block', borderBottom: '1px dashed var(--border-color)', paddingBottom: '4px', marginBottom: '8px' }}>
+            <span style={{ fontSize: '15px', color: 'var(--primary)', fontWeight: '600', display: 'block', borderBottom: '1px dashed var(--border-color)', paddingBottom: '4px', marginBottom: '8px' }}>
               공임 및 원가 설정
             </span>
             <div className="catalog-stone-table-wrapper">
-              <table className="catalog-stone-table labor-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left' }}>
+              <table className="catalog-stone-table labor-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '15px', textAlign: 'left' }}>
                 <thead>
                   <tr style={{ borderBottom: '2px solid var(--border-color)', color: 'var(--text-main)', background: 'rgba(255, 255, 255, 0.04)', height: '28px' }}>
                     <th style={{ padding: '6px 8px' }}>구분</th>
@@ -461,7 +491,7 @@ export const CatalogRegisterForm: React.FC = () => {
                     <tr key={lf.type} style={{ borderBottom: '1px solid var(--border-color)', background: idx % 2 === 0 ? 'rgba(255,255,255,0.005)' : 'rgba(255,255,255,0.02)' }}>
                       <td style={{ padding: '6px 8px', fontWeight: '700', color: 'var(--primary)' }}>{lf.type}</td>
                       <td style={{ padding: '4px 6px' }}>
-                        <select value={lf.color} onChange={e => handleLaborFeeChange(idx, 'color', e.target.value)} className="input-field" style={{ width: '100%', padding: '3px 6px', fontSize: '12px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }}>
+                        <select value={lf.color} onChange={e => handleLaborFeeChange(idx, 'color', e.target.value)} className="input-field" style={{ width: '100%', padding: '3px 6px', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }}>
                           <option value="">전체색상</option>
                           <option value="YG">YG (옐로우)</option>
                           <option value="WG">WG (화이트)</option>
@@ -469,19 +499,19 @@ export const CatalogRegisterForm: React.FC = () => {
                         </select>
                       </td>
                       <td style={{ padding: '4px 6px' }}>
-                        <input type="number" value={lf.cost} onChange={e => handleLaborFeeChange(idx, 'cost', e.target.value)} className="input-field" style={{ width: '100%', padding: '3px 6px', textAlign: 'right', fontSize: '12px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }} />
+                        <input type="number" value={lf.cost} onChange={e => handleLaborFeeChange(idx, 'cost', e.target.value)} className="input-field" style={{ width: '100%', padding: '3px 6px', textAlign: 'right', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }} />
                       </td>
                       <td style={{ padding: '4px 6px' }}>
-                        <input type="number" value={lf.grade1} onChange={e => handleLaborFeeChange(idx, 'grade1', e.target.value)} className="input-field" style={{ width: '100%', padding: '3px 6px', textAlign: 'right', fontSize: '12px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }} />
+                        <input type="number" value={lf.grade1} onChange={e => handleLaborFeeChange(idx, 'grade1', e.target.value)} className="input-field" style={{ width: '100%', padding: '3px 6px', textAlign: 'right', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }} />
                       </td>
                       <td style={{ padding: '4px 6px' }}>
-                        <input type="number" value={lf.grade2} onChange={e => handleLaborFeeChange(idx, 'grade2', e.target.value)} className="input-field" style={{ width: '100%', padding: '3px 6px', textAlign: 'right', fontSize: '12px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }} />
+                        <input type="number" value={lf.grade2} onChange={e => handleLaborFeeChange(idx, 'grade2', e.target.value)} className="input-field" style={{ width: '100%', padding: '3px 6px', textAlign: 'right', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }} />
                       </td>
                       <td style={{ padding: '4px 6px' }}>
-                        <input type="number" value={lf.grade3} onChange={e => handleLaborFeeChange(idx, 'grade3', e.target.value)} className="input-field" style={{ width: '100%', padding: '3px 6px', textAlign: 'right', fontSize: '12px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }} />
+                        <input type="number" value={lf.grade3} onChange={e => handleLaborFeeChange(idx, 'grade3', e.target.value)} className="input-field" style={{ width: '100%', padding: '3px 6px', textAlign: 'right', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }} />
                       </td>
                       <td style={{ padding: '4px 6px' }}>
-                        <input type="number" value={lf.grade4} onChange={e => handleLaborFeeChange(idx, 'grade4', e.target.value)} className="input-field" style={{ width: '100%', padding: '3px 6px', textAlign: 'right', fontSize: '12px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }} />
+                        <input type="number" value={lf.grade4} onChange={e => handleLaborFeeChange(idx, 'grade4', e.target.value)} className="input-field" style={{ width: '100%', padding: '3px 6px', textAlign: 'right', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }} />
                       </td>
                     </tr>
                   ))}
@@ -492,11 +522,11 @@ export const CatalogRegisterForm: React.FC = () => {
 
           {/* Section 3: Stones Specification */}
           <div style={{ border: '1px solid var(--border-color)', borderRadius: '8px', padding: '12px' }}>
-            <span style={{ fontSize: '12px', color: 'var(--primary)', fontWeight: '600', display: 'block', borderBottom: '1px dashed var(--border-color)', paddingBottom: '4px', marginBottom: '8px' }}>
+            <span style={{ fontSize: '15px', color: 'var(--primary)', fontWeight: '600', display: 'block', borderBottom: '1px dashed var(--border-color)', paddingBottom: '4px', marginBottom: '8px' }}>
               기본 세팅 스톤 정보 (스톤 1~7행 설정)
             </span>
             <div className="catalog-stone-table-wrapper">
-              <table className="catalog-stone-table stones-spec-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left' }}>
+              <table className="catalog-stone-table stones-spec-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '15px', textAlign: 'left' }}>
                 <thead>
                   <tr style={{ borderBottom: '2px solid var(--border-color)', color: 'var(--text-main)', background: 'rgba(255, 255, 255, 0.04)', height: '28px' }}>
                     <th style={{ padding: '6px 4px', width: '50px', textAlign: 'center' }}>구분</th>
@@ -519,67 +549,67 @@ export const CatalogRegisterForm: React.FC = () => {
                     <tr key={row.row_id} style={{ borderBottom: '1px solid var(--border-color)', background: idx % 2 === 0 ? 'rgba(255,255,255,0.005)' : 'rgba(255,255,255,0.02)' }}>
                       <td style={{ padding: '4px', textAlign: 'center', color: 'var(--text-muted)' }}>스톤{row.row_id}</td>
                       <td style={{ padding: '2px' }}>
-                        <select value={row.is_main} onChange={e => handleStoneRowChange(idx, 'is_main', e.target.value)} className="input-field" style={{ width: '100%', padding: '3px', fontSize: '12px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }}>
+                        <select value={row.is_main} onChange={e => handleStoneRowChange(idx, 'is_main', e.target.value)} className="input-field" style={{ width: '100%', padding: '3px', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }}>
                           <option value="N">N</option>
                           <option value="Y">Y</option>
                         </select>
                       </td>
                       <td style={{ padding: '2px' }}>
-                        <select value={row.stone_id} onChange={e => handleStoneRowChange(idx, 'stone_id', e.target.value)} className="input-field" style={{ width: '100%', padding: '3px', fontSize: '12px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }}>
+                        <select value={row.stone_id} onChange={e => handleStoneRowChange(idx, 'stone_id', e.target.value)} className="input-field" style={{ width: '100%', padding: '3px', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }}>
                           <option value="">-- 선택 --</option>
                           {stones.map(s => <option key={s.stone_id} value={s.stone_id}>{s.name}</option>)}
                         </select>
                       </td>
                       <td style={{ padding: '2px' }}>
-                        <input type="number" min="0" value={row.quantity} onChange={e => handleStoneRowChange(idx, 'quantity', parseInt(e.target.value) || 0)} className="input-field" style={{ width: '100%', padding: '3px', textAlign: 'right', fontSize: '12px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }} />
+                        <input type="number" min="0" value={row.quantity} onChange={e => handleStoneRowChange(idx, 'quantity', parseInt(e.target.value) || 0)} className="input-field" style={{ width: '100%', padding: '3px', textAlign: 'right', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }} />
                       </td>
                       <td style={{ padding: '2px' }}>
-                        <select value={row.weight_deduction} onChange={e => handleStoneRowChange(idx, 'weight_deduction', e.target.value)} className="input-field" style={{ width: '100%', padding: '3px', fontSize: '12px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }}>
+                        <select value={row.weight_deduction} onChange={e => handleStoneRowChange(idx, 'weight_deduction', e.target.value)} className="input-field" style={{ width: '100%', padding: '3px', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }}>
                           <option value="Y">Y</option>
                           <option value="N">N</option>
                         </select>
                       </td>
                       <td style={{ padding: '2px' }}>
-                        <select value={row.labor_apply} onChange={e => handleStoneRowChange(idx, 'labor_apply', e.target.value)} className="input-field" style={{ width: '100%', padding: '3px', fontSize: '12px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }}>
+                        <select value={row.labor_apply} onChange={e => handleStoneRowChange(idx, 'labor_apply', e.target.value)} className="input-field" style={{ width: '100%', padding: '3px', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }}>
                           <option value="Y">Y</option>
                           <option value="N">N</option>
                         </select>
                       </td>
-                      <td style={{ padding: '2px 4px', textAlign: 'right', color: '#e5e7eb', fontFamily: 'var(--font-title)', fontSize: '12px', fontWeight: '500' }}>
+                      <td style={{ padding: '2px 4px', textAlign: 'right', color: '#e5e7eb', fontFamily: 'var(--font-title)', fontSize: '15px', fontWeight: '500' }}>
                         {row.weight ? row.weight.toFixed(5) : '0.00000'}
                       </td>
-                      <td style={{ padding: '2px 4px', textAlign: 'right', color: '#e5e7eb', fontFamily: 'var(--font-title)', fontSize: '12px', fontWeight: '500' }}>
+                      <td style={{ padding: '2px 4px', textAlign: 'right', color: '#e5e7eb', fontFamily: 'var(--font-title)', fontSize: '15px', fontWeight: '500' }}>
                         {row.buy_price.toLocaleString()}
                       </td>
                       
                       {/* Render 1, 2, 3, 4 grade prices individually */}
-                      <td style={{ padding: '2px 4px', textAlign: 'right', fontFamily: 'var(--font-title)', fontSize: '12px', fontWeight: '600', color: 'var(--primary)' }}>
+                      <td style={{ padding: '2px 4px', textAlign: 'right', fontFamily: 'var(--font-title)', fontSize: '15px', fontWeight: '600', color: 'var(--primary)' }}>
                         {row.stone_id ? row.grade_prices.grade_1.toLocaleString() : '-'}
                       </td>
-                      <td style={{ padding: '2px 4px', textAlign: 'right', fontFamily: 'var(--font-title)', fontSize: '12px', fontWeight: '600', color: 'var(--primary)' }}>
+                      <td style={{ padding: '2px 4px', textAlign: 'right', fontFamily: 'var(--font-title)', fontSize: '15px', fontWeight: '600', color: 'var(--primary)' }}>
                         {row.stone_id ? row.grade_prices.grade_2.toLocaleString() : '-'}
                       </td>
-                      <td style={{ padding: '2px 4px', textAlign: 'right', fontFamily: 'var(--font-title)', fontSize: '12px', fontWeight: '600', color: 'var(--primary)' }}>
+                      <td style={{ padding: '2px 4px', textAlign: 'right', fontFamily: 'var(--font-title)', fontSize: '15px', fontWeight: '600', color: 'var(--primary)' }}>
                         {row.stone_id ? row.grade_prices.grade_3.toLocaleString() : '-'}
                       </td>
-                      <td style={{ padding: '2px 4px', textAlign: 'right', fontFamily: 'var(--font-title)', fontSize: '12px', fontWeight: '600', color: 'var(--primary)' }}>
+                      <td style={{ padding: '2px 4px', textAlign: 'right', fontFamily: 'var(--font-title)', fontSize: '15px', fontWeight: '600', color: 'var(--primary)' }}>
                         {row.stone_id ? row.grade_prices.grade_4.toLocaleString() : '-'}
                       </td>
                       
                       <td style={{ padding: '2px', width: '120px' }}>
-                        <input type="text" value={row.description} onChange={e => handleStoneRowChange(idx, 'description', e.target.value)} className="input-field" style={{ width: '100%', padding: '3px 6px', fontSize: '12px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }} placeholder="메모" />
+                        <input type="text" value={row.description} onChange={e => handleStoneRowChange(idx, 'description', e.target.value)} className="input-field" style={{ width: '100%', padding: '3px 6px', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }} placeholder="메모" />
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-            <div className="catalog-summary-bar" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px', marginTop: '10px', background: 'rgba(255,255,255,0.02)', padding: '8px', borderRadius: '4px', fontSize: '12px', alignItems: 'center', border: '1px solid rgba(255,255,255,0.05)' }}>
+            <div className="catalog-summary-bar" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px', marginTop: '10px', background: 'rgba(255,255,255,0.02)', padding: '8px', borderRadius: '4px', fontSize: '15px', alignItems: 'center', border: '1px solid rgba(255,255,255,0.05)' }}>
               <div>알수 소계: <strong>{totalStonesQty} 개</strong></div>
               <div>중량 소계: <strong>{totalStonesWeight.toFixed(5)} g</strong></div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                 수동 차감중량: 
-                <input type="number" step="0.0001" value={manualDeductionWeight} onChange={e => setManualDeductionWeight(e.target.value)} className="input-field" style={{ width: '70px', padding: '3px', fontSize: '12px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)', textAlign: 'right' }} />
+                <input type="number" step="0.0001" value={manualDeductionWeight} onChange={e => setManualDeductionWeight(e.target.value)} className="input-field" style={{ width: '70px', padding: '3px', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)', textAlign: 'right' }} />
               </div>
               <div style={{ color: 'var(--warning)', fontWeight: '600' }}>
                 총 차감중량: <strong>{totalDeductionWeight.toFixed(5)} g</strong>
@@ -591,8 +621,8 @@ export const CatalogRegisterForm: React.FC = () => {
           </div>
 
           <div style={{ border: '1px solid var(--border-color)', borderRadius: '8px', padding: '12px' }}>
-            <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>기타 설명 및 사양 정보</label>
-            <textarea value={note} onChange={e => setNote(e.target.value)} className="input-field" style={{ width: '100%', height: '50px', resize: 'vertical', fontSize: '12px', padding: '6px' }} placeholder="제품 메모" />
+            <label style={{ display: 'block', fontSize: '15px', color: 'var(--text-muted)', marginBottom: '4px' }}>기타 설명 및 사양 정보</label>
+            <textarea value={note} onChange={e => setNote(e.target.value)} className="input-field" style={{ width: '100%', height: '50px', resize: 'vertical', fontSize: '15px', padding: '6px' }} placeholder="제품 메모" />
           </div>
 
           <div className="catalog-form-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid var(--border-color)', paddingTop: '12px' }}>

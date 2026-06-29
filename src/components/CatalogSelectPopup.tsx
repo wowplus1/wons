@@ -63,7 +63,7 @@ export const CatalogSelectPopup: React.FC = () => {
       
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
-        <h3 style={{ fontSize: '14px', fontWeight: '700', color: 'var(--primary)' }}>
+        <h3 style={{ fontSize: '17px', fontWeight: '700', color: 'var(--primary)' }}>
           카달로그 모델 검색 및 선택
         </h3>
         <button 
@@ -83,7 +83,7 @@ export const CatalogSelectPopup: React.FC = () => {
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
           className="input-field"
-          style={{ flex: 1, padding: '6px 10px', fontSize: '12px' }}
+          style={{ flex: 1, padding: '6px 10px', fontSize: '15px' }}
           autoFocus
         />
       </div>
@@ -117,7 +117,7 @@ export const CatalogSelectPopup: React.FC = () => {
             display: 'flex', 
             alignItems: 'center', 
             justifyContent: 'center', 
-            fontSize: '11px', 
+            fontSize: '14px', 
             color: '#3b82f6', 
             fontWeight: '700' 
           }}>
@@ -125,12 +125,12 @@ export const CatalogSelectPopup: React.FC = () => {
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontWeight: '700', color: '#3b82f6', fontSize: '12px' }}>디자인출력 (3D 디자인 의뢰 모델)</span>
-              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>가상모델</span>
+              <span style={{ fontWeight: '700', color: '#3b82f6', fontSize: '15px' }}>디자인출력 (3D 디자인 의뢰 모델)</span>
+              <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>가상모델</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
-              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>제조사: 자체</span>
-              <span style={{ fontWeight: '700', color: 'var(--text-muted)', fontSize: '12px' }}>
+              <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>제조사: 자체</span>
+              <span style={{ fontWeight: '700', color: 'var(--text-muted)', fontSize: '15px' }}>
                 기본공임/기타설명만 기입
               </span>
             </div>
@@ -161,7 +161,7 @@ export const CatalogSelectPopup: React.FC = () => {
             display: 'flex', 
             alignItems: 'center', 
             justifyContent: 'center', 
-            fontSize: '11px', 
+            fontSize: '14px', 
             color: 'var(--primary)', 
             fontWeight: '700' 
           }}>
@@ -169,12 +169,12 @@ export const CatalogSelectPopup: React.FC = () => {
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontWeight: '700', color: 'var(--primary)', fontSize: '12px' }}>임시제품 (수동 타건 모델)</span>
-              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>가상모델</span>
+              <span style={{ fontWeight: '700', color: 'var(--primary)', fontSize: '15px' }}>임시제품 (수동 타건 모델)</span>
+              <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>가상모델</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
-              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>제조사: JP (기본값)</span>
-              <span style={{ fontWeight: '700', color: 'var(--text-muted)', fontSize: '12px' }}>
+              <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>제조사: JP (기본값)</span>
+              <span style={{ fontWeight: '700', color: 'var(--text-muted)', fontSize: '15px' }}>
                 공임/중량: 수동 기입
               </span>
             </div>
@@ -210,18 +210,18 @@ export const CatalogSelectPopup: React.FC = () => {
                     onError={() => setImageErrors(prev => ({ ...prev, [c.model_number]: true }))}
                   />
                 ) : (
-                  <div style={{ width: '40px', height: '40px', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: 'var(--text-muted)' }}>
+                  <div style={{ width: '40px', height: '40px', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', color: 'var(--text-muted)' }}>
                     No Img
                   </div>
                 )}
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontWeight: '700', color: 'var(--text-main)', fontSize: '12px' }}>{c.model_number}</span>
-                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{c.category}</span>
+                    <span style={{ fontWeight: '700', color: 'var(--text-main)', fontSize: '15px' }}>{c.model_number}</span>
+                    <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>{c.category}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
-                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>제조사: {c.manufacturer || '자체'}</span>
-                    <span style={{ fontWeight: '700', color: 'var(--primary)', fontSize: '12px' }}>
+                    <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>제조사: {c.manufacturer || '자체'}</span>
+                    <span style={{ fontWeight: '700', color: 'var(--primary)', fontSize: '15px' }}>
                       공임: {price.toLocaleString()} 원
                     </span>
                   </div>
@@ -236,7 +236,7 @@ export const CatalogSelectPopup: React.FC = () => {
         )}
 
         {filteredCatalog.length > displayLimit && (
-          <div style={{ textAlign: 'center', padding: '10px', fontSize: '11px', color: 'var(--text-muted)' }}>
+          <div style={{ textAlign: 'center', padding: '10px', fontSize: '14px', color: 'var(--text-muted)' }}>
             아래로 스크롤하여 더 많은 모델 표시 ({displayLimit} / {filteredCatalog.length})
           </div>
         )}

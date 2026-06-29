@@ -177,11 +177,11 @@ export const Dashboard: React.FC = () => {
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <TrendingUp style={{ color: 'var(--primary)' }} size={20} />
-            <h3 style={{ fontSize: '15px', color: 'var(--text-main)' }}>
-              실시간 당일 금 시세 <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>({currentRates.date} 기준)</span>
+            <h3 style={{ fontSize: '18px', color: 'var(--text-main)' }}>
+              실시간 당일 금 시세 <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>({currentRates.date} 기준)</span>
             </h3>
           </div>
-          <div className="dashboard-rates-container" style={{ display: 'flex', gap: '24px', fontSize: '13px' }}>
+          <div className="dashboard-rates-container" style={{ display: 'flex', gap: '24px', fontSize: '16px' }}>
             <div>
               <span style={{ color: 'var(--text-muted)' }}>순금(24K) 매입/매도 (돈당):</span>{' '}
               <strong style={{ color: 'var(--primary)' }}>
@@ -217,17 +217,17 @@ export const Dashboard: React.FC = () => {
             <div style={{ padding: '10px', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}>
               <DollarSign size={20} />
             </div>
-            <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: '600' }}>전체 거래처 미수 잔고</span>
+            <span style={{ fontSize: '16px', color: 'var(--text-muted)', fontWeight: '600' }}>전체 거래처 미수 잔고</span>
           </div>
           <div style={{ marginTop: '4px' }}>
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>총 미수금액</div>
-            <div style={{ fontSize: '22px', fontWeight: '700', fontFamily: 'var(--font-title)', color: '#ef4444' }}>
+            <div style={{ fontSize: '14px', color: 'var(--text-muted)' }}>총 미수금액</div>
+            <div style={{ fontSize: '25px', fontWeight: '700', fontFamily: 'var(--font-title)', color: '#ef4444' }}>
               {totalReceivable.toLocaleString()} 원
             </div>
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '8px' }}>총 순금 미수량</div>
-            <div style={{ fontSize: '18px', fontWeight: '700', fontFamily: 'var(--font-title)', color: 'var(--primary)', marginTop: '2px' }}>
+            <div style={{ fontSize: '14px', color: 'var(--text-muted)', marginTop: '8px' }}>총 순금 미수량</div>
+            <div style={{ fontSize: '21px', fontWeight: '700', fontFamily: 'var(--font-title)', color: 'var(--primary)', marginTop: '2px' }}>
               {totalGoldBalance24k.toLocaleString()} g
-              <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginLeft: '6px', fontWeight: 'normal' }}>
+              <span style={{ fontSize: '14px', color: 'var(--text-muted)', marginLeft: '6px', fontWeight: 'normal' }}>
                 ({(totalGoldBalance24k / 3.75).toFixed(2)} 돈)
               </span>
             </div>
@@ -240,17 +240,17 @@ export const Dashboard: React.FC = () => {
             <div style={{ padding: '10px', borderRadius: '8px', background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6' }}>
               <TrendingUp size={20} />
             </div>
-            <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: '600' }}>이번달 매출 실적 (당월)</span>
+            <span style={{ fontSize: '16px', color: 'var(--text-muted)', fontWeight: '600' }}>이번달 매출 실적 (당월)</span>
           </div>
           <div style={{ marginTop: '4px' }}>
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>당월 확정 매출액</div>
-            <div style={{ fontSize: '22px', fontWeight: '700', fontFamily: 'var(--font-title)', color: '#3b82f6' }}>
+            <div style={{ fontSize: '14px', color: 'var(--text-muted)' }}>당월 확정 매출액</div>
+            <div style={{ fontSize: '25px', fontWeight: '700', fontFamily: 'var(--font-title)', color: '#3b82f6' }}>
               {currentMonthRevenue.toLocaleString()} 원
             </div>
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '8px' }}>당월 확정 금중량</div>
-            <div style={{ fontSize: '18px', fontWeight: '700', fontFamily: 'var(--font-title)', color: 'var(--primary)', marginTop: '2px' }}>
+            <div style={{ fontSize: '14px', color: 'var(--text-muted)', marginTop: '8px' }}>당월 확정 금중량</div>
+            <div style={{ fontSize: '21px', fontWeight: '700', fontFamily: 'var(--font-title)', color: 'var(--primary)', marginTop: '2px' }}>
               {parseFloat(currentMonthGold.toFixed(3)).toLocaleString()} g
-              <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginLeft: '6px', fontWeight: 'normal' }}>
+              <span style={{ fontSize: '14px', color: 'var(--text-muted)', marginLeft: '6px', fontWeight: 'normal' }}>
                 ({(currentMonthGold / 3.75).toFixed(2)} 돈)
               </span>
             </div>
@@ -263,17 +263,17 @@ export const Dashboard: React.FC = () => {
             <div style={{ padding: '10px', borderRadius: '8px', background: 'rgba(167, 139, 250, 0.1)', color: '#a78bfa' }}>
               <Calendar size={20} />
             </div>
-            <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: '600' }}>지난달 매출 실적 (전월)</span>
+            <span style={{ fontSize: '16px', color: 'var(--text-muted)', fontWeight: '600' }}>지난달 매출 실적 (전월)</span>
           </div>
           <div style={{ marginTop: '4px' }}>
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>전월 확정 매출액</div>
-            <div style={{ fontSize: '22px', fontWeight: '700', fontFamily: 'var(--font-title)', color: '#a78bfa' }}>
+            <div style={{ fontSize: '14px', color: 'var(--text-muted)' }}>전월 확정 매출액</div>
+            <div style={{ fontSize: '25px', fontWeight: '700', fontFamily: 'var(--font-title)', color: '#a78bfa' }}>
               {prevMonthRevenue.toLocaleString()} 원
             </div>
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '8px' }}>전월 확정 금중량</div>
-            <div style={{ fontSize: '18px', fontWeight: '700', fontFamily: 'var(--font-title)', color: 'var(--primary)', marginTop: '2px' }}>
+            <div style={{ fontSize: '14px', color: 'var(--text-muted)', marginTop: '8px' }}>전월 확정 금중량</div>
+            <div style={{ fontSize: '21px', fontWeight: '700', fontFamily: 'var(--font-title)', color: 'var(--primary)', marginTop: '2px' }}>
               {parseFloat(prevMonthGold.toFixed(3)).toLocaleString()} g
-              <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginLeft: '6px', fontWeight: 'normal' }}>
+              <span style={{ fontSize: '14px', color: 'var(--text-muted)', marginLeft: '6px', fontWeight: 'normal' }}>
                 ({(prevMonthGold / 3.75).toFixed(2)} 돈)
               </span>
             </div>
@@ -286,15 +286,15 @@ export const Dashboard: React.FC = () => {
             <div style={{ padding: '10px', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }}>
               <Layers size={20} />
             </div>
-            <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: '600' }}>당월 신규 주문 접수</span>
+            <span style={{ fontSize: '16px', color: 'var(--text-muted)', fontWeight: '600' }}>당월 신규 주문 접수</span>
           </div>
           <div style={{ margin: 'auto 0' }}>
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>접수 건수</div>
-            <div style={{ fontSize: '32px', fontWeight: '800', fontFamily: 'var(--font-title)', color: '#10b981', marginTop: '4px' }}>
-              {currentMonthOrders.length} <span style={{ fontSize: '16px', fontWeight: 'normal', color: 'var(--text-muted)' }}>건</span>
+            <div style={{ fontSize: '14px', color: 'var(--text-muted)' }}>접수 건수</div>
+            <div style={{ fontSize: '35px', fontWeight: '800', fontFamily: 'var(--font-title)', color: '#10b981', marginTop: '4px' }}>
+              {currentMonthOrders.length} <span style={{ fontSize: '19px', fontWeight: 'normal', color: 'var(--text-muted)' }}>건</span>
             </div>
           </div>
-          <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+          <div style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
             이번 달 접수된 신규 오더 수량입니다.
           </div>
         </div>
@@ -306,7 +306,7 @@ export const Dashboard: React.FC = () => {
         
         {/* Material Loss Summary */}
         <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '20px' }}>
-          <h3 style={{ fontSize: '15px', color: 'var(--text-main)', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h3 style={{ fontSize: '18px', color: 'var(--text-main)', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Layers size={18} style={{ color: 'var(--primary)' }} />
             재질별 누적 세공 해리 총량
           </h3>
@@ -316,15 +316,15 @@ export const Dashboard: React.FC = () => {
             <div style={{ background: 'rgba(255,255,255,0.02)', padding: '14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <strong style={{ fontSize: '13px', color: 'var(--text-main)' }}>순금 (24K)</strong>
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{materialStats.gold24k.count}개 작업</span>
+                  <strong style={{ fontSize: '16px', color: 'var(--text-main)' }}>순금 (24K)</strong>
+                  <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>{materialStats.gold24k.count}개 작업</span>
                 </div>
-                <div style={{ fontSize: '20px', fontWeight: '700', fontFamily: 'var(--font-title)', color: '#fbbf24', marginTop: '10px' }}>
-                  {materialLossStats.gold24k.lossWeight.toFixed(2)} <span style={{ fontSize: '12px', fontWeight: 'normal', color: 'var(--text-muted)' }}>g</span>
+                <div style={{ fontSize: '23px', fontWeight: '700', fontFamily: 'var(--font-title)', color: '#fbbf24', marginTop: '10px' }}>
+                  {materialLossStats.gold24k.lossWeight.toFixed(2)} <span style={{ fontSize: '15px', fontWeight: 'normal', color: 'var(--text-muted)' }}>g</span>
                 </div>
               </div>
               <div style={{ marginTop: '12px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'var(--text-muted)', marginBottom: '4px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: 'var(--text-muted)', marginBottom: '4px' }}>
                   <span>평균 해리율</span>
                   <span style={{ color: '#fbbf24', fontWeight: '600' }}>
                     {materialLossStats.gold24k.initialWeight > 0 ? ((materialLossStats.gold24k.lossWeight / materialLossStats.gold24k.initialWeight) * 100).toFixed(2) : '0.00'}%
@@ -345,15 +345,15 @@ export const Dashboard: React.FC = () => {
             <div style={{ background: 'rgba(255,255,255,0.02)', padding: '14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <strong style={{ fontSize: '13px', color: 'var(--text-main)' }}>18K 골드</strong>
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{materialStats.gold18k.count}개 작업</span>
+                  <strong style={{ fontSize: '16px', color: 'var(--text-main)' }}>18K 골드</strong>
+                  <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>{materialStats.gold18k.count}개 작업</span>
                 </div>
-                <div style={{ fontSize: '20px', fontWeight: '700', fontFamily: 'var(--font-title)', color: '#fbbf24', marginTop: '10px' }}>
-                  {materialLossStats.gold18k.lossWeight.toFixed(2)} <span style={{ fontSize: '12px', fontWeight: 'normal', color: 'var(--text-muted)' }}>g</span>
+                <div style={{ fontSize: '23px', fontWeight: '700', fontFamily: 'var(--font-title)', color: '#fbbf24', marginTop: '10px' }}>
+                  {materialLossStats.gold18k.lossWeight.toFixed(2)} <span style={{ fontSize: '15px', fontWeight: 'normal', color: 'var(--text-muted)' }}>g</span>
                 </div>
               </div>
               <div style={{ marginTop: '12px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'var(--text-muted)', marginBottom: '4px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: 'var(--text-muted)', marginBottom: '4px' }}>
                   <span>평균 해리율</span>
                   <span style={{ color: '#fbbf24', fontWeight: '600' }}>
                     {materialLossStats.gold18k.initialWeight > 0 ? ((materialLossStats.gold18k.lossWeight / materialLossStats.gold18k.initialWeight) * 100).toFixed(2) : '0.00'}%
@@ -374,15 +374,15 @@ export const Dashboard: React.FC = () => {
             <div style={{ background: 'rgba(255,255,255,0.02)', padding: '14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <strong style={{ fontSize: '13px', color: 'var(--text-main)' }}>14K 골드</strong>
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{materialStats.gold14k.count}개 작업</span>
+                  <strong style={{ fontSize: '16px', color: 'var(--text-main)' }}>14K 골드</strong>
+                  <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>{materialStats.gold14k.count}개 작업</span>
                 </div>
-                <div style={{ fontSize: '20px', fontWeight: '700', fontFamily: 'var(--font-title)', color: '#fbbf24', marginTop: '10px' }}>
-                  {materialLossStats.gold14k.lossWeight.toFixed(2)} <span style={{ fontSize: '12px', fontWeight: 'normal', color: 'var(--text-muted)' }}>g</span>
+                <div style={{ fontSize: '23px', fontWeight: '700', fontFamily: 'var(--font-title)', color: '#fbbf24', marginTop: '10px' }}>
+                  {materialLossStats.gold14k.lossWeight.toFixed(2)} <span style={{ fontSize: '15px', fontWeight: 'normal', color: 'var(--text-muted)' }}>g</span>
                 </div>
               </div>
               <div style={{ marginTop: '12px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'var(--text-muted)', marginBottom: '4px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: 'var(--text-muted)', marginBottom: '4px' }}>
                   <span>평균 해리율</span>
                   <span style={{ color: '#fbbf24', fontWeight: '600' }}>
                     {materialLossStats.gold14k.initialWeight > 0 ? ((materialLossStats.gold14k.lossWeight / materialLossStats.gold14k.initialWeight) * 100).toFixed(2) : '0.00'}%
@@ -403,15 +403,15 @@ export const Dashboard: React.FC = () => {
             <div style={{ background: 'rgba(255,255,255,0.02)', padding: '14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <strong style={{ fontSize: '13px', color: 'var(--text-main)' }}>실버 / 기타</strong>
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{materialStats.silver.count}개 작업</span>
+                  <strong style={{ fontSize: '16px', color: 'var(--text-main)' }}>실버 / 기타</strong>
+                  <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>{materialStats.silver.count}개 작업</span>
                 </div>
-                <div style={{ fontSize: '20px', fontWeight: '700', fontFamily: 'var(--font-title)', color: '#fbbf24', marginTop: '10px' }}>
-                  {materialLossStats.silver.lossWeight.toFixed(2)} <span style={{ fontSize: '12px', fontWeight: 'normal', color: 'var(--text-muted)' }}>g</span>
+                <div style={{ fontSize: '23px', fontWeight: '700', fontFamily: 'var(--font-title)', color: '#fbbf24', marginTop: '10px' }}>
+                  {materialLossStats.silver.lossWeight.toFixed(2)} <span style={{ fontSize: '15px', fontWeight: 'normal', color: 'var(--text-muted)' }}>g</span>
                 </div>
               </div>
               <div style={{ marginTop: '12px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'var(--text-muted)', marginBottom: '4px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: 'var(--text-muted)', marginBottom: '4px' }}>
                   <span>평균 해리율</span>
                   <span style={{ color: '#fbbf24', fontWeight: '600' }}>
                     {materialLossStats.silver.initialWeight > 0 ? ((materialLossStats.silver.lossWeight / materialLossStats.silver.initialWeight) * 100).toFixed(2) : '0.00'}%

@@ -3,49 +3,49 @@
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-title: 'Outfit', var(--font-sans);
 
-  /* Color System (Dark Luxury & Gold Accent) */
-  --bg-base: #090a0f;
-  --bg-surface: rgba(17, 19, 28, 0.75);
-  --bg-surface-solid: #11131c;
-  --bg-card: rgba(26, 29, 43, 0.6);
-  --bg-card-hover: rgba(36, 40, 59, 0.8);
+  /* Color System (Ivory Theme & Warm Bronze/Gold Accent) */
+  --bg-base: #f7f5f0; /* Warm Soft Ivory */
+  --bg-surface: rgba(255, 255, 255, 0.75); /* White Translucent Glass */
+  --bg-surface-solid: #ffffff;
+  --bg-card: rgba(250, 248, 244, 0.8);
+  --bg-card-hover: rgba(243, 239, 230, 0.95);
   
-  --primary: #d4af37; /* Metallic Gold */
-  --primary-rgb: 212, 175, 55;
-  --primary-hover: #f3e5ab; /* Champagne Gold */
-  --primary-active: #aa8513;
+  --primary: #aa8513; /* Deep Bronze Gold for legibility on light background */
+  --primary-rgb: 170, 133, 19;
+  --primary-hover: #8b6d10;
+  --primary-active: #6b530c;
   
-  --text-main: #f3f4f6;
-  --text-muted: #8d92a3;
-  --text-inverse: #090a0f;
+  --text-main: #2b2927; /* Dark Charcoal Brown for cozy warm feeling */
+  --text-muted: #736e67; /* Soft Medium Brown */
+  --text-inverse: #ffffff;
 
-  --border-color: rgba(255, 255, 255, 0.08);
-  --border-focus: rgba(212, 175, 55, 0.6);
+  --border-color: rgba(43, 41, 39, 0.08); /* Soft dark borders */
+  --border-focus: rgba(170, 133, 19, 0.6);
   
-  --success: #10b981;
-  --success-bg: rgba(16, 185, 129, 0.1);
-  --danger: #ef4444;
-  --danger-bg: rgba(239, 68, 68, 0.1);
-  --warning: #f59e0b;
-  --warning-bg: rgba(245, 158, 11, 0.1);
-  --info: #3b82f6;
+  --success: #059669;
+  --success-bg: rgba(5, 150, 105, 0.08);
+  --danger: #dc2626;
+  --danger-bg: rgba(220, 38, 38, 0.08);
+  --warning: #d97706;
+  --warning-bg: rgba(217, 119, 6, 0.08);
+  --info: #2563eb;
 
   /* Glassmorphism Effect */
   --backdrop-blur: blur(16px);
-  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-  --glass-border: 1px solid rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 8px 32px 0 rgba(133, 126, 110, 0.12); /* Soft bronze shadow */
+  --glass-border: 1px solid rgba(255, 255, 255, 0.5);
 
-  /* AG Grid overrides variables */
-  --ag-background-color: #11131c;
-  --ag-header-background-color: #161925;
-  --ag-odd-row-background-color: #131622;
-  --ag-border-color: rgba(255, 255, 255, 0.08);
-  --ag-row-hover-color: rgba(212, 175, 55, 0.1);
-  --ag-selected-row-color: rgba(212, 175, 55, 0.2);
-  --ag-foreground-color: #f3f4f6;
-  --ag-header-foreground-color: #8d92a3;
+  /* AG Grid overrides variables for light ivory theme */
+  --ag-background-color: #ffffff;
+  --ag-header-background-color: #f7f5f0;
+  --ag-odd-row-background-color: #faf9f6;
+  --ag-border-color: rgba(43, 41, 39, 0.08);
+  --ag-row-hover-color: rgba(170, 133, 19, 0.05);
+  --ag-selected-row-color: rgba(170, 133, 19, 0.1);
+  --ag-foreground-color: #2b2927;
+  --ag-header-foreground-color: #736e67;
   --ag-font-family: var(--font-sans);
-  --ag-font-size: 13px;
+  --ag-font-size: 19px;
 }
 
 * {
@@ -59,9 +59,9 @@ body {
   background-color: var(--bg-base);
   color: var(--text-main);
   background-image: 
-    radial-gradient(at 0% 0%, rgba(212, 175, 55, 0.05) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(59, 130, 246, 0.03) 0px, transparent 50%),
-    radial-gradient(at 50% 100%, rgba(26, 29, 43, 0.5) 0px, transparent 50%);
+    radial-gradient(at 0% 0%, rgba(212, 175, 55, 0.08) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(220, 180, 150, 0.05) 0px, transparent 50%),
+    radial-gradient(at 50% 100%, rgba(240, 236, 227, 0.6) 0px, transparent 50%);
   background-attachment: fixed;
   min-height: 100vh;
   overflow-x: hidden;
@@ -119,7 +119,7 @@ h1, h2, h3, h4 {
 }
 
 .gradient-text {
-  background: linear-gradient(135deg, #fff 0%, var(--primary) 100%);
+  background: linear-gradient(135deg, #2b2927 0%, var(--primary) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -156,7 +156,7 @@ h1, h2, h3, h4 {
   padding: 8px 12px;
   border-radius: 6px;
   outline: none;
-  font-size: 14px;
+  font-size: 17px;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -165,11 +165,11 @@ h1, h2, h3, h4 {
   box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.15);
 }
 
-/* select 요소 하위 option의 브라우저 기본 배경 및 글자색 보정 (다크 모드 가독성 확보) */
+/* select 요소 하위 option의 브라우저 기본 배경 및 글자색 보정 (라이트 모드 가독성 확보) */
 .input-field option,
 select option {
-  background-color: #11131c;
-  color: #f3f4f6;
+  background-color: #ffffff;
+  color: #2b2927;
 }
 
 
@@ -177,7 +177,7 @@ select option {
 .badge {
   padding: 3px 8px;
   border-radius: 4px;
-  font-size: 12px;
+  font-size: 15px;
   font-weight: 600;
   display: inline-flex;
   align-items: center;
@@ -247,7 +247,7 @@ input[type="number"] {
 .excel-table th, 
 .excel-table td {
   border: 1px solid rgba(255, 255, 255, 0.08);
-  font-size: 12px;
+  font-size: 15px;
   vertical-align: middle;
   transition: background-color 0.15s ease;
 }
@@ -270,7 +270,7 @@ input[type="number"] {
   color: var(--text-main);
   padding: 2px 8px;
   outline: none;
-  font-size: 12px;
+  font-size: 15px;
   transition: background-color 0.2s, box-shadow 0.2s;
 }
 
@@ -281,7 +281,7 @@ input[type="number"] {
 
 .excel-input:disabled {
   color: var(--text-muted);
-  background-color: rgba(0, 0, 0, 0.2);
+  background-color: rgba(0, 0, 0, 0.05);
   cursor: not-allowed;
 }
 
@@ -349,7 +349,7 @@ select.excel-input {
     width: 100%;
     justify-content: center;
     padding: 10px !important;
-    font-size: 14px !important;
+    font-size: 17px !important;
   }
 
   /* 카탈로그 등록 폼 */
@@ -669,7 +669,7 @@ select.excel-input {
     align-items: center;
     gap: 6px;
     padding: 6px 12px;
-    font-size: 11px;
+    font-size: 14px;
     height: 32px;
   }
 
@@ -769,12 +769,12 @@ select.excel-input {
     gap: 6px 8px !important;
   }
   .rates-card-inputs-grid label {
-    font-size: 10px !important;
+    font-size: 13px !important;
   }
   .rates-card-inputs-grid input {
     height: 28px !important;
     padding: 4px 8px !important;
-    font-size: 11px !important;
+    font-size: 14px !important;
   }
 }
 
@@ -871,7 +871,7 @@ select.excel-input {
 }
 
 .order-list-header .header-subtitle {
-  font-size: 11px;
+  font-size: 14px;
   color: var(--text-muted);
   font-weight: normal;
 }
@@ -932,7 +932,7 @@ select.excel-input {
   }
 
   .order-list-filter-bar .filter-group label {
-    font-size: 11px;
+    font-size: 14px;
   }
 
   .order-list-filter-bar .filter-group input,
@@ -1006,7 +1006,7 @@ select.excel-input {
 /* 모바일 입력 필드 포커스 시 자동 화면 확대 방지 (iOS/Safari 표준 대응) */
 @media (max-width: 768px) {
   input, select, textarea, .input-field, .excel-input {
-    font-size: 16px !important;
+    font-size: 19px !important;
   }
 }
 
@@ -1032,7 +1032,7 @@ select.excel-input {
   .catalog-summary-bar {
     grid-template-columns: 1fr 1fr !important;
     gap: 8px !important;
-    font-size: 11px !important;
+    font-size: 14px !important;
     padding: 10px !important;
   }
   .catalog-summary-bar > div:last-child {

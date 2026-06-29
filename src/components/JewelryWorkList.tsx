@@ -252,54 +252,30 @@ export const JewelryWorkList: React.FC = () => {
     }
   };
 
-  // 개별 완료 처리 단축 버튼
-  const handleSingleComplete = async (orderId: string, itemId: number) => {
+  // 개별 세공 작업 되돌리기 (주문/명세서 탭 이동)
+  const handleRollbackWork = async (orderId: string, itemId: number) => {
     try {
-      // 해당 단일 품목의 3단계 해리 무게 입력 여부 검증
       const item = workItems.find(w => w.orderId === orderId && w.itemId === itemId);
       if (!item) {
         alert('해당 품목을 찾을 수 없습니다.');
         return;
       }
-      
-      // 구분이 결제이거나 디자인출력 모델일 경우 해리 무게 검증 생략
-      const isBypass = item.division === '결제' || item.model === '디자인출력';
-      if (!isBypass) {
-        const sw = item.stepWeights;
-        const s1Before = sw?.step1?.before || 0;
-        const s1After = sw?.step1?.after || 0;
-        const s2Before = sw?.step2?.before || 0;
-        const s2After = sw?.step2?.after || 0;
-        const s3Before = sw?.step3?.before || 0;
-        const s3After = sw?.step3?.after || 0;
 
-        const isComplete = (
-          s1Before > 0 && s1After > 0 &&
-          s2Before > 0 && s2After > 0 &&
-          s3Before > 0 && s3After > 0
-        );
-
-        if (!isComplete) {
-          alert(`단계별(1~3단계) 해리 무게가 모두 입력되지 않았습니다. 3단계까지 입력 완료해야 출고 대기로 이동할 수 있습니다:\n\n모델: ${item.model}`);
-          return;
-        }
-      }
-
-      const isConfirm = window.confirm("해당 품목의 세공 작업을 완료하고 출고 대기 상태로 변경하시겠습니까?");
+      const isConfirm = window.confirm(`해당 품목 [모델: ${item.model}]의 세공 작업을 취소하고 주문 내역/명세서 탭으로 되돌리시겠습니까?`);
       if (!isConfirm) return;
 
-      // 일괄 업데이트 API 활용
-      await updateMultipleItemsStatus([{ orderId, itemId }], '출고대기');
-      alert('출고 대기 단계로 이동되었습니다.');
+      // '접수' 상태로 되돌리기 실행
+      await updateMultipleItemsStatus([{ orderId, itemId }], '접수');
+      alert('주문 내역으로 되돌아갔습니다.');
       fetchDb();
 
-      // 출고대기 리스트 탭으로 화면 전환
+      // 주문 내역 / 명세서 탭으로 이동
       setTimeout(() => {
-        setActiveTab('release_list');
+        setActiveTab('orders');
       }, 50);
     } catch (err: any) {
-      alert(`[개별 완료 처리 오류]\n상태 변경 중 에러가 발생했습니다:\n${err.message || err}`);
-      console.error("handleSingleComplete error:", err);
+      alert(`[되돌리기 처리 오류]\n상태 복구 중 에러가 발생했습니다:\n${err.message || err}`);
+      console.error("handleRollbackWork error:", err);
     }
   };
 
@@ -332,14 +308,14 @@ export const JewelryWorkList: React.FC = () => {
   };
 
   return (
-    <div className="glass-panel animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '12px' }}>
+    <div className="glass-panel animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '15px' }}>
       
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-        <h2 style={{ fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <h2 style={{ fontSize: '19px', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Wrench size={18} style={{ color: 'var(--primary)' }} />
           <span className="gradient-text" style={{ fontFamily: 'var(--font-title)', fontWeight: '600' }}>Jewelry Workshop Manager</span>
-          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>(주얼리 세공 및 작업 현황 관리대장)</span>
+          <span style={{ fontSize: '15px', color: 'var(--text-muted)' }}>(주얼리 세공 및 작업 현황 관리대장)</span>
         </h2>
       </div>
 
@@ -352,7 +328,7 @@ export const JewelryWorkList: React.FC = () => {
         display: 'flex',
         gap: '24px',
         alignItems: 'center',
-        fontSize: '11px',
+        fontSize: '14px',
         color: 'var(--text-main)'
       }}>
         <strong style={{ color: 'var(--primary)' }}>⚡ [실시간 세공 동기화 자가진단]</strong>
@@ -365,7 +341,7 @@ export const JewelryWorkList: React.FC = () => {
           style={{
             marginLeft: 'auto',
             padding: '2px 8px',
-            fontSize: '10px',
+            fontSize: '13px',
             background: 'rgba(255,255,255,0.05)',
             border: '1px solid var(--border-color)',
             borderRadius: '4px',
@@ -396,7 +372,7 @@ export const JewelryWorkList: React.FC = () => {
         {/* Action Buttons */}
         <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px', alignItems: 'center' }}>
           {checkedItems.size > 0 && (
-            <span style={{ fontSize: '11px', color: 'var(--primary)', fontWeight: 'bold', marginRight: '8px' }}>
+            <span style={{ fontSize: '14px', color: 'var(--primary)', fontWeight: 'bold', marginRight: '8px' }}>
               선택됨: {checkedItems.size}건
             </span>
           )}
@@ -406,7 +382,7 @@ export const JewelryWorkList: React.FC = () => {
             className="btn-primary"
             style={{
               padding: '6px 14px',
-              fontSize: '12px',
+              fontSize: '15px',
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
@@ -425,7 +401,7 @@ export const JewelryWorkList: React.FC = () => {
             className="btn-primary"
             style={{
               padding: '6px 14px',
-              fontSize: '12px',
+              fontSize: '15px',
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
@@ -443,7 +419,7 @@ export const JewelryWorkList: React.FC = () => {
 
       {/* Main Table Grid */}
       <div className="table-responsive" style={{ overflowX: 'auto' }}>
-        <table className="excel-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '1200px', fontSize: '11px', tableLayout: 'fixed' }}>
+        <table className="excel-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '1200px', fontSize: '14px', tableLayout: 'fixed' }}>
           {showPrice ? (
             <colgroup>
               <col style={{ width: '3%' }} />
@@ -506,7 +482,7 @@ export const JewelryWorkList: React.FC = () => {
               <th style={{ padding: '8px 4px', border: '1px solid var(--border-color)' }}>단계별 세공 무게 (해리)</th>
               {showPrice && <th style={{ padding: '8px 4px', textAlign: 'right', border: '1px solid var(--border-color)' }}>공임비</th>}
               <th style={{ padding: '8px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>상태</th>
-              <th style={{ padding: '8px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>작업</th>
+              <th style={{ padding: '8px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>되돌리기</th>
             </tr>
           </thead>
           <tbody>
@@ -561,7 +537,7 @@ export const JewelryWorkList: React.FC = () => {
                           style={{ maxWidth: '50px', maxHeight: '50px', objectFit: 'contain', borderRadius: '4px', display: 'block', margin: '0 auto', border: '1px solid var(--border-color)' }}
                         />
                       ) : (
-                        <div style={{ width: '40px', height: '40px', margin: '0 auto', background: 'rgba(255,255,255,0.03)', borderRadius: '4px', display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--text-muted)', fontSize: '8px' }}>
+                        <div style={{ width: '40px', height: '40px', margin: '0 auto', background: 'rgba(255,255,255,0.03)', borderRadius: '4px', display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--text-muted)', fontSize: '11px' }}>
                           No Image
                         </div>
                       )}
@@ -588,14 +564,14 @@ export const JewelryWorkList: React.FC = () => {
                     </td>
 
                     {/* 수량 */}
-                    <td style={{ padding: '6px 4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle', fontSize: '12px' }}>
+                    <td style={{ padding: '6px 4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle', fontSize: '15px' }}>
                       {row.quantity}
                     </td>
 
                     {/* 스톤 세팅 스펙 */}
                     <td style={{ padding: '6px 4px', lineHeight: '1.3', verticalAlign: 'middle' }}>
                       {row.stoneMainText && <div style={{ color: 'var(--text-main)' }}>{row.stoneMainText}</div>}
-                      {row.stoneSubText && <div style={{ color: 'var(--text-muted)', fontSize: '10px' }}>{row.stoneSubText}</div>}
+                      {row.stoneSubText && <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{row.stoneSubText}</div>}
                       {!row.stoneMainText && !row.stoneSubText && <span style={{ color: 'var(--text-muted)' }}>스톤 없음</span>}
                     </td>
 
@@ -607,7 +583,7 @@ export const JewelryWorkList: React.FC = () => {
                     {/* 단계별 세공 무게 (손실) */}
                     <td style={{ padding: '8px 6px', verticalAlign: 'middle' }}>
                       {row.division === '결제' || row.model === '디자인출력' ? (
-                        <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '11px', fontStyle: 'italic' }}>
+                        <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '14px', fontStyle: 'italic' }}>
                           {row.model === '디자인출력' ? '디자인출력 (해리 없음)' : '결제 구분 (해리 없음)'}
                         </div>
                       ) : (() => {
@@ -626,7 +602,7 @@ export const JewelryWorkList: React.FC = () => {
                                 className="btn-primary"
                                 style={{
                                   padding: '4px 8px',
-                                  fontSize: '11px',
+                                  fontSize: '14px',
                                   background: 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)',
                                   color: 'var(--text-inverse)',
                                   border: 'none',
@@ -663,7 +639,7 @@ export const JewelryWorkList: React.FC = () => {
                         const totalLossPct = initialBefore > 0 ? ((totalLoss / initialBefore) * 100).toFixed(2) : '0.00';
 
                         return (
-                          <div style={{ fontSize: '11px', display: 'flex', flexDirection: 'column', gap: '3px', lineHeight: '1.2' }}>
+                          <div style={{ fontSize: '14px', display: 'flex', flexDirection: 'column', gap: '3px', lineHeight: '1.2' }}>
                             {before1 > 0 || after1 > 0 ? (
                               <div>1단계: {before1.toFixed(2)}g → {after1.toFixed(2)}g (해리 {loss1.toFixed(2)}g / {pct1}%)</div>
                             ) : null}
@@ -688,7 +664,7 @@ export const JewelryWorkList: React.FC = () => {
                                 onClick={() => handleOpenWeightModal(row)}
                                 style={{
                                   padding: '1px 6px',
-                                  fontSize: '10px',
+                                  fontSize: '13px',
                                   background: 'rgba(255,255,255,0.05)',
                                   border: '1px solid var(--border-color)',
                                   borderRadius: '3px',
@@ -714,27 +690,27 @@ export const JewelryWorkList: React.FC = () => {
 
                     {/* 상태 배지 */}
                     <td style={{ padding: '6px 4px', textAlign: 'center', verticalAlign: 'middle' }}>
-                      <span className="badge" style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#fbbf24', border: '1px solid rgba(245, 158, 11, 0.3)', padding: '3px 8px', borderRadius: '12px', fontSize: '10px', fontWeight: 'bold' }}>
+                      <span className="badge" style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#fbbf24', border: '1px solid rgba(245, 158, 11, 0.3)', padding: '3px 8px', borderRadius: '12px', fontSize: '13px', fontWeight: 'bold' }}>
                         세공 작업 중
                       </span>
                     </td>
 
-                    {/* 액션 (완료 단축버튼) */}
+                    {/* 액션 (되돌리기 단축버튼) */}
                     <td style={{ padding: '6px 4px', textAlign: 'center', verticalAlign: 'middle' }}>
                       <button
-                        onClick={() => handleSingleComplete(row.orderId, row.itemId)}
+                        onClick={() => handleRollbackWork(row.orderId, row.itemId)}
                         className="btn-primary"
                         style={{
                           padding: '4px 8px',
-                          fontSize: '10px',
-                          background: 'rgba(16, 185, 129, 0.1)',
-                          color: '#10b981',
-                          border: '1px solid rgba(16, 185, 129, 0.3)',
+                          fontSize: '13px',
+                          background: 'rgba(239, 68, 68, 0.1)',
+                          color: '#ef4444',
+                          border: '1px solid rgba(239, 68, 68, 0.3)',
                           borderRadius: '4px',
                           cursor: 'pointer'
                         }}
                       >
-                        완료
+                        되돌리기
                       </button>
                     </td>
                   </tr>
@@ -742,9 +718,9 @@ export const JewelryWorkList: React.FC = () => {
               })
             ) : (
               <tr>
-                <td colSpan={20} style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '12px' }}>
+                <td colSpan={20} style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '15px' }}>
                   현재 작업실에서 진행 중인 세공 품목이 없습니다.<br />
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>[주문 내역 / 명세서] 탭 대장에서 가공 품목을 체크하고 '세공리스트로 보내기' 버튼을 클릭해 작업을 개시해 주십시오.</span>
+                  <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>[주문 내역 / 명세서] 탭 대장에서 가공 품목을 체크하고 '세공리스트로 보내기' 버튼을 클릭해 작업을 개시해 주십시오.</span>
                 </td>
               </tr>
             )}
@@ -780,7 +756,7 @@ export const JewelryWorkList: React.FC = () => {
           }}>
             {/* 헤더 */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-              <h3 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Wrench size={16} style={{ color: 'var(--primary)' }} />
                 <span>단계별 세공 무게 입력 (손실/혜리 기록)</span>
               </h3>
@@ -798,10 +774,10 @@ export const JewelryWorkList: React.FC = () => {
               
               {/* 1단계 */}
               <div style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '12px' }}>
-                <div style={{ fontWeight: 'bold', color: 'var(--text-main)', marginBottom: '8px', fontSize: '12px' }}>1단계 공정</div>
+                <div style={{ fontWeight: 'bold', color: 'var(--text-main)', marginBottom: '8px', fontSize: '15px' }}>1단계 공정</div>
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '11px', color: 'var(--text-muted)' }}>작업 전 무게 (g)</label>
+                    <label style={{ fontSize: '14px', color: 'var(--text-muted)' }}>작업 전 무게 (g)</label>
                     <input
                       type="number"
                       step="0.01"
@@ -809,12 +785,12 @@ export const JewelryWorkList: React.FC = () => {
                       value={step1Before}
                       onChange={(e) => setStep1Before(e.target.value)}
                       className="input-field"
-                      style={{ width: '100%', fontSize: '12px', padding: '6px 8px' }}
+                      style={{ width: '100%', fontSize: '15px', padding: '6px 8px' }}
                     />
                   </div>
                   <span style={{ color: 'var(--text-muted)', marginTop: '14px' }}>→</span>
                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '11px', color: 'var(--text-muted)' }}>작업 후 무게 (g)</label>
+                    <label style={{ fontSize: '14px', color: 'var(--text-muted)' }}>작업 후 무게 (g)</label>
                     <input
                       type="number"
                       step="0.01"
@@ -826,7 +802,7 @@ export const JewelryWorkList: React.FC = () => {
                         setStep2Before(val);
                       }}
                       className="input-field"
-                      style={{ width: '100%', fontSize: '12px', padding: '6px 8px' }}
+                      style={{ width: '100%', fontSize: '15px', padding: '6px 8px' }}
                     />
                   </div>
                 </div>
@@ -834,10 +810,10 @@ export const JewelryWorkList: React.FC = () => {
 
               {/* 2단계 */}
               <div style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '12px' }}>
-                <div style={{ fontWeight: 'bold', color: 'var(--text-main)', marginBottom: '8px', fontSize: '12px' }}>2단계 공정</div>
+                <div style={{ fontWeight: 'bold', color: 'var(--text-main)', marginBottom: '8px', fontSize: '15px' }}>2단계 공정</div>
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '11px', color: 'var(--text-muted)' }}>작업 전 무게 (g)</label>
+                    <label style={{ fontSize: '14px', color: 'var(--text-muted)' }}>작업 전 무게 (g)</label>
                     <input
                       type="number"
                       step="0.01"
@@ -845,12 +821,12 @@ export const JewelryWorkList: React.FC = () => {
                       value={step2Before}
                       onChange={(e) => setStep2Before(e.target.value)}
                       className="input-field"
-                      style={{ width: '100%', fontSize: '12px', padding: '6px 8px' }}
+                      style={{ width: '100%', fontSize: '15px', padding: '6px 8px' }}
                     />
                   </div>
                   <span style={{ color: 'var(--text-muted)', marginTop: '14px' }}>→</span>
                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '11px', color: 'var(--text-muted)' }}>작업 후 무게 (g)</label>
+                    <label style={{ fontSize: '14px', color: 'var(--text-muted)' }}>작업 후 무게 (g)</label>
                     <input
                       type="number"
                       step="0.01"
@@ -862,7 +838,7 @@ export const JewelryWorkList: React.FC = () => {
                         setStep3Before(val);
                       }}
                       className="input-field"
-                      style={{ width: '100%', fontSize: '12px', padding: '6px 8px' }}
+                      style={{ width: '100%', fontSize: '15px', padding: '6px 8px' }}
                     />
                   </div>
                 </div>
@@ -870,10 +846,10 @@ export const JewelryWorkList: React.FC = () => {
 
               {/* 3단계 */}
               <div style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '12px' }}>
-                <div style={{ fontWeight: 'bold', color: 'var(--text-main)', marginBottom: '8px', fontSize: '12px' }}>3단계 공정</div>
+                <div style={{ fontWeight: 'bold', color: 'var(--text-main)', marginBottom: '8px', fontSize: '15px' }}>3단계 공정</div>
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '11px', color: 'var(--text-muted)' }}>작업 전 무게 (g)</label>
+                    <label style={{ fontSize: '14px', color: 'var(--text-muted)' }}>작업 전 무게 (g)</label>
                     <input
                       type="number"
                       step="0.01"
@@ -881,12 +857,12 @@ export const JewelryWorkList: React.FC = () => {
                       value={step3Before}
                       onChange={(e) => setStep3Before(e.target.value)}
                       className="input-field"
-                      style={{ width: '100%', fontSize: '12px', padding: '6px 8px' }}
+                      style={{ width: '100%', fontSize: '15px', padding: '6px 8px' }}
                     />
                   </div>
                   <span style={{ color: 'var(--text-muted)', marginTop: '14px' }}>→</span>
                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '11px', color: 'var(--text-muted)' }}>작업 후 무게 (g)</label>
+                    <label style={{ fontSize: '14px', color: 'var(--text-muted)' }}>작업 후 무게 (g)</label>
                     <input
                       type="number"
                       step="0.01"
@@ -894,7 +870,7 @@ export const JewelryWorkList: React.FC = () => {
                       value={step3After}
                       onChange={(e) => setStep3After(e.target.value)}
                       className="input-field"
-                      style={{ width: '100%', fontSize: '12px', padding: '6px 8px' }}
+                      style={{ width: '100%', fontSize: '15px', padding: '6px 8px' }}
                     />
                   </div>
                 </div>

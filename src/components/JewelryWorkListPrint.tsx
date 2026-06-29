@@ -61,7 +61,7 @@ export const JewelryWorkListPrint: React.FC = () => {
 
   if (selectedItems.length === 0) {
     return (
-      <div style={{ padding: '40px', color: '#000', textAlign: 'center', fontSize: '14px', background: '#fff', minHeight: '100vh', fontFamily: 'Gulim, sans-serif' }}>
+      <div style={{ padding: '40px', color: '#000', textAlign: 'center', fontSize: '17px', background: '#fff', minHeight: '100vh', fontFamily: 'Gulim, sans-serif' }}>
         선택된 세공 대상 주문 품목 정보가 없거나 데이터를 로드하는 데 실패했습니다.
       </div>
     );
@@ -96,13 +96,13 @@ export const JewelryWorkListPrint: React.FC = () => {
         borderRadius: '8px',
         border: '1px solid #ddd',
         color: '#333',
-        fontSize: '12px',
+        fontSize: '15px',
         boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
         maxWidth: '1200px',
         margin: '0 auto 20px auto'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <strong style={{ color: '#c0981d', fontSize: '13px' }}>[주얼리 세공 작업지시서 인쇄 모드]</strong>
+          <strong style={{ color: '#c0981d', fontSize: '16px' }}>[주얼리 세공 작업지시서 인쇄 모드]</strong>
           <span>선택 품목: <strong>{selectedItems.length}</strong>건</span>
           
           <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontWeight: 'bold', userSelect: 'none' }}>
@@ -131,7 +131,7 @@ export const JewelryWorkListPrint: React.FC = () => {
               color: '#fff',
               cursor: 'pointer',
               fontWeight: 'bold',
-              fontSize: '12px'
+              fontSize: '15px'
             }}
           >
             <Printer size={14} /> 인쇄 대화상자 열기
@@ -145,7 +145,7 @@ export const JewelryWorkListPrint: React.FC = () => {
               borderRadius: '4px',
               color: '#555', 
               cursor: 'pointer',
-              fontSize: '12px'
+              fontSize: '15px'
             }}
           >
             창 닫기
@@ -168,14 +168,14 @@ export const JewelryWorkListPrint: React.FC = () => {
         {/* Header Title */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '2px solid #000', paddingBottom: '10px', marginBottom: '15px' }}>
           <div>
-            <h1 style={{ fontSize: '24px', fontWeight: '900', margin: 0, letterSpacing: '0.1em', fontFamily: 'Gulim, "Malgun Gothic", sans-serif' }}>
+            <h1 style={{ fontSize: '27px', fontWeight: '900', margin: 0, letterSpacing: '0.1em', fontFamily: 'Gulim, "Malgun Gothic", sans-serif' }}>
               주얼리 세공 작업지시서 (쥬얼리 세공리스트)
             </h1>
-            <div style={{ fontSize: '11px', marginTop: '6px', color: '#333' }}>
+            <div style={{ fontSize: '14px', marginTop: '6px', color: '#333' }}>
               출력 일시: {new Date().toLocaleString()} &nbsp;&nbsp;|&nbsp;&nbsp; 총 세공 건수: {selectedItems.length}건
             </div>
           </div>
-          <div style={{ textAlign: 'right', fontSize: '11px', lineHeight: '1.4' }}>
+          <div style={{ textAlign: 'right', fontSize: '14px', lineHeight: '1.4' }}>
             <strong>출고처 (공급자):</strong> 하트 (02-766-8820)<br />
             <strong>수신처 (세공처):</strong> 세공 공장 작업실 귀하
           </div>
@@ -185,7 +185,7 @@ export const JewelryWorkListPrint: React.FC = () => {
         <table style={{ 
           width: '100%', 
           borderCollapse: 'collapse', 
-          fontSize: '11px', 
+          fontSize: '14px', 
           tableLayout: 'fixed',
           borderBottom: '2px solid #000'
         }}>
@@ -240,7 +240,7 @@ export const JewelryWorkListPrint: React.FC = () => {
                   <td style={{ border: '1px solid #000', padding: '4px', textAlign: 'center' }}>{i + 1}</td>
                   
                   {/* 의뢰일 */}
-                  <td style={{ border: '1px solid #000', padding: '4px', textAlign: 'center', fontSize: '10px' }}>
+                  <td style={{ border: '1px solid #000', padding: '4px', textAlign: 'center', fontSize: '13px' }}>
                     {formatDate(orderDate)}
                   </td>
                   
@@ -258,14 +258,14 @@ export const JewelryWorkListPrint: React.FC = () => {
                         style={{ maxWidth: '60px', maxHeight: '60px', objectFit: 'contain', display: 'block', margin: '0 auto' }} 
                       />
                     ) : (
-                      <div style={{ width: '45px', height: '45px', margin: '0 auto', background: '#e5e7eb', borderRadius: '4px', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#9ca3af', fontSize: '9px' }}>
+                      <div style={{ width: '45px', height: '45px', margin: '0 auto', background: '#e5e7eb', borderRadius: '4px', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#9ca3af', fontSize: '12px' }}>
                         No Image
                       </div>
                     )}
                   </td>
                   
                   {/* 모델번호 */}
-                  <td style={{ border: '1px solid #000', padding: '4px', fontWeight: 'bold', fontSize: '12px' }}>
+                  <td style={{ border: '1px solid #000', padding: '4px', fontWeight: 'bold', fontSize: '15px' }}>
                     {item.model_number}
                   </td>
                   
@@ -303,12 +303,12 @@ export const JewelryWorkListPrint: React.FC = () => {
                     </td>
                   )}
                   {/* 수량 */}
-                  <td style={{ border: '1px solid #000', padding: '4px', textAlign: 'center', fontWeight: 'bold', fontSize: '12px' }}>
+                  <td style={{ border: '1px solid #000', padding: '4px', textAlign: 'center', fontWeight: 'bold', fontSize: '15px' }}>
                     {item.quantity || 1}
                   </td>
                   
                   {/* 확인 */}
-                  <td style={{ border: '1px solid #000', padding: '4px', textAlign: 'center', fontSize: '14px', color: '#ccc' }}>
+                  <td style={{ border: '1px solid #000', padding: '4px', textAlign: 'center', fontSize: '17px', color: '#ccc' }}>
                     [ &nbsp; ]
                   </td>
                 </tr>
@@ -320,12 +320,12 @@ export const JewelryWorkListPrint: React.FC = () => {
               <td colSpan={8} style={{ border: '1px solid #000', padding: '6px', textAlign: 'center' }}>
                 소계 / 합계
               </td>
-              <td style={{ border: '1px solid #000', padding: '6px', textAlign: 'left', fontSize: '10px' }}>
+              <td style={{ border: '1px solid #000', padding: '6px', textAlign: 'left', fontSize: '13px' }}>
                 추정 중량 합계: {totalGoldWeightDon.toFixed(3)}돈 ({totalGoldWeightG.toFixed(2)}g)
               </td>
               <td style={{ border: '1px solid #000', padding: '6px' }}></td>
               {showPrice && <td style={{ border: '1px solid #000', padding: '6px' }}></td>}
-              <td style={{ border: '1px solid #000', padding: '6px', textAlign: 'center', fontSize: '13px', color: '#1e3a8a' }}>
+              <td style={{ border: '1px solid #000', padding: '6px', textAlign: 'center', fontSize: '16px', color: '#1e3a8a' }}>
                 {totalQty}
               </td>
               <td style={{ border: '1px solid #000', padding: '6px', textAlign: 'center' }}>
@@ -336,7 +336,7 @@ export const JewelryWorkListPrint: React.FC = () => {
         </table>
 
         {/* Footer Confirmation sign */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '30px', fontSize: '12px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '30px', fontSize: '15px' }}>
           <div>
             * 본 작업지시서의 지시 사양에 어긋난 무단 변경 작업은 가공 불량으로 처리되오니 사전 협의 바랍니다.<br />
             * 금 중량 및 보석 세팅 상태를 작업 완료 후 꼼꼼히 확인하고 인수해 주십시오.

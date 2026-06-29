@@ -1,7 +1,7 @@
 // src/components/CatalogManager.tsx
 import React from 'react';
 import { useErpStore } from '../store/useErpStore';
-import { Eye, Plus } from 'lucide-react';
+import { Eye, Plus, Image } from 'lucide-react';
 
 export const CatalogManager: React.FC = () => {
   const { catalog, stones } = useErpStore();
@@ -47,7 +47,7 @@ export const CatalogManager: React.FC = () => {
       <div className="catalog-header-bar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <Eye size={18} style={{ color: 'var(--primary)' }} />
-          <h2 style={{ fontSize: '16px', fontFamily: 'var(--font-title)', fontWeight: '600' }}>
+          <h2 style={{ fontSize: '19px', fontFamily: 'var(--font-title)', fontWeight: '600' }}>
             B2B 상품 카탈로그 마스터 조회
           </h2>
         </div>
@@ -55,7 +55,7 @@ export const CatalogManager: React.FC = () => {
         <button 
           onClick={handleOpenRegisterWindow} 
           className="btn-primary" 
-          style={{ fontSize: '13px', padding: '6px 14px' }}
+          style={{ fontSize: '16px', padding: '6px 14px' }}
         >
           <Plus size={14} /> 신규 카다로그 등록 (새창)
         </button>
@@ -90,36 +90,43 @@ export const CatalogManager: React.FC = () => {
               }}
               className="catalog-card"
             >
-              <img 
-                src={item.images[0]} 
-                alt={item.model_number} 
-                style={{ width: '100%', height: '130px', objectFit: 'cover', borderBottom: '1px solid var(--border-color)' }}
-              />
+              {item.images && item.images[0] ? (
+                <img 
+                  src={item.images[0]} 
+                  alt={item.model_number} 
+                  style={{ width: '100%', height: '130px', objectFit: 'cover', borderBottom: '1px solid var(--border-color)' }}
+                />
+              ) : (
+                <div style={{ width: '100%', height: '130px', background: 'rgba(255,255,255,0.03)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px', borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
+                  <Image size={28} />
+                  <span style={{ fontSize: '14px' }}>이미지 없음</span>
+                </div>
+              )}
               <div style={{ padding: '10px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--primary)', fontFamily: 'var(--font-title)' }}>
+                  <span style={{ fontSize: '17px', fontWeight: '700', color: 'var(--primary)', fontFamily: 'var(--font-title)' }}>
                     {item.model_number}
                   </span>
                   {item.is_set && (
-                    <span className="badge badge-success" style={{ fontSize: '12px', padding: '2px 5px' }}>
+                    <span className="badge badge-success" style={{ fontSize: '15px', padding: '2px 5px' }}>
                       SET 묶음
                     </span>
                   )}
                 </div>
-                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                <div style={{ fontSize: '15px', color: 'var(--text-muted)' }}>
                   카테고리: <strong>{item.category}</strong>
                 </div>
-                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                <div style={{ fontSize: '15px', color: 'var(--text-muted)' }}>
                   중량: <strong>{item.materials.join(', ')}[{pureGoldWeight.toFixed(2)}]</strong>
                 </div>
-                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                <div style={{ fontSize: '15px', color: 'var(--text-muted)' }}>
                   스톤: <strong>{totalStonesWeight.toFixed(3)} g</strong>
                 </div>
-                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                <div style={{ fontSize: '15px', color: 'var(--text-muted)' }}>
                   공임({mainMaterial} 1등급): <strong>{(item.base_labor_fees[mainMaterial]?.grade_1 || 0).toLocaleString()}원</strong>
                 </div>
                 {item.default_stones && item.default_stones.length > 0 && (
-                  <div style={{ fontSize: '12px', color: 'var(--primary)', marginTop: '4px', borderTop: '1px dashed var(--border-color)', paddingTop: '4px' }}>
+                  <div style={{ fontSize: '15px', color: 'var(--primary)', marginTop: '4px', borderTop: '1px dashed var(--border-color)', paddingTop: '4px' }}>
                     매핑스톤: {item.default_stones.length}종 세팅됨
                   </div>
                 )}

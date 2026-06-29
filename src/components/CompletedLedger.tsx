@@ -286,16 +286,16 @@ export const CompletedLedger: React.FC = () => {
   };
 
   return (
-    <div className="glass-panel animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '12px' }}>
+    <div className="glass-panel animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '15px' }}>
       
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-        <h2 style={{ fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <h2 style={{ fontSize: '19px', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <FileCheck size={18} style={{ color: 'var(--primary)' }} />
           <span className="gradient-text" style={{ fontFamily: 'var(--font-title)', fontWeight: '600' }}>
             {activeTab === 'unpaid_ledger' ? 'Unpaid Release Ledger' : activeTab === 'paid_ledger' ? 'Paid Release Ledger' : 'Hold Release Ledger'}
           </span>
-          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+          <span style={{ fontSize: '15px', color: 'var(--text-muted)' }}>
             {activeTab === 'unpaid_ledger' ? '(미수금 장부 대장 - 결제전)' : activeTab === 'paid_ledger' ? '(수금완료 장부 대장 - 결제완료)' : '(보류 대장)'}
           </span>
         </h2>
@@ -311,7 +311,7 @@ export const CompletedLedger: React.FC = () => {
             value={filterCustomer}
             onChange={(e) => setFilterCustomer(e.target.value)}
             className="input-field"
-            style={{ width: '180px', padding: '5px 10px', fontSize: '12px' }}
+            style={{ width: '180px', padding: '5px 10px', fontSize: '15px' }}
           />
         </div>
 
@@ -321,7 +321,7 @@ export const CompletedLedger: React.FC = () => {
             value={filterType}
             onChange={(e) => setFilterType(e.target.value as '전체' | '판매' | '결제' | '반품' | 'DC')}
             className="input-field"
-            style={{ width: '120px', padding: '5px 10px', fontSize: '12px' }}
+            style={{ width: '120px', padding: '5px 10px', fontSize: '15px' }}
           >
             <option value="전체">전체 구분</option>
             <option value="판매">판매 (주문)</option>
@@ -331,7 +331,7 @@ export const CompletedLedger: React.FC = () => {
           </select>
         </div>
 
-        <div style={{ marginLeft: 'auto', fontSize: '11px', color: 'var(--text-muted)' }}>
+        <div style={{ marginLeft: 'auto', fontSize: '14px', color: 'var(--text-muted)' }}>
           {activeTab === 'unpaid_ledger' ? '미수금' : activeTab === 'paid_ledger' ? '수금완료' : '보류'} 총 건수: <strong style={{ color: 'var(--primary)' }}>{filteredRows.length}</strong>건
         </div>
       </div>
@@ -347,7 +347,7 @@ export const CompletedLedger: React.FC = () => {
                 disabled={selectedRows.length === 0}
                 style={{
                   padding: '6px 16px',
-                  fontSize: '12px',
+                  fontSize: '15px',
                   background: selectedRows.length > 0 ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 'rgba(255,255,255,0.05)',
                   color: selectedRows.length > 0 ? '#fff' : 'rgba(255,255,255,0.3)',
                   border: 'none',
@@ -365,7 +365,7 @@ export const CompletedLedger: React.FC = () => {
                 disabled={selectedRows.length === 0}
                 style={{
                   padding: '6px 16px',
-                  fontSize: '12px',
+                  fontSize: '15px',
                   background: selectedRows.length > 0 ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' : 'rgba(255,255,255,0.05)',
                   color: selectedRows.length > 0 ? '#fff' : 'rgba(255,255,255,0.3)',
                   border: 'none',
@@ -387,7 +387,7 @@ export const CompletedLedger: React.FC = () => {
               disabled={selectedRows.length === 0}
               style={{
                 padding: '6px 16px',
-                fontSize: '12px',
+                fontSize: '15px',
                 background: selectedRows.length > 0 ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' : 'rgba(255,255,255,0.05)',
                 color: selectedRows.length > 0 ? '#fff' : 'rgba(255,255,255,0.3)',
                 border: 'none',
@@ -407,7 +407,7 @@ export const CompletedLedger: React.FC = () => {
               disabled={selectedRows.length === 0}
               style={{
                 padding: '6px 16px',
-                fontSize: '12px',
+                fontSize: '15px',
                 background: selectedRows.length > 0 ? 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' : 'rgba(255,255,255,0.05)',
                 color: selectedRows.length > 0 ? '#fff' : 'rgba(255,255,255,0.3)',
                 border: 'none',
@@ -421,14 +421,14 @@ export const CompletedLedger: React.FC = () => {
             </button>
           )}
         </div>
-        <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+        <div style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
           선택된 항목 수: <strong style={{ color: 'var(--primary)' }}>{selectedRows.length}</strong>개
         </div>
       </div>
 
       {/* Table grid */}
       <div className="table-responsive" style={{ overflowX: 'auto' }}>
-        <table className="excel-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '1200px', fontSize: '11px', tableLayout: 'fixed' }}>
+        <table className="excel-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '1200px', fontSize: '14px', tableLayout: 'fixed' }}>
           <colgroup>
             <col style={{ width: '3%' }} />
             <col style={{ width: '3%' }} />
@@ -482,10 +482,10 @@ export const CompletedLedger: React.FC = () => {
               <th rowSpan={2} style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>되돌리기</th>
             </tr>
             <tr style={{ background: 'rgba(255, 255, 255, 0.03)', borderBottom: '2px solid var(--border-color)', color: 'var(--text-muted)' }}>
-              <th style={{ padding: '4px 4px', textAlign: 'center', border: '1px solid var(--border-color)', fontSize: '10px' }}>금</th>
-              <th style={{ padding: '4px 4px', textAlign: 'center', border: '1px solid var(--border-color)', fontSize: '10px' }}>순금</th>
-              <th style={{ padding: '4px 4px', textAlign: 'center', border: '1px solid var(--border-color)', fontSize: '10px' }}>기+추</th>
-              <th style={{ padding: '4px 4px', textAlign: 'center', border: '1px solid var(--border-color)', fontSize: '10px' }}>중+보</th>
+              <th style={{ padding: '4px 4px', textAlign: 'center', border: '1px solid var(--border-color)', fontSize: '13px' }}>금</th>
+              <th style={{ padding: '4px 4px', textAlign: 'center', border: '1px solid var(--border-color)', fontSize: '13px' }}>순금</th>
+              <th style={{ padding: '4px 4px', textAlign: 'center', border: '1px solid var(--border-color)', fontSize: '13px' }}>기+추</th>
+              <th style={{ padding: '4px 4px', textAlign: 'center', border: '1px solid var(--border-color)', fontSize: '13px' }}>중+보</th>
             </tr>
           </thead>
           <tbody>
@@ -632,7 +632,7 @@ export const CompletedLedger: React.FC = () => {
 
                     {/* 상태 */}
                     <td style={{ padding: '6px 4px', textAlign: 'center' }}>
-                      <span className="badge" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold' }}>
+                      <span className="badge" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '2px 6px', borderRadius: '4px', fontSize: '13px', fontWeight: 'bold' }}>
                         출고 완료
                       </span>
                     </td>
@@ -649,7 +649,7 @@ export const CompletedLedger: React.FC = () => {
                             border: '1px solid rgba(245, 158, 11, 0.3)',
                             borderRadius: '4px',
                             padding: '2px 6px',
-                            fontSize: '11px',
+                            fontSize: '14px',
                             fontWeight: 'bold',
                             cursor: 'pointer',
                             boxShadow: 'none'
@@ -668,7 +668,7 @@ export const CompletedLedger: React.FC = () => {
                             border: '1px solid rgba(59, 130, 246, 0.3)',
                             borderRadius: '4px',
                             padding: '2px 6px',
-                            fontSize: '11px',
+                            fontSize: '14px',
                             fontWeight: 'bold',
                             cursor: 'pointer',
                             boxShadow: 'none'

@@ -24,16 +24,36 @@ export const RatesManager: React.FC = () => {
   const [sell14kG, setSell14kG] = useState<string>(currentRates?.sell_rates.gold_14k_per_g.toString() || '0');
   const [sellSilverG, setSellSilverG] = useState<string>(currentRates?.sell_rates.silver_per_g.toString() || '0');
 
+  // 1,000단위 콤마 포맷 헬퍼 함수
+  const formatWithComma = (val: string) => {
+    if (!val) return '';
+    const clean = val.replace(/,/g, '');
+    if (isNaN(Number(clean))) return val;
+    
+    if (clean.endsWith('.')) {
+      const numPart = parseInt(clean.slice(0, -1), 10) || 0;
+      return `${numPart.toLocaleString()}.`;
+    }
+    
+    const parts = clean.split('.');
+    const intPart = parseInt(parts[0], 10) || 0;
+    if (parts.length > 1) {
+      return `${intPart.toLocaleString()}.${parts[1]}`;
+    }
+    return intPart.toLocaleString();
+  };
+
   // Auto conversion helper (1 don = 3.75 g)
   const handleBuy24kChange = (val: string, unit: 'g' | 'don') => {
-    const num = parseFloat(val) || 0;
+    const cleanVal = val.replace(/,/g, '');
+    const num = parseFloat(cleanVal) || 0;
     if (unit === 'g') {
-      setBuy24kG(val);
+      setBuy24kG(cleanVal);
       setBuy24kDon(Math.round(num * 3.75).toString());
       setBuy18kG(Math.round(num * 0.75).toString());
       setBuy14kG(Math.round(num * 0.585).toString());
     } else {
-      setBuy24kDon(val);
+      setBuy24kDon(cleanVal);
       const calculatedG = parseFloat((num / 3.75).toFixed(2));
       setBuy24kG(calculatedG.toString());
       setBuy18kG(Math.round(calculatedG * 0.75).toString());
@@ -42,14 +62,15 @@ export const RatesManager: React.FC = () => {
   };
 
   const handleSell24kChange = (val: string, unit: 'g' | 'don') => {
-    const num = parseFloat(val) || 0;
+    const cleanVal = val.replace(/,/g, '');
+    const num = parseFloat(cleanVal) || 0;
     if (unit === 'g') {
-      setSell24kG(val);
+      setSell24kG(cleanVal);
       setSell24kDon(Math.round(num * 3.75).toString());
       setSell18kG(Math.round(num * 0.75).toString());
       setSell14kG(Math.round(num * 0.585).toString());
     } else {
-      setSell24kDon(val);
+      setSell24kDon(cleanVal);
       const calculatedG = parseFloat((num / 3.75).toFixed(2));
       setSell24kG(calculatedG.toString());
       setSell18kG(Math.round(calculatedG * 0.75).toString());
@@ -95,7 +116,7 @@ export const RatesManager: React.FC = () => {
           className={`glass-panel rates-form-panel animate-fade-in ${isFormOpen ? 'mobile-show' : 'mobile-hide'}`}
           onClick={(e) => e.stopPropagation()}
         >
-        <h2 style={{ fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', width: '100%' }}>
+        <h2 style={{ fontSize: '19px', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', width: '100%' }}>
           <Coins size={18} style={{ color: 'var(--primary)' }} />
           일별 금 시세 (앞시세 / 뒷시세) 등록 및 관리
         </h2>
@@ -104,7 +125,7 @@ export const RatesManager: React.FC = () => {
           
           {/* Target Date Input */}
           <div style={{ width: '100%' }}>
-            <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>적용 일자</label>
+            <label style={{ display: 'block', fontSize: '15px', color: 'var(--text-muted)', marginBottom: '4px' }}>적용 일자</label>
             <input 
               type="date" 
               value={date} 
@@ -119,16 +140,16 @@ export const RatesManager: React.FC = () => {
             
             {/* Left: Buy Rates (앞시세 - 매입) */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '12px', border: '1px solid var(--border-color)', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.01)' }}>
-              <h3 style={{ fontSize: '14px', color: 'var(--primary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <h3 style={{ fontSize: '17px', color: 'var(--primary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <Landmark size={14} /> 앞시세 (매입/소매매입)
               </h3>
               
               <div className="rates-card-inputs-grid">
                 <div>
-                  <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '2px' }}>24K 순금 돈당 금액 (3.75g)</label>
+                  <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '2px' }}>24K 순금 돈당 금액 (3.75g)</label>
                   <input 
-                    type="number" 
-                    value={buy24kDon} 
+                    type="text" 
+                    value={formatWithComma(buy24kDon)} 
                     onChange={(e) => handleBuy24kChange(e.target.value, 'don')} 
                     className="input-field" 
                     style={{ width: '100%', textAlign: 'right' }} 
@@ -137,10 +158,10 @@ export const RatesManager: React.FC = () => {
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '2px' }}>24K 순금 그람당 금액 (g)</label>
+                  <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '2px' }}>24K 순금 그람당 금액 (g)</label>
                   <input 
-                    type="number" 
-                    value={buy24kG} 
+                    type="text" 
+                    value={formatWithComma(buy24kG)} 
                     onChange={(e) => handleBuy24kChange(e.target.value, 'g')} 
                     className="input-field" 
                     style={{ width: '100%', textAlign: 'right' }} 
@@ -149,11 +170,11 @@ export const RatesManager: React.FC = () => {
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '2px' }}>18K 그람당 금액 (g)</label>
+                  <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '2px' }}>18K 그람당 금액 (g)</label>
                   <input 
-                    type="number" 
-                    value={buy18kG} 
-                    onChange={(e) => setBuy18kG(e.target.value)} 
+                    type="text" 
+                    value={formatWithComma(buy18kG)} 
+                    onChange={(e) => setBuy18kG(e.target.value.replace(/,/g, ''))} 
                     className="input-field" 
                     style={{ width: '100%', textAlign: 'right' }} 
                     required 
@@ -161,11 +182,11 @@ export const RatesManager: React.FC = () => {
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '2px' }}>14K 그람당 금액 (g)</label>
+                  <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '2px' }}>14K 그람당 금액 (g)</label>
                   <input 
-                    type="number" 
-                    value={buy14kG} 
-                    onChange={(e) => setBuy14kG(e.target.value)} 
+                    type="text" 
+                    value={formatWithComma(buy14kG)} 
+                    onChange={(e) => setBuy14kG(e.target.value.replace(/,/g, ''))} 
                     className="input-field" 
                     style={{ width: '100%', textAlign: 'right' }} 
                     required 
@@ -173,11 +194,11 @@ export const RatesManager: React.FC = () => {
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '2px' }}>은(Silver) 그람당 금액 (g)</label>
+                  <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '2px' }}>은(Silver) 그람당 금액 (g)</label>
                   <input 
-                    type="number" 
-                    value={buySilverG} 
-                    onChange={(e) => setBuySilverG(e.target.value)} 
+                    type="text" 
+                    value={formatWithComma(buySilverG)} 
+                    onChange={(e) => setBuySilverG(e.target.value.replace(/,/g, ''))} 
                     className="input-field" 
                     style={{ width: '100%', textAlign: 'right' }} 
                     required 
@@ -188,16 +209,16 @@ export const RatesManager: React.FC = () => {
 
             {/* Right: Sell Rates (뒷시세 - 매도/출고) */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '12px', border: '1px solid var(--border-color)', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.01)' }}>
-              <h3 style={{ fontSize: '14px', color: '#ef4444', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <h3 style={{ fontSize: '17px', color: '#ef4444', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <Landmark size={14} /> 뒷시세 (매도/공장도매출고)
               </h3>
               
               <div className="rates-card-inputs-grid">
                 <div>
-                  <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '2px' }}>24K 순금 돈당 금액 (3.75g)</label>
+                  <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '2px' }}>24K 순금 돈당 금액 (3.75g)</label>
                   <input 
-                    type="number" 
-                    value={sell24kDon} 
+                    type="text" 
+                    value={formatWithComma(sell24kDon)} 
                     onChange={(e) => handleSell24kChange(e.target.value, 'don')} 
                     className="input-field" 
                     style={{ width: '100%', textAlign: 'right' }} 
@@ -206,10 +227,10 @@ export const RatesManager: React.FC = () => {
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '2px' }}>24K 순금 그람당 금액 (g)</label>
+                  <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '2px' }}>24K 순금 그람당 금액 (g)</label>
                   <input 
-                    type="number" 
-                    value={sell24kG} 
+                    type="text" 
+                    value={formatWithComma(sell24kG)} 
                     onChange={(e) => handleSell24kChange(e.target.value, 'g')} 
                     className="input-field" 
                     style={{ width: '100%', textAlign: 'right' }} 
@@ -218,11 +239,11 @@ export const RatesManager: React.FC = () => {
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '2px' }}>18K 그람당 금액 (g)</label>
+                  <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '2px' }}>18K 그람당 금액 (g)</label>
                   <input 
-                    type="number" 
-                    value={sell18kG} 
-                    onChange={(e) => setSell18kG(e.target.value)} 
+                    type="text" 
+                    value={formatWithComma(sell18kG)} 
+                    onChange={(e) => setSell18kG(e.target.value.replace(/,/g, ''))} 
                     className="input-field" 
                     style={{ width: '100%', textAlign: 'right' }} 
                     required 
@@ -230,11 +251,11 @@ export const RatesManager: React.FC = () => {
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '2px' }}>14K 그람당 금액 (g)</label>
+                  <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '2px' }}>14K 그람당 금액 (g)</label>
                   <input 
-                    type="number" 
-                    value={sell14kG} 
-                    onChange={(e) => setSell14kG(e.target.value)} 
+                    type="text" 
+                    value={formatWithComma(sell14kG)} 
+                    onChange={(e) => setSell14kG(e.target.value.replace(/,/g, ''))} 
                     className="input-field" 
                     style={{ width: '100%', textAlign: 'right' }} 
                     required 
@@ -242,11 +263,11 @@ export const RatesManager: React.FC = () => {
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '2px' }}>은(Silver) 그람당 금액 (g)</label>
+                  <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '2px' }}>은(Silver) 그람당 금액 (g)</label>
                   <input 
-                    type="number" 
-                    value={sellSilverG} 
-                    onChange={(e) => setSellSilverG(e.target.value)} 
+                    type="text" 
+                    value={formatWithComma(sellSilverG)} 
+                    onChange={(e) => setSellSilverG(e.target.value.replace(/,/g, ''))} 
                     className="input-field" 
                     style={{ width: '100%', textAlign: 'right' }} 
                     required 
@@ -278,14 +299,14 @@ export const RatesManager: React.FC = () => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', flexWrap: 'wrap', gap: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <History size={18} style={{ color: 'var(--primary)' }} />
-            <h2 style={{ fontSize: '15px', fontWeight: '600', fontFamily: 'var(--font-title)' }}>과거 금 시세 이력 (History)</h2>
+            <h2 style={{ fontSize: '18px', fontWeight: '600', fontFamily: 'var(--font-title)' }}>과거 금 시세 이력 (History)</h2>
             <button
               className="btn-primary mobile-customer-add-btn"
               onClick={(e) => {
                 e.stopPropagation();
                 setIsFormOpen(true);
               }}
-              style={{ padding: '4px 10px', fontSize: '11px', boxShadow: 'none' }}
+              style={{ padding: '4px 10px', fontSize: '14px', boxShadow: 'none' }}
             >
               <PlusCircle size={12} />
               <span>시세 등록</span>
@@ -294,7 +315,7 @@ export const RatesManager: React.FC = () => {
         </div>
 
         <div className="table-responsive" style={{ overflowY: 'auto', maxHeight: '480px', marginBottom: 0 }}>
-          <table style={{ width: '100%', minWidth: '550px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12px' }}>
+          <table style={{ width: '100%', minWidth: '550px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '15px' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)', height: '28px' }}>
                 <th rowSpan={2} style={{ padding: '6px', verticalAlign: 'middle', borderRight: '1px solid var(--border-color)', textAlign: 'center' }}>일자</th>
