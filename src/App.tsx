@@ -41,7 +41,7 @@ const LoadingFallback = () => (
 );
 
 function App() {
-  const { fetchDb, updateGoldRate, currentRates, activeTab, setActiveTab, loading, customers } = useErpStore();
+  const { fetchDb, prefetchDb, updateGoldRate, currentRates, activeTab, setActiveTab, loading, customers } = useErpStore();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   // Detect pop-up status from URL query parameter
@@ -108,6 +108,29 @@ function App() {
       fetchDb(neededCollections);
     }
   }, [activeTab, fetchDb, popupType]);
+
+  // 최초 핵심 데이터 로드 완료 직후 (사용자가 대시보드를 보는 시점)
+  // 백그라운드에서 용량이 큰 catalog, stones 데이터를 무소음(로딩 표시 없음)으로 미리 로드(Prefetch)
+  useEffect(() => {
+    if (popupType) return;
+    
+    // 초기 로딩이 완료된 상태(customers.length > 0)일 때만 작동
+    if (!loading && customers.length > 0) {
+      const state = useErpStore.getState();
+      const needed: ('catalog' | 'stones')[] = [];
+      
+      if (state.catalog.length === 0) needed.push('catalog');
+      if (state.stones.length === 0) needed.push('stones');
+      
+      if (needed.length > 0) {
+        // 사용자 인터랙션의 병목을 방지하기 위해 1.5초 후 백그라운드로 가져옴
+        const timer = setTimeout(() => {
+          prefetchDb(needed);
+        }, 1500);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [loading, customers, prefetchDb, popupType]);
 
   // Render popup forms directly if matching URL query parameter is found
   if (popupType === 'stone') {

@@ -119,6 +119,7 @@ interface ErpState {
   deleteOrderItem: (orderId: string, itemId: number) => Promise<void>;
   deleteTransaction: (transactionId: string) => Promise<void>;
   saveCatalogItem: (item: CatalogItem) => Promise<void>;
+  prefetchDb: (targetCollections: ('catalog' | 'stones')[]) => Promise<void>;
 }
 
 export const useErpStore = create<ErpState>((set, get) => ({
@@ -186,6 +187,28 @@ export const useErpStore = create<ErpState>((set, get) => ({
       console.error("fetchDb error: ", error);
     } finally {
       set({ loading: false });
+    }
+  },
+
+  prefetchDb: async (targetCollections) => {
+    try {
+      const snapPromise = targetCollections.map(col => getDocs(collection(db, col)));
+      const results = await Promise.all(snapPromise);
+      const updates: any = {};
+      
+      targetCollections.forEach((col, index) => {
+        const snap = results[index];
+        const data = snap.docs.map(d => d.data());
+        
+        if (col === 'catalog') {
+          updates.catalog = data as CatalogItem[];
+        } else if (col === 'stones') {
+          updates.stones = data as Stone[];
+        }
+      });
+      set(updates);
+    } catch (error) {
+      console.error("prefetchDb error: ", error);
     }
   },
 
