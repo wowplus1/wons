@@ -12,7 +12,47 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- 초기 로딩 스피너 (React가 로드되기 전 시각적 피드백 제공) -->
+      <div style="
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background-color: #0b0b0f;
+        font-family: 'Outfit', 'Inter', sans-serif;
+        z-index: 9999;
+      ">
+        <div style="
+          width: 48px;
+          height: 48px;
+          border: 3px solid rgba(212, 175, 55, 0.1);
+          border-radius: 50%;
+          border-top-color: #d4af37;
+          animation: spin 1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+          margin-bottom: 20px;
+        "></div>
+        <div style="
+          color: #d4af37;
+          font-size: 16px;
+          font-weight: 600;
+          letter-spacing: 0.1em;
+        ">GOLDLINK ERP</div>
+        <div style="
+          color: rgba(255, 255, 255, 0.4);
+          font-size: 11px;
+          margin-top: 8px;
+          letter-spacing: 0.05em;
+        ">시스템 데이터를 불러오는 중...</div>
+      </div>
+      <style>
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      </style>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
