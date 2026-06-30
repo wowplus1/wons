@@ -69,7 +69,7 @@ export const OrderGrid: React.FC = () => {
     addOrderItem({ 
       item_id: currentOrderItems.length + 1, 
       quantity: 1,
-      grade: 3, // 기본은 '일반'(3등급)으로 설정
+      grade: selectedCustomerForOrder.grade || 3, // 거래처 등급 상속
       material: '14K',
       color: 'YG',
       manufacturer: 'JP',
@@ -93,7 +93,7 @@ export const OrderGrid: React.FC = () => {
       }
     }, 50);
   };
-
+ 
   const handleCustomerChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const customer = customers.find(c => c.customer_id === e.target.value) || null;
     selectCustomer(customer);
@@ -103,7 +103,7 @@ export const OrderGrid: React.FC = () => {
       addOrderItem({ 
         item_id: 1, 
         quantity: 1, 
-        grade: 3, // 기본은 '일반'(3등급)으로 설정
+        grade: customer.grade || 3, // 거래처 등급 상속
         material: '14K',
         color: 'YG',
         manufacturer: 'JP',
@@ -178,18 +178,18 @@ export const OrderGrid: React.FC = () => {
   );
 
   return (
-    <div className="glass-panel animate-fade-in" ref={containerRef} style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '12px' }}>
+    <div className="glass-panel animate-fade-in" ref={containerRef} style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '15px' }}>
       
       {/* Top Header & Customer Selection */}
       <div className="order-grid-header">
         <div className="order-header-select-group">
-          <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--primary)' }}>거래처 선택 (필수):</label>
+          <label style={{ fontSize: '15px', fontWeight: '700', color: 'var(--primary)' }}>거래처 선택 (필수):</label>
           <select
             value={selectedCustomerForOrder?.customer_id || ''}
             onChange={handleCustomerChange}
             disabled={!!editingOrderId}
             className="input-field"
-            style={{ padding: '6px 12px', fontSize: '12px', cursor: editingOrderId ? 'not-allowed' : 'default', opacity: editingOrderId ? 0.6 : 1 }}
+            style={{ padding: '6px 12px', fontSize: '15px', cursor: editingOrderId ? 'not-allowed' : 'default', opacity: editingOrderId ? 0.6 : 1 }}
           >
             <option value="">-- 거래처를 먼저 선택해 주세요 --</option>
             {customers.map(c => (
@@ -200,7 +200,7 @@ export const OrderGrid: React.FC = () => {
           </select>
         </div>
 
-        <h2 style={{ fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <h2 style={{ fontSize: '19px', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span className="gradient-text" style={{ fontFamily: 'var(--font-title)', fontWeight: '600' }}>
             {editingOrderId ? `Order Editor [수정 중: ${editingOrderId}]` : 'Quick Order Sheet'}
           </span> 
@@ -224,8 +224,8 @@ export const OrderGrid: React.FC = () => {
           margin: '20px 0'
         }}>
           <Search size={32} style={{ color: 'var(--primary)', opacity: 0.8 }} />
-          <h3 style={{ fontSize: '14px', color: 'var(--text-main)', fontWeight: '600' }}>거래처 미선택</h3>
-          <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+          <h3 style={{ fontSize: '17px', color: 'var(--text-main)', fontWeight: '600' }}>거래처 미선택</h3>
+          <p style={{ fontSize: '15px', color: 'var(--text-muted)' }}>
             주문서 작성을 시작하려면 상단 우측의 <strong style={{ color: 'var(--primary)' }}>'거래처 선택 (필수)'</strong> 드롭다운에서 거래처를 선택해 주세요.
           </p>
         </div>
@@ -264,19 +264,19 @@ export const OrderGrid: React.FC = () => {
                         display: 'inline-flex', 
                         justifyContent: 'center', 
                         alignItems: 'center', 
-                        fontSize: '11px', 
+                        fontSize: '14px', 
                         fontWeight: 'bold' 
                       }}>
                         {index + 1}
                       </span>
-                      <strong style={{ fontSize: '13px', color: 'var(--text-muted)' }}>품목 정보 입력</strong>
+                      <strong style={{ fontSize: '16px', color: 'var(--text-muted)' }}>품목 정보 입력</strong>
                     </div>
 
                     <button
                       type="button"
                       onClick={() => removeOrderItem(index)}
                       className="badge badge-danger"
-                      style={{ border: 'none', background: 'var(--danger-bg)', cursor: 'pointer', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px' }}
+                      style={{ border: 'none', background: 'var(--danger-bg)', cursor: 'pointer', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '14px' }}
                       title="항목 제거"
                     >
                       <Trash2 size={12} /> 삭제
@@ -285,13 +285,13 @@ export const OrderGrid: React.FC = () => {
 
                   {/* 1단계: 기본 정보 (구분, 주문모델, 제조사, 수량, 색상, 재질) */}
                   <div>
-                    <div style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--primary)', marginBottom: '8px', letterSpacing: '0.5px' }}>
+                    <div style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--primary)', marginBottom: '8px', letterSpacing: '0.5px' }}>
                       [1단계] 기본 사양 정보
                     </div>
                     <div className="order-form-step-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(24, minmax(0, 1fr))', gap: '12px', alignItems: 'end' }}>
                       {/* 구분 */}
                       <div style={{ gridColumn: 'span 3' }}>
-                        <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>구분</label>
+                        <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>구분</label>
                         <select
                           value={item.division || '판매'}
                           onChange={(e) => updateOrderItem(index, { division: e.target.value as '판매' | '결제' | '반품' | 'DC' })}
@@ -301,7 +301,7 @@ export const OrderGrid: React.FC = () => {
                             width: '100%',
                             height: '32px',
                             padding: '4px 8px',
-                            fontSize: '12px',
+                            fontSize: '15px',
                             fontWeight: 'bold', 
                             color: item.division === '결제' ? '#34d399' : item.division === '반품' ? '#fb7185' : item.division === 'DC' ? '#a78bfa' : '#38bdf8' 
                           }}
@@ -315,7 +315,7 @@ export const OrderGrid: React.FC = () => {
 
                       {/* ★ 주문모델 */}
                       <div style={{ gridColumn: 'span 7' }}>
-                        <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>★ 주문모델</label>
+                        <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>★ 주문모델</label>
                         <div style={{ 
                           display: 'flex', 
                           alignItems: 'center', 
@@ -345,7 +345,7 @@ export const OrderGrid: React.FC = () => {
                               color: 'var(--text-main)', 
                               fontWeight: 'bold', 
                               outline: 'none', 
-                              fontSize: '12px',
+                              fontSize: '15px',
                               cursor: item.division === '결제' ? 'not-allowed' : 'text'
                             }}
                             required={item.division !== '결제' && item.division !== 'DC'}
@@ -381,7 +381,7 @@ export const OrderGrid: React.FC = () => {
 
                       {/* ★ 제조사 */}
                       <div style={{ gridColumn: 'span 6' }}>
-                        <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>★ 제조사</label>
+                        <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>★ 제조사</label>
                         <input
                           type="text"
                           value={item.manufacturer || ''}
@@ -393,7 +393,7 @@ export const OrderGrid: React.FC = () => {
                             width: '100%', 
                             height: '32px', 
                             padding: '4px 8px', 
-                            fontSize: '12px',
+                            fontSize: '15px',
                             cursor: (item.division === '결제' || item.model_number === '디자인출력') ? 'not-allowed' : 'text',
                             opacity: (item.division === '결제' || item.model_number === '디자인출력') ? 0.6 : 1
                           }}
@@ -403,7 +403,7 @@ export const OrderGrid: React.FC = () => {
 
                       {/* 수량 */}
                       <div style={{ gridColumn: 'span 2' }}>
-                        <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>수량</label>
+                        <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>수량</label>
                         <input
                           type="number"
                           min="1"
@@ -416,7 +416,7 @@ export const OrderGrid: React.FC = () => {
                             width: '100%', 
                             height: '32px', 
                             padding: '4px 8px', 
-                            fontSize: '12px', 
+                            fontSize: '15px', 
                             textAlign: 'center',
                             cursor: (item.division === '결제' || item.model_number === '디자인출력') ? 'not-allowed' : 'text',
                             opacity: (item.division === '결제' || item.model_number === '디자인출력') ? 0.6 : 1
@@ -427,7 +427,7 @@ export const OrderGrid: React.FC = () => {
 
                       {/* 색상 */}
                       <div style={{ gridColumn: 'span 3' }}>
-                        <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>색상</label>
+                        <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>색상</label>
                         <select
                           value={item.color || 'YG'}
                           disabled={item.division === '결제' || item.model_number === '디자인출력'}
@@ -438,7 +438,7 @@ export const OrderGrid: React.FC = () => {
                             width: '100%', 
                             height: '32px', 
                             padding: '4px 8px', 
-                            fontSize: '12px',
+                            fontSize: '15px',
                             cursor: (item.division === '결제' || item.model_number === '디자인출력') ? 'not-allowed' : 'default',
                             opacity: (item.division === '결제' || item.model_number === '디자인출력') ? 0.6 : 1
                           }}
@@ -451,7 +451,7 @@ export const OrderGrid: React.FC = () => {
 
                       {/* 재질 */}
                       <div style={{ gridColumn: 'span 3' }}>
-                        <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>재질</label>
+                        <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>재질</label>
                         <select
                           value={item.material || '14K'}
                           disabled={item.division === '결제' || item.model_number === '디자인출력'}
@@ -462,7 +462,7 @@ export const OrderGrid: React.FC = () => {
                             width: '100%', 
                             height: '32px', 
                             padding: '4px 8px', 
-                            fontSize: '12px',
+                            fontSize: '15px',
                             cursor: (item.division === '결제' || item.model_number === '디자인출력') ? 'not-allowed' : 'default',
                             opacity: (item.division === '결제' || item.model_number === '디자인출력') ? 0.6 : 1
                           }}
@@ -478,7 +478,7 @@ export const OrderGrid: React.FC = () => {
 
                   {/* 2단계: 스톤 및 공임 정보 (자재 정보 1줄, 공임단가 정보 1줄로 분할하여 찌그러짐 원천 차단) */}
                   <div style={{ borderTop: '1px dashed rgba(255,255,255,0.08)', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    <div style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--primary)', letterSpacing: '0.5px' }}>
+                    <div style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--primary)', letterSpacing: '0.5px' }}>
                       [2단계] 자재 및 세공 공임 정보
                     </div>
                     
@@ -486,7 +486,7 @@ export const OrderGrid: React.FC = () => {
                     <div className="order-form-step-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(24, minmax(0, 1fr))', gap: '12px', alignItems: 'end' }}>
                       {/* 스톤종류 중심 */}
                       <div style={{ gridColumn: 'span 10' }}>
-                        <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>스톤종류 (중심)</label>
+                        <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>스톤종류 (중심)</label>
                         <div style={{ 
                           display: 'flex', 
                           alignItems: 'center', 
@@ -509,7 +509,7 @@ export const OrderGrid: React.FC = () => {
                               border: 'none', 
                               background: 'transparent', 
                               color: 'var(--text-main)', 
-                              fontSize: '12px', 
+                              fontSize: '15px', 
                               outline: 'none',
                               cursor: (item.division === '결제' || item.model_number === '디자인출력') ? 'not-allowed' : 'default'
                             }}
@@ -536,7 +536,7 @@ export const OrderGrid: React.FC = () => {
 
                       {/* 스톤종류 보조 */}
                       <div style={{ gridColumn: 'span 6' }}>
-                        <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>스톤종류 (보조)</label>
+                        <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>스톤종류 (보조)</label>
                         <div style={{ 
                           display: 'flex', 
                           alignItems: 'center', 
@@ -559,7 +559,7 @@ export const OrderGrid: React.FC = () => {
                               border: 'none', 
                               background: 'transparent', 
                               color: 'var(--text-main)', 
-                              fontSize: '12px', 
+                              fontSize: '15px', 
                               outline: 'none',
                               cursor: (item.division === '결제' || item.model_number === '디자인출력') ? 'not-allowed' : 'default'
                             }}
@@ -586,7 +586,7 @@ export const OrderGrid: React.FC = () => {
 
                       {/* 알수 보 */}
                       <div style={{ gridColumn: 'span 2' }}>
-                        <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>알수 (보조)</label>
+                        <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>알수 (보조)</label>
                         <input
                           type="number"
                           value={item.qty_sub === 0 ? '' : item.qty_sub}
@@ -598,7 +598,7 @@ export const OrderGrid: React.FC = () => {
                             width: '100%', 
                             height: '32px', 
                             padding: '4px 8px', 
-                            fontSize: '12px', 
+                            fontSize: '15px', 
                             textAlign: 'center',
                             cursor: (item.division === '결제' || item.model_number === '디자인출력') ? 'not-allowed' : 'text',
                             opacity: (item.division === '결제' || item.model_number === '디자인출력') ? 0.6 : 1
@@ -608,7 +608,7 @@ export const OrderGrid: React.FC = () => {
 
                       {/* 알수 메 */}
                       <div style={{ gridColumn: 'span 3' }}>
-                        <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>알수 (메인)</label>
+                        <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>알수 (메인)</label>
                         <input
                           type="number"
                           value={item.qty_main === 0 ? '' : item.qty_main}
@@ -620,7 +620,7 @@ export const OrderGrid: React.FC = () => {
                             width: '100%', 
                             height: '32px', 
                             padding: '4px 8px', 
-                            fontSize: '12px', 
+                            fontSize: '15px', 
                             textAlign: 'center',
                             cursor: (item.division === '결제' || item.model_number === '디자인출력') ? 'not-allowed' : 'text',
                             opacity: (item.division === '결제' || item.model_number === '디자인출력') ? 0.6 : 1
@@ -630,7 +630,7 @@ export const OrderGrid: React.FC = () => {
 
                       {/* 알중/EA */}
                       <div style={{ gridColumn: 'span 3' }}>
-                        <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>알중 / EA</label>
+                        <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>알중 / EA</label>
                         <input
                           type="number"
                           step="0.001"
@@ -643,7 +643,7 @@ export const OrderGrid: React.FC = () => {
                             width: '100%', 
                             height: '32px', 
                             padding: '4px 8px', 
-                            fontSize: '12px', 
+                            fontSize: '15px', 
                             textAlign: 'right',
                             cursor: (item.division === '결제' || item.model_number === '디자인출력') ? 'not-allowed' : 'text',
                             opacity: (item.division === '결제' || item.model_number === '디자인출력') ? 0.6 : 1
@@ -656,7 +656,7 @@ export const OrderGrid: React.FC = () => {
                     <div className="order-form-step-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(24, minmax(0, 1fr))', gap: '12px', alignItems: 'end' }}>
                       {/* 공임단가 기본 */}
                       <div style={{ gridColumn: 'span 5' }}>
-                        <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>
+                        <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>
                           {item.model_number === '디자인출력' ? '디자인 비용' : item.division === '결제' ? '공임비(결제금액)' : '기본 공임'}
                         </label>
                         <input
@@ -665,13 +665,13 @@ export const OrderGrid: React.FC = () => {
                           onChange={(e) => updateOrderItem(index, { labor_base: parseInt(e.target.value) || 0 })}
                           onKeyDown={(e) => handleKeyDown(e, index, 'labor_base')}
                           className="input-field"
-                          style={{ width: '100%', height: '32px', padding: '4px 8px', fontSize: '12px', textAlign: 'right' }}
+                          style={{ width: '100%', height: '32px', padding: '4px 8px', fontSize: '15px', textAlign: 'right' }}
                         />
                       </div>
 
                       {/* 공임단가 추가 */}
                       <div style={{ gridColumn: 'span 5' }}>
-                        <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>추가 공임</label>
+                        <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>추가 공임</label>
                         <input
                           type="number"
                           value={item.labor_extra === 0 ? '' : item.labor_extra}
@@ -683,7 +683,7 @@ export const OrderGrid: React.FC = () => {
                             width: '100%', 
                             height: '32px', 
                             padding: '4px 8px', 
-                            fontSize: '12px', 
+                            fontSize: '15px', 
                             textAlign: 'right',
                             cursor: (item.division === '결제' || item.model_number === '디자인출력') ? 'not-allowed' : 'text',
                             opacity: (item.division === '결제' || item.model_number === '디자인출력') ? 0.6 : 1
@@ -693,7 +693,7 @@ export const OrderGrid: React.FC = () => {
 
                       {/* 공임단가 중심 */}
                       <div style={{ gridColumn: 'span 6' }}>
-                        <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>공임 (중심)</label>
+                        <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>공임 (중심)</label>
                         <input
                           type="number"
                           value={item.labor_main === 0 ? '' : item.labor_main}
@@ -705,7 +705,7 @@ export const OrderGrid: React.FC = () => {
                             width: '100%', 
                             height: '32px', 
                             padding: '4px 8px', 
-                            fontSize: '12px', 
+                            fontSize: '15px', 
                             textAlign: 'right',
                             cursor: (item.division === '결제' || item.model_number === '디자인출력') ? 'not-allowed' : 'text',
                             opacity: (item.division === '결제' || item.model_number === '디자인출력') ? 0.6 : 1
@@ -715,7 +715,7 @@ export const OrderGrid: React.FC = () => {
 
                       {/* 공임단가 보조 */}
                       <div style={{ gridColumn: 'span 5' }}>
-                        <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>공임 (보조)</label>
+                        <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>공임 (보조)</label>
                         <input
                           type="number"
                           value={item.labor_sub === 0 ? '' : item.labor_sub}
@@ -727,7 +727,7 @@ export const OrderGrid: React.FC = () => {
                             width: '100%', 
                             height: '32px', 
                             padding: '4px 8px', 
-                            fontSize: '12px', 
+                            fontSize: '15px', 
                             textAlign: 'right',
                             cursor: item.division === '결제' ? 'not-allowed' : 'text',
                             opacity: item.division === '결제' ? 0.6 : 1
@@ -737,7 +737,7 @@ export const OrderGrid: React.FC = () => {
 
                       {/* 공임단가 급 */}
                       <div style={{ gridColumn: 'span 3' }}>
-                        <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>공임 급</label>
+                        <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>공임 급</label>
                         <select
                           value={item.grade || 3}
                           disabled={item.division === '결제' || item.model_number === '디자인출력'}
@@ -748,7 +748,7 @@ export const OrderGrid: React.FC = () => {
                             width: '100%', 
                             height: '32px', 
                             padding: '4px 8px', 
-                            fontSize: '12px', 
+                            fontSize: '15px', 
                             textAlign: 'center',
                             cursor: (item.division === '결제' || item.model_number === '디자인출력') ? 'not-allowed' : 'default',
                             opacity: (item.division === '결제' || item.model_number === '디자인출력') ? 0.6 : 1
@@ -764,13 +764,13 @@ export const OrderGrid: React.FC = () => {
 
                   {/* 3단계: 규격 및 메모 (사이즈, 주문 기타설명, 출고일, 계산금액) */}
                   <div style={{ borderTop: '1px dashed rgba(255,255,255,0.08)', paddingTop: '12px' }}>
-                    <div style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--primary)', marginBottom: '8px', letterSpacing: '0.5px' }}>
+                    <div style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--primary)', marginBottom: '8px', letterSpacing: '0.5px' }}>
                       [3단계] 규격 및 상세 특이사항
                     </div>
                     <div className="order-form-step-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(24, minmax(0, 1fr))', gap: '12px', alignItems: 'end' }}>
                       {/* 사이즈 */}
                       <div style={{ gridColumn: 'span 4' }}>
-                        <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>사이즈</label>
+                        <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>사이즈</label>
                         <input
                           type="text"
                           placeholder={(item.division === '결제' || item.model_number === '디자인출력') ? '입력 안 함' : '예: 12호'}
@@ -783,7 +783,7 @@ export const OrderGrid: React.FC = () => {
                             width: '100%', 
                             height: '32px', 
                             padding: '4px 8px', 
-                            fontSize: '12px',
+                            fontSize: '15px',
                             cursor: (item.division === '결제' || item.model_number === '디자인출력') ? 'not-allowed' : 'text',
                             opacity: (item.division === '결제' || item.model_number === '디자인출력') ? 0.6 : 1
                           }}
@@ -792,7 +792,7 @@ export const OrderGrid: React.FC = () => {
 
                       {/* 주문 기타설명 */}
                       <div style={{ gridColumn: 'span 12' }}>
-                        <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>주문 기타설명 (상세 비고)</label>
+                        <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>주문 기타설명 (상세 비고)</label>
                         <input
                           type="text"
                           placeholder="특이사항이나 전달 문구를 입력하세요."
@@ -800,13 +800,13 @@ export const OrderGrid: React.FC = () => {
                           onChange={(e) => updateOrderItem(index, { note: e.target.value })}
                           onKeyDown={(e) => handleKeyDown(e, index, 'note')}
                           className="input-field"
-                          style={{ width: '100%', height: '32px', padding: '4px 8px', fontSize: '12px' }}
+                          style={{ width: '100%', height: '32px', padding: '4px 8px', fontSize: '15px' }}
                         />
                       </div>
 
                       {/* 출고일 */}
                       <div style={{ gridColumn: 'span 5' }}>
-                        <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>출고 예정일</label>
+                        <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>출고 예정일</label>
                         <input
                           type="date"
                           value={item.release_date || ''}
@@ -818,7 +818,7 @@ export const OrderGrid: React.FC = () => {
                             width: '100%', 
                             height: '32px', 
                             padding: '4px 8px', 
-                            fontSize: '12px',
+                            fontSize: '15px',
                             cursor: (item.division === '결제' || item.model_number === '디자인출력') ? 'not-allowed' : 'default',
                             opacity: (item.division === '결제' || item.model_number === '디자인출력') ? 0.6 : 1
                           }}
@@ -827,9 +827,9 @@ export const OrderGrid: React.FC = () => {
 
                       {/* 계산금액 */}
                       <div style={{ gridColumn: 'span 3', textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', whiteSpace: 'nowrap' }}>실시간 계산금액</span>
+                        <span style={{ fontSize: '14px', color: 'var(--text-muted)', display: 'block', whiteSpace: 'nowrap' }}>실시간 계산금액</span>
                         <div style={{ 
-                          fontSize: '13px', 
+                          fontSize: '16px', 
                           fontWeight: '800', 
                           color: 'var(--primary)',
                           background: 'rgba(212, 175, 55, 0.08)',
@@ -860,15 +860,15 @@ export const OrderGrid: React.FC = () => {
               type="button"
               onClick={handleAddRow}
               className="btn-primary"
-              style={{ padding: '8px 16px', background: 'rgba(255, 255, 255, 0.05)', color: 'var(--text-main)', border: '1px solid var(--border-color)', boxShadow: 'none', fontSize: '13px' }}
+              style={{ padding: '8px 16px', background: 'rgba(255, 255, 255, 0.05)', color: 'var(--text-main)', border: '1px solid var(--border-color)', boxShadow: 'none', fontSize: '16px' }}
             >
               <Plus size={14} /> 품목 추가하기
             </button>
             
             <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>총 주문금액 합계</div>
-                <div style={{ fontSize: '24px', fontWeight: '700', fontFamily: 'var(--font-title)', color: 'var(--primary)' }}>
+                <div style={{ fontSize: '15px', color: 'var(--text-muted)' }}>총 주문금액 합계</div>
+                <div style={{ fontSize: '27px', fontWeight: '700', fontFamily: 'var(--font-title)', color: 'var(--primary)' }}>
                   {totalOrderAmount.toLocaleString()} 원
                 </div>
               </div>
@@ -880,11 +880,11 @@ export const OrderGrid: React.FC = () => {
                       type="button"
                       onClick={cancelEditOrder}
                       className="btn-primary"
-                      style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#fb7185', border: '1px solid rgba(239, 68, 68, 0.3)', boxShadow: 'none', fontSize: '13px', padding: '8px 18px', cursor: 'pointer' }}
+                      style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#fb7185', border: '1px solid rgba(239, 68, 68, 0.3)', boxShadow: 'none', fontSize: '16px', padding: '8px 18px', cursor: 'pointer' }}
                     >
                       수정 취소
                     </button>
-                    <button type="submit" className="btn-primary" style={{ fontSize: '13px', padding: '8px 20px', background: 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)', color: 'var(--text-inverse)', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                    <button type="submit" className="btn-primary" style={{ fontSize: '16px', padding: '8px 20px', background: 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)', color: 'var(--text-inverse)', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
                       <CheckCircle2 size={14} style={{ marginRight: '4px' }} /> 수정 완료 (덮어쓰기)
                     </button>
                   </>
@@ -894,11 +894,11 @@ export const OrderGrid: React.FC = () => {
                       type="button"
                       onClick={clearOrderForm}
                       className="btn-primary"
-                      style={{ background: 'rgba(255, 255, 255, 0.03)', color: 'var(--text-muted)', border: '1px solid var(--border-color)', boxShadow: 'none', fontSize: '13px', padding: '8px 18px', cursor: 'pointer' }}
+                      style={{ background: 'rgba(255, 255, 255, 0.03)', color: 'var(--text-muted)', border: '1px solid var(--border-color)', boxShadow: 'none', fontSize: '16px', padding: '8px 18px', cursor: 'pointer' }}
                     >
                       전체 초기화
                     </button>
-                    <button type="submit" className="btn-primary" style={{ fontSize: '13px', padding: '8px 20px', cursor: 'pointer' }}>
+                    <button type="submit" className="btn-primary" style={{ fontSize: '16px', padding: '8px 20px', cursor: 'pointer' }}>
                       <CheckCircle2 size={14} /> 주문서 접수 (스냅샷 저장)
                     </button>
                   </>
@@ -939,7 +939,7 @@ export const OrderGrid: React.FC = () => {
             overflow: 'hidden'
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
-              <h3 style={{ fontSize: '14px', fontWeight: '700', color: 'var(--primary)' }}>
+              <h3 style={{ fontSize: '17px', fontWeight: '700', color: 'var(--primary)' }}>
                 스톤 마스터 검색 ({stoneModalTarget.type === 'main' ? '중심스톤' : '보조스톤'})
               </h3>
               <button 
@@ -958,7 +958,7 @@ export const OrderGrid: React.FC = () => {
                 value={stoneSearchText}
                 onChange={(e) => setStoneSearchText(e.target.value)}
                 className="input-field"
-                style={{ flex: 1, padding: '6px 10px', fontSize: '12px' }}
+                style={{ flex: 1, padding: '6px 10px', fontSize: '15px' }}
                 autoFocus
               />
             </div>
@@ -987,7 +987,7 @@ export const OrderGrid: React.FC = () => {
                     >
                       <div>
                         <div style={{ fontWeight: '700', color: 'var(--text-main)' }}>{s.name}</div>
-                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                        <div style={{ fontSize: '14px', color: 'var(--text-muted)', marginTop: '2px' }}>
                           {s.shape} | {s.size} | {s.weight_carat}ct
                         </div>
                       </div>

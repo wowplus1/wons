@@ -87,134 +87,140 @@ export const CompletedLedger: React.FC = () => {
   };
 
   // Compile tradeNoMap (거래처별 누적 차수 계산)
-  const customerEvents: { [customerId: string]: { id: string; date: string }[] } = {};
+  const completedRows = React.useMemo(() => {
+    const customerEvents: { [customerId: string]: { id: string; date: string }[] } = {};
 
-  orders.forEach(order => {
-    const cId = order.customer_snapshot?.customer_id;
-    if (!cId) return;
-    if (!customerEvents[cId]) {
-      customerEvents[cId] = [];
-    }
-    if (!customerEvents[cId].some(e => e.id === order.order_id)) {
-      customerEvents[cId].push({
-        id: order.order_id,
-        date: order.order_date
-      });
-    }
-  });
-
-  transactions.forEach(tx => {
-    if (tx.created_by === 'system') return;
-    const cId = tx.customer_id;
-    if (!cId) return;
-    if (!customerEvents[cId]) {
-      customerEvents[cId] = [];
-    }
-    if (!customerEvents[cId].some(e => e.id === tx.transaction_id)) {
-      customerEvents[cId].push({
-        id: tx.transaction_id,
-        date: tx.created_at
-      });
-    }
-  });
-
-  const tradeNoMap: { [customerId: string]: { [eventId: string]: number } } = {};
-  Object.keys(customerEvents).forEach(cId => {
-    const sorted = [...customerEvents[cId]].sort((a, b) => a.date.localeCompare(b.date));
-    tradeNoMap[cId] = {};
-    sorted.forEach((event, index) => {
-      tradeNoMap[cId][event.id] = index + 1;
+    orders.forEach(order => {
+      const cId = order.customer_snapshot?.customer_id;
+      if (!cId) return;
+      if (!customerEvents[cId]) {
+        customerEvents[cId] = [];
+      }
+      if (!customerEvents[cId].some(e => e.id === order.order_id)) {
+        customerEvents[cId].push({
+          id: order.order_id,
+          date: order.order_date
+        });
+      }
     });
-  });
 
-  const completedRows: LedgerRowData[] = [];
+    transactions.forEach(tx => {
+      if (tx.created_by === 'system') return;
+      const cId = tx.customer_id;
+      if (!cId) return;
+      if (!customerEvents[cId]) {
+        customerEvents[cId] = [];
+      }
+      if (!customerEvents[cId].some(e => e.id === tx.transaction_id)) {
+        customerEvents[cId].push({
+          id: tx.transaction_id,
+          date: tx.created_at
+        });
+      }
+    });
 
-  // 개별 품목의 status가 '출고완료'인 품목들만 수집
-  orders.forEach(order => {
-    if (!order) return;
-
-    const cId = order.customer_snapshot?.customer_id;
-    const customer = cId ? customers.find(c => c.customer_id === cId) : undefined;
-    const lossRate = order.customer_snapshot?.loss_rate || customer?.loss_rate || 0;
-
-    const itemsList = order.items || [];
-    itemsList.forEach((item, itemIdx) => {
-      const itemStatus = item.status || order.status || '접수';
-      if (itemStatus !== '출고완료') return;
-      const division = item.division || '판매';
-
-      const qty = item.quantity || 1;
-      const pureGoldWeightG = item.estimated_weight_g || 0;
-      const weightGoldDon = pureGoldWeightG / 3.75;
-
-      const purity = item.material === '14K' ? 0.585 : item.material === '18K' ? 0.750 : 1.0;
-      const singleGoldSalesDon = Math.floor((weightGoldDon * purity * (1 + lossRate / 100)) * 1000) / 1000;
-      const weightPureGoldDon = singleGoldSalesDon * qty;
-
-      const baseLabor = item.labor_base || 0;
-      const extraLabor = item.labor_extra || 0;
-      const mainStoneLabor = (item.labor_main || 0) * (item.qty_main || 0);
-      const subStoneLabor = (item.labor_sub || 0) * (item.qty_sub || 0);
-
-      const laborBaseExtra = baseLabor + extraLabor;
-      const laborStone = mainStoneLabor + subStoneLabor;
-      const totalAmount = (laborBaseExtra + laborStone) * qty;
-
-      const serialNo = order.order_id.replace(/[^0-9]/g, '').slice(-8) || order.order_id.slice(-8);
-      const tradeNoVal = cId ? (tradeNoMap[cId]?.[order.order_id] || 1) : 1;
-      const tradeNo = String(tradeNoVal);
-
-      // 매입 단가 임시 매핑
-      let purchasePrice = 20000;
-      if (item.model_number === '650M-런블') purchasePrice = 97400;
-      else if (item.model_number === '벨R-562') purchasePrice = 22000;
-      else if (item.model_number === '벨M-549') purchasePrice = 150800;
-      else if (item.model_number.includes('JP출력')) purchasePrice = 20000;
-
-      completedRows.push({
-        id: `completed-item::${order.order_id}::${item.item_id}::${itemIdx}`,
-        date: order.order_date,
-        dateDisplay: (() => {
-          try {
-            const d = new Date(order.order_date);
-            return isNaN(d.getTime()) ? '-' : d.toISOString().slice(5, 10);
-          } catch {
-            return '-';
-          }
-        })(),
-        type: division,
-        customerName: order.customer_snapshot?.name || '알수없음',
-        customerId: cId || '',
-        orderId: order.order_id,
-        itemId: item.item_id,
-        paymentStatus: item.payment_status || '결제전',
-        serialNo,
-        tradeNo,
-        model: item.model_number,
-        material: item.material,
-        color: item.color,
-        note: item.note || '',
-        weightGoldDon,
-        weightPureGoldDon,
-        purchasePrice,
-        laborBaseExtra,
-        laborStone,
-        stoneQty: item.qty_main || undefined,
-        quantity: qty,
-        totalAmount
+    const tradeNoMap: { [customerId: string]: { [eventId: string]: number } } = {};
+    Object.keys(customerEvents).forEach(cId => {
+      const sorted = [...customerEvents[cId]].sort((a, b) => a.date.localeCompare(b.date));
+      tradeNoMap[cId] = {};
+      sorted.forEach((event, index) => {
+        tradeNoMap[cId][event.id] = index + 1;
       });
     });
-  });
+
+    const rows: LedgerRowData[] = [];
+
+    // 개별 품목의 status가 '출고완료'인 품목들만 수집
+    orders.forEach(order => {
+      if (!order) return;
+
+      const cId = order.customer_snapshot?.customer_id;
+      const customer = cId ? customers.find(c => c.customer_id === cId) : undefined;
+      const lossRate = order.customer_snapshot?.loss_rate || customer?.loss_rate || 0;
+
+      const itemsList = order.items || [];
+      itemsList.forEach((item, itemIdx) => {
+        const itemStatus = item.status || order.status || '접수';
+        if (itemStatus !== '출고완료') return;
+        const division = item.division || '판매';
+
+        const qty = item.quantity || 1;
+        const pureGoldWeightG = item.estimated_weight_g || 0;
+        const weightGoldDon = pureGoldWeightG / 3.75;
+
+        const purity = item.material === '14K' ? 0.585 : item.material === '18K' ? 0.750 : 1.0;
+        const singleGoldSalesDon = Math.floor((weightGoldDon * purity * (1 + lossRate / 100)) * 1000) / 1000;
+        const weightPureGoldDon = singleGoldSalesDon * qty;
+
+        const baseLabor = item.labor_base || 0;
+        const extraLabor = item.labor_extra || 0;
+        const mainStoneLabor = (item.labor_main || 0) * (item.qty_main || 0);
+        const subStoneLabor = (item.labor_sub || 0) * (item.qty_sub || 0);
+
+        const laborBaseExtra = baseLabor + extraLabor;
+        const laborStone = mainStoneLabor + subStoneLabor;
+        const totalAmount = (laborBaseExtra + laborStone) * qty;
+
+        const serialNo = order.order_id.replace(/[^0-9]/g, '').slice(-8) || order.order_id.slice(-8);
+        const tradeNoVal = cId ? (tradeNoMap[cId]?.[order.order_id] || 1) : 1;
+        const tradeNo = String(tradeNoVal);
+
+        // 매입 단가 임시 매핑
+        let purchasePrice = 20000;
+        if (item.model_number === '650M-런블') purchasePrice = 97400;
+        else if (item.model_number === '벨R-562') purchasePrice = 22000;
+        else if (item.model_number === '벨M-549') purchasePrice = 150800;
+        else if (item.model_number.includes('JP출력')) purchasePrice = 20000;
+
+        rows.push({
+          id: `completed-item::${order.order_id}::${item.item_id}::${itemIdx}`,
+          date: order.order_date,
+          dateDisplay: (() => {
+            try {
+              const d = new Date(order.order_date);
+              return isNaN(d.getTime()) ? '-' : d.toISOString().slice(5, 10);
+            } catch {
+              return '-';
+            }
+          })(),
+          type: division,
+          customerName: order.customer_snapshot?.name || '알수없음',
+          customerId: cId || '',
+          orderId: order.order_id,
+          itemId: item.item_id,
+          paymentStatus: item.payment_status || '결제전',
+          serialNo,
+          tradeNo,
+          model: item.model_number,
+          material: item.material,
+          color: item.color,
+          note: item.note || '',
+          weightGoldDon,
+          weightPureGoldDon,
+          purchasePrice,
+          laborBaseExtra,
+          laborStone,
+          stoneQty: item.qty_main || undefined,
+          quantity: qty,
+          totalAmount
+        });
+      });
+    });
+
+    return rows;
+  }, [orders, transactions, customers]);
 
   // Filter by search text, type and activeTab
-  const filteredRows = completedRows.filter(row => {
-    const matchCustomer = row.customerName.toLowerCase().includes(filterCustomer.toLowerCase());
-    const matchType = filterType === '전체' || row.type === filterType;
-    const matchSubTab = activeTab === 'unpaid_ledger' ? row.paymentStatus === '결제전' 
-                      : activeTab === 'paid_ledger' ? row.paymentStatus === '결제완료'
-                      : row.paymentStatus === '보류';
-    return matchCustomer && matchType && matchSubTab;
-  }).sort((a, b) => b.date.localeCompare(a.date));
+  const filteredRows = React.useMemo(() => {
+    return completedRows.filter(row => {
+      const matchCustomer = row.customerName.toLowerCase().includes(filterCustomer.toLowerCase());
+      const matchType = filterType === '전체' || row.type === filterType;
+      const matchSubTab = activeTab === 'unpaid_ledger' ? row.paymentStatus === '결제전' 
+                        : activeTab === 'paid_ledger' ? row.paymentStatus === '결제완료'
+                        : row.paymentStatus === '보류';
+      return matchCustomer && matchType && matchSubTab;
+    }).sort((a, b) => b.date.localeCompare(a.date));
+  }, [completedRows, filterCustomer, filterType, activeTab]);
 
   // Selection Checkbox Handlers
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -280,16 +286,16 @@ export const CompletedLedger: React.FC = () => {
   };
 
   return (
-    <div className="glass-panel animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '12px' }}>
+    <div className="glass-panel animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '15px' }}>
       
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-        <h2 style={{ fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <h2 style={{ fontSize: '19px', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <FileCheck size={18} style={{ color: 'var(--primary)' }} />
           <span className="gradient-text" style={{ fontFamily: 'var(--font-title)', fontWeight: '600' }}>
             {activeTab === 'unpaid_ledger' ? 'Unpaid Release Ledger' : activeTab === 'paid_ledger' ? 'Paid Release Ledger' : 'Hold Release Ledger'}
           </span>
-          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+          <span style={{ fontSize: '15px', color: 'var(--text-muted)' }}>
             {activeTab === 'unpaid_ledger' ? '(미수금 장부 대장 - 결제전)' : activeTab === 'paid_ledger' ? '(수금완료 장부 대장 - 결제완료)' : '(보류 대장)'}
           </span>
         </h2>
@@ -305,7 +311,7 @@ export const CompletedLedger: React.FC = () => {
             value={filterCustomer}
             onChange={(e) => setFilterCustomer(e.target.value)}
             className="input-field"
-            style={{ width: '180px', padding: '5px 10px', fontSize: '12px' }}
+            style={{ width: '180px', padding: '5px 10px', fontSize: '15px' }}
           />
         </div>
 
@@ -315,7 +321,7 @@ export const CompletedLedger: React.FC = () => {
             value={filterType}
             onChange={(e) => setFilterType(e.target.value as '전체' | '판매' | '결제' | '반품' | 'DC')}
             className="input-field"
-            style={{ width: '120px', padding: '5px 10px', fontSize: '12px' }}
+            style={{ width: '120px', padding: '5px 10px', fontSize: '15px' }}
           >
             <option value="전체">전체 구분</option>
             <option value="판매">판매 (주문)</option>
@@ -325,7 +331,7 @@ export const CompletedLedger: React.FC = () => {
           </select>
         </div>
 
-        <div style={{ marginLeft: 'auto', fontSize: '11px', color: 'var(--text-muted)' }}>
+        <div style={{ marginLeft: 'auto', fontSize: '14px', color: 'var(--text-muted)' }}>
           {activeTab === 'unpaid_ledger' ? '미수금' : activeTab === 'paid_ledger' ? '수금완료' : '보류'} 총 건수: <strong style={{ color: 'var(--primary)' }}>{filteredRows.length}</strong>건
         </div>
       </div>
@@ -341,7 +347,7 @@ export const CompletedLedger: React.FC = () => {
                 disabled={selectedRows.length === 0}
                 style={{
                   padding: '6px 16px',
-                  fontSize: '12px',
+                  fontSize: '15px',
                   background: selectedRows.length > 0 ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 'rgba(255,255,255,0.05)',
                   color: selectedRows.length > 0 ? '#fff' : 'rgba(255,255,255,0.3)',
                   border: 'none',
@@ -359,7 +365,7 @@ export const CompletedLedger: React.FC = () => {
                 disabled={selectedRows.length === 0}
                 style={{
                   padding: '6px 16px',
-                  fontSize: '12px',
+                  fontSize: '15px',
                   background: selectedRows.length > 0 ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' : 'rgba(255,255,255,0.05)',
                   color: selectedRows.length > 0 ? '#fff' : 'rgba(255,255,255,0.3)',
                   border: 'none',
@@ -381,7 +387,7 @@ export const CompletedLedger: React.FC = () => {
               disabled={selectedRows.length === 0}
               style={{
                 padding: '6px 16px',
-                fontSize: '12px',
+                fontSize: '15px',
                 background: selectedRows.length > 0 ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' : 'rgba(255,255,255,0.05)',
                 color: selectedRows.length > 0 ? '#fff' : 'rgba(255,255,255,0.3)',
                 border: 'none',
@@ -401,7 +407,7 @@ export const CompletedLedger: React.FC = () => {
               disabled={selectedRows.length === 0}
               style={{
                 padding: '6px 16px',
-                fontSize: '12px',
+                fontSize: '15px',
                 background: selectedRows.length > 0 ? 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' : 'rgba(255,255,255,0.05)',
                 color: selectedRows.length > 0 ? '#fff' : 'rgba(255,255,255,0.3)',
                 border: 'none',
@@ -415,14 +421,14 @@ export const CompletedLedger: React.FC = () => {
             </button>
           )}
         </div>
-        <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+        <div style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
           선택된 항목 수: <strong style={{ color: 'var(--primary)' }}>{selectedRows.length}</strong>개
         </div>
       </div>
 
       {/* Table grid */}
       <div className="table-responsive" style={{ overflowX: 'auto' }}>
-        <table className="excel-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '1200px', fontSize: '11px', tableLayout: 'fixed' }}>
+        <table className="excel-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '1200px', fontSize: '14px', tableLayout: 'fixed' }}>
           <colgroup>
             <col style={{ width: '3%' }} />
             <col style={{ width: '3%' }} />
@@ -476,10 +482,10 @@ export const CompletedLedger: React.FC = () => {
               <th rowSpan={2} style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>되돌리기</th>
             </tr>
             <tr style={{ background: 'rgba(255, 255, 255, 0.03)', borderBottom: '2px solid var(--border-color)', color: 'var(--text-muted)' }}>
-              <th style={{ padding: '4px 4px', textAlign: 'center', border: '1px solid var(--border-color)', fontSize: '10px' }}>금</th>
-              <th style={{ padding: '4px 4px', textAlign: 'center', border: '1px solid var(--border-color)', fontSize: '10px' }}>순금</th>
-              <th style={{ padding: '4px 4px', textAlign: 'center', border: '1px solid var(--border-color)', fontSize: '10px' }}>기+추</th>
-              <th style={{ padding: '4px 4px', textAlign: 'center', border: '1px solid var(--border-color)', fontSize: '10px' }}>중+보</th>
+              <th style={{ padding: '4px 4px', textAlign: 'center', border: '1px solid var(--border-color)', fontSize: '13px' }}>금</th>
+              <th style={{ padding: '4px 4px', textAlign: 'center', border: '1px solid var(--border-color)', fontSize: '13px' }}>순금</th>
+              <th style={{ padding: '4px 4px', textAlign: 'center', border: '1px solid var(--border-color)', fontSize: '13px' }}>기+추</th>
+              <th style={{ padding: '4px 4px', textAlign: 'center', border: '1px solid var(--border-color)', fontSize: '13px' }}>중+보</th>
             </tr>
           </thead>
           <tbody>
@@ -626,7 +632,7 @@ export const CompletedLedger: React.FC = () => {
 
                     {/* 상태 */}
                     <td style={{ padding: '6px 4px', textAlign: 'center' }}>
-                      <span className="badge" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold' }}>
+                      <span className="badge" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '2px 6px', borderRadius: '4px', fontSize: '13px', fontWeight: 'bold' }}>
                         출고 완료
                       </span>
                     </td>
@@ -643,7 +649,7 @@ export const CompletedLedger: React.FC = () => {
                             border: '1px solid rgba(245, 158, 11, 0.3)',
                             borderRadius: '4px',
                             padding: '2px 6px',
-                            fontSize: '11px',
+                            fontSize: '14px',
                             fontWeight: 'bold',
                             cursor: 'pointer',
                             boxShadow: 'none'
@@ -662,7 +668,7 @@ export const CompletedLedger: React.FC = () => {
                             border: '1px solid rgba(59, 130, 246, 0.3)',
                             borderRadius: '4px',
                             padding: '2px 6px',
-                            fontSize: '11px',
+                            fontSize: '14px',
                             fontWeight: 'bold',
                             cursor: 'pointer',
                             boxShadow: 'none'

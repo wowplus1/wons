@@ -24,7 +24,7 @@ export const InvoicePrintView: React.FC = () => {
 
   if (!order || !currentRates) {
     return (
-      <div style={{ padding: '20px', color: '#000', textAlign: 'center', fontSize: '12px', background: '#fff' }}>
+      <div style={{ padding: '20px', color: '#000', textAlign: 'center', fontSize: '15px', background: '#fff' }}>
         해당 주문 정보 또는 시세 데이터를 불러올 수 없습니다. (주문번호: {orderId})
       </div>
     );
@@ -201,10 +201,10 @@ export const InvoicePrintView: React.FC = () => {
           {/* Header Top: Title & Info Card */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid #000', paddingBottom: '5px' }}>
             <div>
-              <h1 style={{ fontSize: '18px', fontWeight: '900', margin: 0, letterSpacing: '0.15em', color: '#000', fontFamily: 'Gulim, "Malgun Gothic", sans-serif' }}>
+              <h1 style={{ fontSize: '21px', fontWeight: '900', margin: 0, letterSpacing: '0.15em', color: '#000', fontFamily: 'Gulim, "Malgun Gothic", sans-serif' }}>
                 {title}
               </h1>
-              <div style={{ fontSize: '9px', marginTop: '6px', color: '#000', fontFamily: 'Gulim, sans-serif', letterSpacing: '-0.5px' }}>
+              <div style={{ fontSize: '12px', marginTop: '6px', color: '#000', fontFamily: 'Gulim, sans-serif', letterSpacing: '-0.5px' }}>
                 일자: {formatDate(order.order_date)} &nbsp;&nbsp;
                 G당시세: {sell24kDon.toLocaleString()}(별도) &nbsp;&nbsp;
                 거래No: {order.order_id.split('-').pop()?.slice(-4) || order.order_id.slice(-4)}
@@ -229,7 +229,7 @@ export const InvoicePrintView: React.FC = () => {
 
           {/* Customer Name Row under header for Client Copy */}
           {type === '고객용' && (
-            <div style={{ fontSize: '10px', fontWeight: '700', padding: '4px 0', borderBottom: '1px solid #000', fontFamily: 'Gulim, sans-serif' }}>
+            <div style={{ fontSize: '13px', fontWeight: '700', padding: '4px 0', borderBottom: '1px solid #000', fontFamily: 'Gulim, sans-serif' }}>
               거래처명: {order.customer_snapshot.name}
             </div>
           )}
@@ -238,7 +238,7 @@ export const InvoicePrintView: React.FC = () => {
           <table className="print-table" style={{ 
             width: '100%', 
             borderCollapse: 'collapse', 
-            fontSize: '10px', 
+            fontSize: '13px', 
             marginTop: '5px', 
             borderBottom: '2px solid #000',
             tableLayout: 'fixed'
@@ -295,16 +295,16 @@ export const InvoicePrintView: React.FC = () => {
                       </td>
                       <td style={{ border: '1px solid #000', padding: '2px 4px', textAlign: 'right', lineHeight: '1.1' }}>
                         {item.goldWeightDon > 0 ? item.goldWeightDon.toFixed(3) : '0.000'}<br/>
-                        <span style={{ color: '#555', fontSize: '8px' }}>{item.totalStonesWeightRowDon > 0 ? item.totalStonesWeightRowDon.toFixed(3) : ''}</span>
+                        <span style={{ color: '#555', fontSize: '11px' }}>{item.totalStonesWeightRowDon > 0 ? item.totalStonesWeightRowDon.toFixed(3) : ''}</span>
                       </td>
                       <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'center', verticalAlign: 'bottom' }}>
                         {item.qty_main || ''}
                       </td>
-                      <td style={{ border: '1px solid #000', padding: '2px 4px', textAlign: 'right', lineHeight: '1.1', fontSize: '9px' }}>
+                      <td style={{ border: '1px solid #000', padding: '2px 4px', textAlign: 'right', lineHeight: '1.1', fontSize: '12px' }}>
                         {item.baseLabor > 0 ? item.baseLabor.toLocaleString() : ''}<br/>
                         <span style={{ color: '#555' }}>{item.extraLabor > 0 ? item.extraLabor.toLocaleString() : ''}</span>
                       </td>
-                      <td style={{ border: '1px solid #000', padding: '2px 4px', textAlign: 'right', lineHeight: '1.1', fontSize: '9px' }}>
+                      <td style={{ border: '1px solid #000', padding: '2px 4px', textAlign: 'right', lineHeight: '1.1', fontSize: '12px' }}>
                         {item.labor_sub > 0 ? item.labor_sub.toLocaleString() : ''}<br/>
                         <span style={{ color: '#555' }}>{item.labor_main > 0 ? item.labor_main.toLocaleString() : ''}</span>
                       </td>
@@ -325,7 +325,7 @@ export const InvoicePrintView: React.FC = () => {
                 return (
                   <tr key={i} style={{ height: '26px' }}>
                     <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'center', color: '#999' }}>{i + 1}</td>
-                    <td style={{ border: '1px solid #000', padding: '2px 6px', color: '#333', fontStyle: 'italic', fontSize: '9px' }}>
+                    <td style={{ border: '1px solid #000', padding: '2px 6px', color: '#333', fontStyle: 'italic', fontSize: '12px' }}>
                       {isPlaceholder ? '-이하여백-' : ''}
                     </td>
                     <td style={{ border: '1px solid #000', padding: '2px' }}></td>
@@ -369,7 +369,7 @@ export const InvoicePrintView: React.FC = () => {
               </tr>
             </tbody>
           </table>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', marginTop: '2px', fontFamily: 'Gulim, sans-serif' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginTop: '2px', fontFamily: 'Gulim, sans-serif' }}>
             <span></span>
             <strong style={{ letterSpacing: '2px' }}>[1][끝]</strong>
           </div>
@@ -377,7 +377,7 @@ export const InvoicePrintView: React.FC = () => {
 
         {/* Ledger Summary Box */}
         <div>
-          <table className="print-ledger-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px', marginTop: '12px', border: '1.5px solid #000' }}>
+          <table className="print-ledger-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', marginTop: '12px', border: '1.5px solid #000' }}>
             <thead>
               <tr style={{ background: '#fff', borderBottom: '1.5px solid #000' }}>
                 <th style={{ border: '1px solid #000', padding: '4px', width: '28%', textAlign: 'center', fontWeight: '700' }}></th>
@@ -459,10 +459,10 @@ export const InvoicePrintView: React.FC = () => {
                 <td style={{ border: '1px solid #000', padding: '2px 4px', textAlign: 'center' }}>
                   <span style={{ color: 'red', marginRight: '3px', fontWeight: '800' }}>✔</span>거래 후 미수
                 </td>
-                <td style={{ border: '1px solid #000', padding: '2px 4px', textAlign: 'right', fontSize: '10px' }}>
+                <td style={{ border: '1px solid #000', padding: '2px 4px', textAlign: 'right', fontSize: '13px' }}>
                   {goldAfterTxDon.toFixed(3)}
                 </td>
-                <td style={{ border: '1px solid #000', padding: '2px 4px', textAlign: 'right', fontSize: '10px' }}>
+                <td style={{ border: '1px solid #000', padding: '2px 4px', textAlign: 'right', fontSize: '13px' }}>
                   {cashAfterTx.toLocaleString()}
                 </td>
                 <td style={{ border: '1px solid #000', padding: '2px 4px' }}></td>
@@ -487,7 +487,7 @@ export const InvoicePrintView: React.FC = () => {
         borderRadius: '8px',
         border: '1px solid #ddd',
         color: '#333',
-        fontSize: '12px',
+        fontSize: '15px',
         boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
         maxWidth: '1200px',
         margin: '0 auto 20px auto'
@@ -509,7 +509,7 @@ export const InvoicePrintView: React.FC = () => {
               color: '#fff',
               cursor: 'pointer',
               fontWeight: 'bold',
-              fontSize: '12px'
+              fontSize: '15px'
             }}
           >
             <Printer size={14} /> 인쇄 대화상자 열기
@@ -523,7 +523,7 @@ export const InvoicePrintView: React.FC = () => {
               borderRadius: '4px',
               color: '#555', 
               cursor: 'pointer',
-              fontSize: '12px'
+              fontSize: '15px'
             }}
           >
             창 닫기

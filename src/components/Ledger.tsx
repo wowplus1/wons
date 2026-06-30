@@ -39,13 +39,13 @@ export const Ledger: React.FC = () => {
       
       {/* 1. Customer Ledger List */}
       <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        <h2 style={{ fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
+        <h2 style={{ fontSize: '19px', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
           <Landmark size={18} style={{ color: 'var(--primary)' }} />
           거래처 미수금 및 순금 장부 관리
         </h2>
         
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '16px' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
                 <th style={{ padding: '8px' }}>상호명</th>
@@ -60,7 +60,7 @@ export const Ledger: React.FC = () => {
                 <tr key={c.customer_id} style={{ borderBottom: '1px solid var(--border-color)', height: '44px' }}>
                   <td style={{ padding: '8px', fontWeight: '600' }}>{c.name}</td>
                   <td style={{ padding: '8px' }}>
-                    <span className="badge badge-warning" style={{ fontSize: '11px' }}>{c.grade}등급</span>
+                    <span className="badge badge-warning" style={{ fontSize: '14px' }}>{c.grade}등급</span>
                   </td>
                   <td style={{ padding: '8px', textAlign: 'right', fontFamily: 'var(--font-title)', color: 'var(--primary)', fontWeight: '600' }}>
                     {c.gold_balance_24k_g.toLocaleString()} g
@@ -72,7 +72,7 @@ export const Ledger: React.FC = () => {
                     <button 
                       onClick={() => openPayModal(c)}
                       className="btn-primary"
-                      style={{ fontSize: '11px', padding: '4px 10px', boxShadow: 'none' }}
+                      style={{ fontSize: '14px', padding: '4px 10px', boxShadow: 'none' }}
                     >
                       <ArrowDownCircle size={12} /> 실물 금 입고
                     </button>
@@ -86,7 +86,7 @@ export const Ledger: React.FC = () => {
 
       {/* 2. Order History & Status Management */}
       <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        <h2 style={{ fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
+        <h2 style={{ fontSize: '19px', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
           <FileSpreadsheet size={18} style={{ color: 'var(--primary)' }} />
           최근 주문 현황 및 상태 제어
         </h2>
@@ -106,14 +106,14 @@ export const Ledger: React.FC = () => {
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '12px', fontFamily: 'var(--font-title)', fontWeight: '600', color: 'var(--primary)' }}>
+                <span style={{ fontSize: '15px', fontFamily: 'var(--font-title)', fontWeight: '600', color: 'var(--primary)' }}>
                   {o.order_id}
                 </span>
                 <select
                   value={o.status}
                   onChange={(e) => updateOrderStatus(o.order_id, e.target.value as any)}
                   className="input-field"
-                  style={{ fontSize: '11px', padding: '2px 6px', background: 'var(--bg-surface-solid)' }}
+                  style={{ fontSize: '14px', padding: '2px 6px', background: 'var(--bg-surface-solid)' }}
                 >
                   <option value="접수">접수</option>
                   <option value="공장발주">공장발주</option>
@@ -122,13 +122,13 @@ export const Ledger: React.FC = () => {
                   <option value="보류">보류</option>
                 </select>
               </div>
-              <div style={{ fontSize: '13px', fontWeight: '600' }}>
+              <div style={{ fontSize: '16px', fontWeight: '600' }}>
                 {o.customer_snapshot.name}
               </div>
-              <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+              <div style={{ fontSize: '15px', color: 'var(--text-muted)' }}>
                 {o.items.map(i => `${i.model_number} (${i.material}/${i.color} ${i.size}) x${i.quantity}`).join(', ')}
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', borderTop: '1px solid var(--border-color)', paddingTop: '8px', marginTop: '4px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '15px', borderTop: '1px solid var(--border-color)', paddingTop: '8px', marginTop: '4px' }}>
                 <span>금액: <strong>{o.total_amount.toLocaleString()}원</strong></span>
                 <span>환산순금: <strong>{o.total_gold_weight_24k_g}g</strong></span>
               </div>
@@ -161,20 +161,20 @@ export const Ledger: React.FC = () => {
               boxShadow: '0 0 24px rgba(212, 175, 55, 0.15)'
             }}
           >
-            <h3 style={{ fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', marginBottom: '16px' }}>
+            <h3 style={{ fontSize: '19px', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', marginBottom: '16px' }}>
               <ShieldCheck size={18} style={{ color: 'var(--primary)' }} />
               실물 순금 입고 정산
             </h3>
             
             <form onSubmit={handlePaymentSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>대상 거래처</label>
-                <div style={{ fontSize: '14px', fontWeight: '700' }}>{selectedCust.name}</div>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>현재 미수금: {selectedCust.gold_balance_24k_g} g</div>
+                <label style={{ display: 'block', fontSize: '15px', color: 'var(--text-muted)', marginBottom: '4px' }}>대상 거래처</label>
+                <div style={{ fontSize: '17px', fontWeight: '700' }}>{selectedCust.name}</div>
+                <div style={{ fontSize: '14px', color: 'var(--text-muted)' }}>현재 미수금: {selectedCust.gold_balance_24k_g} g</div>
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>정산할 실물 금 중량 (g)</label>
+                <label style={{ display: 'block', fontSize: '15px', color: 'var(--text-muted)', marginBottom: '4px' }}>정산할 실물 금 중량 (g)</label>
                 <input
                   type="number"
                   step="0.01"
@@ -189,7 +189,7 @@ export const Ledger: React.FC = () => {
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>상세 비고 (입고 내역)</label>
+                <label style={{ display: 'block', fontSize: '15px', color: 'var(--text-muted)', marginBottom: '4px' }}>상세 비고 (입고 내역)</label>
                 <input
                   type="text"
                   placeholder="예: 종로공장 실물 골드바 정산"

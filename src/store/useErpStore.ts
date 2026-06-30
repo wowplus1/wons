@@ -12,6 +12,64 @@ import {
 } from 'firebase/firestore';
 import type { GoldRates, Stone, Customer, CatalogItem, Order, OrderItem, GoldTransaction } from '../firebase/mockDb';
 
+// 특정 재질, 색상, 등급에 대응하는 공임비(판매가)와 구매원가(cost)를 조회하는 헬퍼 함수
+export const getCatalogLaborFees = (
+  catalogItem: CatalogItem,
+  material: string,
+  color: string,
+  grade: number
+) => {
+  const mat = material || '14K';
+  const itemGradeKey = `grade_${grade}`;
+
+  // 1. 색상별 공임 데이터(v2)가 존재하는 경우
+  if (catalogItem.labor_fees_v2 && catalogItem.labor_fees_v2[mat]) {
+    const fees = catalogItem.labor_fees_v2[mat];
+    
+    // 해당 색상과 정확히 일치하는 행 조회
+    let matchedFee = fees.find(f => f.color === color);
+    
+    let isMatched = true;
+    if (!matchedFee) {
+      isMatched = false;
+      // 매칭되는 색상이 없다면 전체색상('') 행을 조회하고, YG(옐로우)인 경우에 한해서만 최후의 수단으로 '기본' 행으로 매핑
+      matchedFee = fees.find(f => f.color === '');
+      if (!matchedFee && color === 'YG') {
+        matchedFee = fees.find(f => f.type === '기본');
+        isMatched = true;
+      }
+    }
+    
+    if (matchedFee) {
+      const laborBase = (matchedFee as any)[itemGradeKey] || 0;
+      const laborCost = matchedFee.cost || 0;
+      return { laborBase, laborCost, isMatched: isMatched && laborBase > 0 };
+    }
+    return { laborBase: 0, laborCost: 0, isMatched: false };
+  }
+
+  // 2. 구버전 데이터 호환용 폴백 (v2 데이터가 없을 때)
+  const baseLabor = catalogItem.base_labor_fees[mat] || { grade_1: 0, grade_2: 0, grade_3: 0, grade_4: 0 };
+  const laborBase = (baseLabor as any)[itemGradeKey] || 0;
+  
+  let extra = 0;
+  let isMatched = false;
+  
+  if (color === 'YG') {
+    isMatched = laborBase > 0;
+  }
+  
+  // WG(화이트)인 경우 기존 extra_labor_fee 가산 처리
+  if (color === 'WG') {
+    extra = catalogItem.extra_labor_fee || 0;
+    if (extra > 0) {
+      isMatched = true;
+    }
+  }
+  
+  return { laborBase: laborBase + extra, laborCost: 0, isMatched };
+};
+
 interface ErpState {
   // DB States
   goldRates: GoldRates[];
@@ -34,7 +92,7 @@ interface ErpState {
   editingOrderId: string | null;
   
   // Actions
-  fetchDb: () => Promise<void>;
+  fetchDb: (targetCollections?: ('gold_rates' | 'stones' | 'customers' | 'catalog' | 'orders' | 'gold_transactions')[]) => Promise<void>;
   setActiveTab: (tab: 'customers' | 'dashboard' | 'order' | 'ledger' | 'catalog' | 'rates' | 'stones' | 'orders' | 'work_list' | 'release_list' | 'unpaid_ledger' | 'paid_ledger' | 'hold_ledger') => void;
   startEditOrder: (orderId: string) => void;
   cancelEditOrder: () => void;
@@ -58,6 +116,7 @@ interface ErpState {
   updateItemActualWeight: (orderId: string, itemId: number, actualWeightG: number) => Promise<void>;
   updateItemStepWeightsAndActualWeight: (orderId: string, itemId: number, stepWeights: any, actualWeightG?: number) => Promise<void>;
   deleteOrder: (orderId: string) => Promise<void>;
+  deleteOrderItem: (orderId: string, itemId: number) => Promise<void>;
   deleteTransaction: (transactionId: string) => Promise<void>;
   saveCatalogItem: (item: CatalogItem) => Promise<void>;
 }
@@ -82,44 +141,47 @@ export const useErpStore = create<ErpState>((set, get) => ({
 
   setActiveTab: (tab) => set({ activeTab: tab }),
 
-  fetchDb: async () => {
+  fetchDb: async (targetCollections) => {
     set({ loading: true });
     try {
-      const [ratesSnap, stonesSnap, customersSnap, catalogSnap, ordersSnap, txSnap] = await Promise.all([
-        getDocs(collection(db, 'gold_rates')),
-        getDocs(collection(db, 'stones')),
-        getDocs(collection(db, 'customers')),
-        getDocs(collection(db, 'catalog')),
-        getDocs(collection(db, 'orders')),
-        getDocs(collection(db, 'gold_transactions'))
-      ]);
+      const collectionsToFetch = targetCollections || [
+        'gold_rates',
+        'stones',
+        'customers',
+        'catalog',
+        'orders',
+        'gold_transactions'
+      ];
 
-      const goldRates = ratesSnap.docs.map(d => d.data() as GoldRates);
-      const stones = stonesSnap.docs.map(d => d.data() as Stone);
-      const customers = customersSnap.docs.map(d => d.data() as Customer);
-      const catalog = catalogSnap.docs.map(d => d.data() as CatalogItem);
-      const orders = ordersSnap.docs.map(d => d.data() as Order);
-      const transactions = txSnap.docs.map(d => d.data() as GoldTransaction);
+      const promises = collectionsToFetch.map(col => getDocs(collection(db, col)));
+      const results = await Promise.all(promises);
 
-      // Sort rates by date descending, grab today
-      const sortedRates = [...goldRates].sort((a, b) => b.date.localeCompare(a.date));
-      const currentRates = sortedRates[0] || null;
+      const updates: any = {};
 
-      // Calculate core metrics
-      const totalReceivable = customers.reduce((sum, c) => sum + c.receivable_amount, 0);
-      const totalGoldBalance24k = customers.reduce((sum, c) => sum + c.gold_balance_24k_g, 0);
+      collectionsToFetch.forEach((col, index) => {
+        const snap = results[index];
+        const data = snap.docs.map(d => d.data());
 
-      set({
-        goldRates,
-        stones,
-        customers,
-        catalog,
-        orders,
-        transactions,
-        currentRates,
-        totalReceivable,
-        totalGoldBalance24k,
+        if (col === 'gold_rates') {
+          updates.goldRates = data as GoldRates[];
+          const sortedRates = [...(data as GoldRates[])].sort((a, b) => b.date.localeCompare(a.date));
+          updates.currentRates = sortedRates[0] || null;
+        } else if (col === 'stones') {
+          updates.stones = data as Stone[];
+        } else if (col === 'customers') {
+          updates.customers = data as Customer[];
+          updates.totalReceivable = (data as Customer[]).reduce((sum, c) => sum + c.receivable_amount, 0);
+          updates.totalGoldBalance24k = (data as Customer[]).reduce((sum, c) => sum + c.gold_balance_24k_g, 0);
+        } else if (col === 'catalog') {
+          updates.catalog = data as CatalogItem[];
+        } else if (col === 'orders') {
+          updates.orders = data as Order[];
+        } else if (col === 'gold_transactions') {
+          updates.transactions = data as GoldTransaction[];
+        }
       });
+
+      set(updates);
     } catch (error) {
       console.error("fetchDb error: ", error);
     } finally {
@@ -158,6 +220,7 @@ export const useErpStore = create<ErpState>((set, get) => ({
 
   updateOrderItem: (index: number, updatedItem: Partial<OrderItem>) => {
     const items = [...get().currentOrderItems];
+    const prevItem = { ...items[index] }; // 변경 전 원본 상태 백업
     const isModelChanged = updatedItem.model_number !== undefined && updatedItem.model_number !== items[index].model_number;
     const isDivisionChanged = updatedItem.division !== undefined && updatedItem.division !== items[index].division;
     
@@ -214,7 +277,7 @@ export const useErpStore = create<ErpState>((set, get) => ({
           item.manufacturer = 'JP';
           item.material = item.material || '14K';
           item.color = item.color || 'YG';
-          item.grade = 3;
+          item.grade = selectedCustomer.grade || 3;
           
           item.labor_base = 0;
           item.labor_extra = 0;
@@ -237,17 +300,23 @@ export const useErpStore = create<ErpState>((set, get) => ({
       } else {
         const catalogItem = get().catalog.find(c => c.model_number === item.model_number);
         if (catalogItem) {
-          const gradeKey = `grade_${item.grade || 3}`;
-          
+          const mat = isModelChanged
+            ? (catalogItem.materials[0] || '14K')
+            : (item.material || catalogItem.materials[0] || '14K');
+          const grade = item.grade || selectedCustomer.grade || 3;
+          const itemGradeKey = `grade_${grade}`;
+
           if (isModelChanged) {
             item.manufacturer = 'JP';
-            item.material = item.material || catalogItem.materials[0] || '14K';
+            item.material = mat;
             item.color = item.color || 'YG';
-            item.grade = 3;
+            item.grade = grade;
             
-            const mat = item.material || '14K';
-            item.labor_base = catalogItem.base_labor_fees[mat]?.[gradeKey] || 0;
-            item.labor_extra = catalogItem.extra_labor_fee || 0;
+            const { laborBase, laborCost } = getCatalogLaborFees(catalogItem, mat, item.color || 'YG', grade);
+            
+            item.labor_base = laborBase;
+            item.labor_cost = laborCost;
+            item.labor_extra = 0;
             
             const dsMain = catalogItem.default_stones[0];
             const dsSub = catalogItem.default_stones[1];
@@ -257,7 +326,7 @@ export const useErpStore = create<ErpState>((set, get) => ({
               item.stone_main_id = dsMain.stone_id;
               item.stone_main_name = stoneDetail?.name || dsMain.stone_id;
               item.qty_main = dsMain.quantity;
-              item.labor_main = stoneDetail?.grade_prices[gradeKey] || 0;
+              item.labor_main = stoneDetail?.grade_prices[itemGradeKey] || 0;
               item.stone_weight_ea = stoneDetail?.weight_carat || 0;
             } else {
               item.stone_main_id = '';
@@ -272,7 +341,7 @@ export const useErpStore = create<ErpState>((set, get) => ({
               item.stone_sub_id = dsSub.stone_id;
               item.stone_sub_name = stoneDetail?.name || dsSub.stone_id;
               item.qty_sub = dsSub.quantity;
-              item.labor_sub = stoneDetail?.grade_prices[gradeKey] || 0;
+              item.labor_sub = stoneDetail?.grade_prices[itemGradeKey] || 0;
             } else {
               item.stone_sub_id = '';
               item.stone_sub_name = '';
@@ -285,17 +354,42 @@ export const useErpStore = create<ErpState>((set, get) => ({
             item.release_date = date.toISOString().split('T')[0];
           }
           
-          const mat = item.material || '14K';
-          const itemGradeKey = `grade_${item.grade || selectedCustomer.grade}`;
-          if (updatedItem.material !== undefined) {
-            item.labor_base = catalogItem.base_labor_fees[mat]?.[itemGradeKey] || 0;
+          if (
+            updatedItem.material !== undefined ||
+            updatedItem.color !== undefined ||
+            updatedItem.grade !== undefined
+          ) {
+            const { laborBase, laborCost, isMatched } = getCatalogLaborFees(catalogItem, mat, item.color || 'YG', grade);
+            
+            // 색상 변경 시에만 alert 알림창을 띄우고 이전 값으로 롤백 수행
+            if (updatedItem.color !== undefined && !isMatched && item.model_number !== '임시제품' && item.model_number !== '디자인출력') {
+              alert(`[알림] 선택하신 모델 [${item.model_number}]의 ${item.color || 'YG'} 색상 공임 단가가 등록되어 있지 않거나 0원입니다.\n정확한 정산을 위해 B2B 카탈로그에서 단가를 보완해 주세요.`);
+              
+              // 롤백: 색상값만 이전 값으로 복원
+              item.color = prevItem.color;
+              
+              // 원복된 색상 기준으로 단가 재조회
+              const rollbackColor = item.color || 'YG';
+              const rollbackFees = getCatalogLaborFees(catalogItem, mat, rollbackColor, grade);
+              
+              item.labor_base = rollbackFees.laborBase;
+              item.labor_cost = rollbackFees.laborCost;
+            } else {
+              // 색상 외 변경이거나 단가 매칭이 성공한 경우
+              item.labor_base = laborBase;
+              item.labor_cost = laborCost;
+            }
+            
+            const currentGrade = item.grade || selectedCustomer.grade || 3;
+            const currentGradeKey = `grade_${currentGrade}`;
+            
             if (item.stone_main_id) {
               const stoneDetail = get().stones.find(s => s.stone_id === item.stone_main_id);
-              item.labor_main = stoneDetail?.grade_prices[itemGradeKey] || 0;
+              item.labor_main = stoneDetail?.grade_prices[currentGradeKey] || 0;
             }
             if (item.stone_sub_id) {
               const stoneDetail = get().stones.find(s => s.stone_id === item.stone_sub_id);
-              item.labor_sub = stoneDetail?.grade_prices[itemGradeKey] || 0;
+              item.labor_sub = stoneDetail?.grade_prices[currentGradeKey] || 0;
             }
           }
         }
@@ -457,13 +551,19 @@ export const useErpStore = create<ErpState>((set, get) => ({
       let finalAmount = selectedCustomerForOrder.receivable_amount;
 
       // 1. 수정 모드일 때 정산 롤백 처리
+      // 1. 수정 모드일 때 정산 롤백 처리
       if (editingOrderId) {
         const oldOrder = get().orders.find(o => o.order_id === editingOrderId);
         if (oldOrder) {
           const isWeightTrade = selectedCustomerForOrder.trade_type === 'weight';
           
           oldOrder.items.forEach(item => {
+            const itemStatus = item.status || oldOrder.status || '접수';
+            if (itemStatus !== '출고완료') return; // 출고완료된 품목만 롤백 대상
+            
             const division = item.division || '판매';
+            if (division !== '판매') return; // 출고완료 단계에서는 판매 품목만 롤백 처리 (결제/반품/DC는 결제완료 시에만 롤백)
+
             const lossRate = selectedCustomerForOrder.loss_rate || 0;
             const lossMultiplier = (1 + lossRate / 100);
             const purityMultiplier = item.material === '14K' ? (0.585 * lossMultiplier) 
@@ -486,15 +586,6 @@ export const useErpStore = create<ErpState>((set, get) => ({
               } else {
                 finalAmount = Math.max(0, finalAmount - itemAmount);
               }
-            } else if (division === '결제' || division === '반품') {
-              if (isWeightTrade) {
-                finalGold = parseFloat((finalGold + itemGoldWeight24k).toFixed(3));
-                finalAmount += totalLaborCost;
-              } else {
-                finalAmount += itemAmount;
-              }
-            } else if (division === 'DC') {
-              finalAmount += itemAmount;
             }
           });
 
@@ -515,7 +606,12 @@ export const useErpStore = create<ErpState>((set, get) => ({
       // 2. 새 주문 내역에 따른 거래처 잔고 가산 연산
       const isWeightTrade = selectedCustomerForOrder.trade_type === 'weight';
       validItems.forEach(item => {
+        const itemStatus = item.status || '접수';
+        if (itemStatus !== '출고완료') return; // 출고완료된 품목만 거래처 미수에 가산
+        
         const division = item.division || '판매';
+        if (division !== '판매') return; // 출고완료 단계에서는 판매 품목만 가산 (결제/반품/DC는 결제완료 시에 반영)
+
         const itemAmount = item.calculated_price || 0;
         const baseLabor = item.labor_base || 0;
         const extraLabor = item.labor_extra || 0;
@@ -529,14 +625,6 @@ export const useErpStore = create<ErpState>((set, get) => ({
           } else {
             finalAmount += itemAmount;
           }
-        } else if (division === '결제' || division === '반품') {
-          if (isWeightTrade) {
-            finalAmount = Math.max(0, finalAmount - totalLaborCost);
-          } else {
-            finalAmount = Math.max(0, finalAmount - itemAmount);
-          }
-        } else if (division === 'DC') {
-          finalAmount = Math.max(0, finalAmount - itemAmount);
         }
       });
 
@@ -544,7 +632,12 @@ export const useErpStore = create<ErpState>((set, get) => ({
       if (isWeightTrade) {
         let goldDiff = 0;
         validItems.forEach((item, itemIdx) => {
+          const itemStatus = item.status || '접수';
+          if (itemStatus !== '출고완료') return; // 출고완료된 품목만 금 미수에 가산
+
           const division = item.division || '판매';
+          if (division !== '판매') return; // 중량 정산에서도 판매 품목만 가산 (결제/반품은 결제완료 시 정산)
+
           const lossRate = newOrder.customer_snapshot.loss_rate || selectedCustomerForOrder.loss_rate || 0;
           const lossMultiplier = (1 + lossRate / 100);
           const purityMultiplier = item.material === '14K' ? (0.585 * lossMultiplier) 
@@ -645,22 +738,98 @@ export const useErpStore = create<ErpState>((set, get) => ({
         grouped[orderId].push(itemId);
       });
 
+      const customerBalanceDiffs: { [customerId: string]: { amount: number, gold: number } } = {};
+
       for (const orderId of Object.keys(grouped)) {
         const order = get().orders.find(o => o.order_id === orderId);
         if (order) {
+          const customerId = order.customer_snapshot.customer_id;
+          if (!customerBalanceDiffs[customerId]) {
+            customerBalanceDiffs[customerId] = { amount: 0, gold: 0 };
+          }
+
+          const customerDetail = get().customers.find(c => c.customer_id === customerId);
+          const lossRate = order.customer_snapshot.loss_rate || customerDetail?.loss_rate || 0;
+          const lossMultiplier = (1 + lossRate / 100);
+          const isWeightTrade = customerDetail?.trade_type === 'weight';
+
           const itemIds = grouped[orderId];
           const items = order.items.map(i => {
             const currentItemStatus = i.status || order.status || '접수';
-            return itemIds.includes(i.item_id)
-              ? { ...i, status }
-              : { ...i, status: currentItemStatus };
+            const isTarget = itemIds.includes(i.item_id);
+
+            if (isTarget && currentItemStatus !== status) {
+              const division = i.division || '판매';
+              if (division === '판매') {
+                const itemAmount = i.calculated_price || 0;
+                const baseLabor = i.labor_base || 0;
+                const extraLabor = i.labor_extra || 0;
+                const mainStoneLabor = (i.labor_main || 0) * (i.qty_main || 0);
+                const subStoneLabor = (i.labor_sub || 0) * (i.qty_sub || 0);
+                const totalLaborCost = (baseLabor + extraLabor + mainStoneLabor + subStoneLabor) * i.quantity;
+
+                const priceVal = isWeightTrade ? totalLaborCost : itemAmount;
+
+                const purityMultiplier = i.material === '14K' ? (0.585 * lossMultiplier) 
+                                       : i.material === '18K' ? (0.750 * lossMultiplier) 
+                                       : 1.0;
+                const itemGoldWeight24k = (i.estimated_weight_g || 0) * i.quantity * purityMultiplier;
+
+                // 출고완료 진입: 미수금 가산
+                if (status === '출고완료') {
+                  customerBalanceDiffs[customerId].amount += priceVal;
+                  customerBalanceDiffs[customerId].gold += itemGoldWeight24k;
+
+                  if (isWeightTrade && itemGoldWeight24k > 0) {
+                    const txId = `TX-${orderId}-${i.item_id}`;
+                    const tx: GoldTransaction = {
+                      transaction_id: txId,
+                      customer_id: customerId,
+                      type: 'out',
+                      gold_type: '24K',
+                      weight_g: parseFloat(itemGoldWeight24k.toFixed(3)),
+                      note: `판매 출고완료: ${orderId} (품목 ${i.item_id})`,
+                      created_at: new Date().toISOString(),
+                      created_by: 'system'
+                    };
+                    batch.set(doc(db, 'gold_transactions', txId), tx);
+                  }
+                }
+                // 출고완료 롤백: 미수금 차감
+                else if (currentItemStatus === '출고완료') {
+                  customerBalanceDiffs[customerId].amount -= priceVal;
+                  customerBalanceDiffs[customerId].gold -= itemGoldWeight24k;
+
+                  if (isWeightTrade && itemGoldWeight24k > 0) {
+                    const txId = `TX-${orderId}-${i.item_id}`;
+                    batch.delete(doc(db, 'gold_transactions', txId));
+                  }
+                }
+              }
+            }
+
+            return isTarget ? { ...i, status } : { ...i, status: currentItemStatus };
           });
-          
-          // 하위 호환성 및 편의성을 위해, 모든 아이템 상태가 동일하면 주문 자체 status도 맞춰줍니다.
+
           const allItemsSameStatus = items.every(i => i.status === status);
           const orderStatusUpdate = allItemsSameStatus ? { items, status } : { items };
-          
           batch.update(doc(db, 'orders', orderId), orderStatusUpdate);
+        }
+      }
+
+      for (const customerId of Object.keys(customerBalanceDiffs)) {
+        const diff = customerBalanceDiffs[customerId];
+        if (diff.amount !== 0 || diff.gold !== 0) {
+          const customerDetail = get().customers.find(c => c.customer_id === customerId);
+          if (customerDetail) {
+            const nextAmount = Math.max(0, customerDetail.receivable_amount + diff.amount);
+            const nextGold = parseFloat(Math.max(0, customerDetail.gold_balance_24k_g + diff.gold).toFixed(3));
+            batch.update(doc(db, 'customers', customerId), {
+              receivable_amount: nextAmount,
+              gold_balance_24k_g: nextGold,
+              updated_at: new Date().toISOString()
+            });
+          }
         }
       }
       await batch.commit();
@@ -711,12 +880,7 @@ export const useErpStore = create<ErpState>((set, get) => ({
 
   updateItemPaymentStatus: async (orderId: string, itemId: number, status: '결제완료' | '결제전' | '보류') => {
     try {
-      const order = get().orders.find(o => o.order_id === orderId);
-      if (order) {
-        const items = order.items.map(i => i.item_id === itemId ? { ...i, payment_status: status } : i);
-        await updateDoc(doc(db, 'orders', orderId), { items });
-        await get().fetchDb();
-      }
+      await get().updateMultipleItemsPaymentStatus([{ orderId, itemId }], status);
     } catch (error) {
       console.error("updateItemPaymentStatus error: ", error);
     }
@@ -731,12 +895,99 @@ export const useErpStore = create<ErpState>((set, get) => ({
         grouped[orderId].push(itemId);
       });
 
+      const customerBalanceDiffs: { [customerId: string]: { amount: number, gold: number } } = {};
+
       for (const orderId of Object.keys(grouped)) {
         const order = get().orders.find(o => o.order_id === orderId);
         if (order) {
+          const customerId = order.customer_snapshot.customer_id;
+          if (!customerBalanceDiffs[customerId]) {
+            customerBalanceDiffs[customerId] = { amount: 0, gold: 0 };
+          }
+
+          const customerDetail = get().customers.find(c => c.customer_id === customerId);
+          const lossRate = order.customer_snapshot.loss_rate || customerDetail?.loss_rate || 0;
+          const lossMultiplier = (1 + lossRate / 100);
           const itemIds = grouped[orderId];
-          const items = order.items.map(i => itemIds.includes(i.item_id) ? { ...i, payment_status: status } : i);
+          const items = order.items.map(i => {
+            const currentPaymentStatus = i.payment_status || '결제전';
+            const isTarget = itemIds.includes(i.item_id);
+
+            if (isTarget && currentPaymentStatus !== status) {
+              const division = i.division || '판매';
+              const itemAmount = i.calculated_price || 0;
+              const baseLabor = i.labor_base || 0;
+              const extraLabor = i.labor_extra || 0;
+              const mainStoneLabor = (i.labor_main || 0) * (i.qty_main || 0);
+              const subStoneLabor = (i.labor_sub || 0) * (i.qty_sub || 0);
+              const totalLaborCost = (baseLabor + extraLabor + mainStoneLabor + subStoneLabor) * i.quantity;
+              
+              const isWeightTrade = customerDetail?.trade_type === 'weight';
+              const priceVal = isWeightTrade ? totalLaborCost : itemAmount;
+
+              const purityMultiplier = i.material === '14K' ? (0.585 * lossMultiplier) 
+                                     : i.material === '18K' ? (0.750 * lossMultiplier) 
+                                     : 1.0;
+              const wt = i.actual_weight_g !== undefined ? i.actual_weight_g : (i.estimated_weight_g || 0);
+              const itemGoldWeight24k = wt * i.quantity * purityMultiplier;
+
+              // 결제완료 진입: 거래처 현금 미수금 차감
+              if (status === '결제완료') {
+                // 결제완료 대장 이동 시 모든 품목(판매, 결제, 반품, DC)의 금액이 미수금에서 차감됨
+                customerBalanceDiffs[customerId].amount -= priceVal;
+
+                // 중량거래처이고 결제/반품 구분인 경우 순금 미수 차감 및 TX 추가
+                if (isWeightTrade && (division === '결제' || division === '반품') && itemGoldWeight24k > 0) {
+                  customerBalanceDiffs[customerId].gold -= itemGoldWeight24k;
+
+                  const txId = `TX-PAY-${orderId}-${i.item_id}`;
+                  const tx: GoldTransaction = {
+                    transaction_id: txId,
+                    customer_id: customerId,
+                    type: 'in', // 결제/반품은 실물 금 회수를 의미하므로 입고(in)로 순금 미수 차감
+                    gold_type: '24K',
+                    weight_g: parseFloat(itemGoldWeight24k.toFixed(3)),
+                    note: `${division} 결제완료: ${orderId} (품목 ${i.item_id})`,
+                    created_at: new Date().toISOString(),
+                    created_by: 'system'
+                  };
+                  batch.set(doc(db, 'gold_transactions', txId), tx);
+                }
+              }
+              // 결제완료 롤백(탈출): 거래처 현금 미수금 가산
+              else if (currentPaymentStatus === '결제완료') {
+                customerBalanceDiffs[customerId].amount += priceVal;
+
+                // 중량거래처이고 결제/반품 구분인 경우 순금 미수 가산 및 TX 삭제
+                if (isWeightTrade && (division === '결제' || division === '반품') && itemGoldWeight24k > 0) {
+                  customerBalanceDiffs[customerId].gold += itemGoldWeight24k;
+
+                  const txId = `TX-PAY-${orderId}-${i.item_id}`;
+                  batch.delete(doc(db, 'gold_transactions', txId));
+                }
+              }
+            }
+
+            return isTarget ? { ...i, payment_status: status } : i;
+          });
+
           batch.update(doc(db, 'orders', orderId), { items });
+        }
+      }
+
+      for (const customerId of Object.keys(customerBalanceDiffs)) {
+        const diff = customerBalanceDiffs[customerId];
+        if (diff.amount !== 0 || diff.gold !== 0) {
+          const customerDetail = get().customers.find(c => c.customer_id === customerId);
+          if (customerDetail) {
+            const nextAmount = Math.max(0, customerDetail.receivable_amount + diff.amount);
+            const nextGold = parseFloat(Math.max(0, customerDetail.gold_balance_24k_g + diff.gold).toFixed(3));
+            batch.update(doc(db, 'customers', customerId), {
+              receivable_amount: nextAmount,
+              gold_balance_24k_g: nextGold,
+              updated_at: new Date().toISOString()
+            });
+          }
         }
       }
       await batch.commit();
@@ -817,7 +1068,12 @@ export const useErpStore = create<ErpState>((set, get) => ({
         let nextAmount = customerDetail.receivable_amount;
 
         order.items.forEach(i => {
+          const itemStatus = i.status || order.status || '접수';
+          if (itemStatus !== '출고완료') return; // 출고완료된 품목만 미수 롤백/가산 대상
+
           const division = i.division || '판매';
+          if (division !== '판매') return; // 출고완료 단계에서는 판매 품목만 롤백/가산 (결제/반품/DC는 결제완료 시에 반영)
+
           const itemAmount = i.calculated_price || 0;
           const baseLabor = i.labor_base || 0;
           const extraLabor = i.labor_extra || 0;
@@ -831,14 +1087,6 @@ export const useErpStore = create<ErpState>((set, get) => ({
             } else {
               nextAmount += itemAmount;
             }
-          } else if (division === '결제' || division === '반품') {
-            if (isWeightTrade) {
-              nextAmount = Math.max(0, nextAmount - totalLaborCost);
-            } else {
-              nextAmount = Math.max(0, nextAmount - itemAmount);
-            }
-          } else if (division === 'DC') {
-            nextAmount = Math.max(0, nextAmount - itemAmount);
           }
         });
 
@@ -850,7 +1098,12 @@ export const useErpStore = create<ErpState>((set, get) => ({
         if (isWeightTrade) {
           let goldDiff = 0;
           order.items.forEach((i, itemIdx) => {
+            const itemStatus = i.status || order.status || '접수';
+            if (itemStatus !== '출고완료') return; // 출고완료된 품목만 금 미수 롤백/가산 대상
+
             const division = i.division || '판매';
+            if (division !== '판매') return; // 중량 정산에서도 판매 품목만 롤백/가산 (결제/반품은 결제완료 시 정산)
+
             const purityMultiplier = i.material === '14K' ? (0.585 * lossMultiplier) 
                                    : i.material === '18K' ? (0.750 * lossMultiplier) 
                                    : 1.0;
@@ -951,7 +1204,11 @@ export const useErpStore = create<ErpState>((set, get) => ({
         let nextAmount = customerDetail.receivable_amount;
 
         order.items.forEach(i => {
+          const itemStatus = i.status || order.status || '접수';
+          if (itemStatus !== '출고완료') return; // 출고완료된 품목만 미수 롤백/가산 대상
+
           const division = i.division || '판매';
+          if (division !== '판매') return; // 출고완료 단계에서는 판매 품목만 롤백/가산 (결제/반품/DC는 결제완료 시에 반영)
           const itemAmount = i.calculated_price || 0;
           const baseLabor = i.labor_base || 0;
           const extraLabor = i.labor_extra || 0;
@@ -984,7 +1241,11 @@ export const useErpStore = create<ErpState>((set, get) => ({
         if (isWeightTrade) {
           let goldDiff = 0;
           order.items.forEach((i, itemIdx) => {
+            const itemStatus = i.status || order.status || '접수';
+            if (itemStatus !== '출고완료') return; // 출고완료된 품목만 금 미수 롤백/가산 대상
+
             const division = i.division || '판매';
+            if (division !== '판매') return; // 중량 정산에서도 판매 품목만 롤백/가산 (결제/반품은 결제완료 시 정산)
             const purityMultiplier = i.material === '14K' ? (0.585 * lossMultiplier) 
                                    : i.material === '18K' ? (0.750 * lossMultiplier) 
                                    : 1.0;
@@ -1041,7 +1302,12 @@ export const useErpStore = create<ErpState>((set, get) => ({
         let revisedAmount = customerDetail.receivable_amount;
 
         order.items.forEach(item => {
+          const itemStatus = item.status || order.status || '접수';
+          if (itemStatus !== '출고완료') return; // 출고완료된 품목만 미수 롤백 대상
+
           const division = item.division || '판매';
+          if (division !== '판매') return; // 출고완료 단계에서는 판매 품목만 롤백 대상 (결제/반품/DC는 결제완료 시에만 반영되었으므로 결제완료 시에만 롤백)
+
           const lossRate = customerDetail.loss_rate || 0;
           const lossMultiplier = (1 + lossRate / 100);
           const purityMultiplier = item.material === '14K' ? (0.585 * lossMultiplier) 
@@ -1064,15 +1330,6 @@ export const useErpStore = create<ErpState>((set, get) => ({
             } else {
               revisedAmount = Math.max(0, revisedAmount - itemAmount);
             }
-          } else if (division === '결제' || division === '반품') {
-            if (isWeightTrade) {
-              revisedGold = parseFloat((revisedGold + itemGoldWeight24k).toFixed(3));
-              revisedAmount += totalLaborCost;
-            } else {
-              revisedAmount += itemAmount;
-            }
-          } else if (division === 'DC') {
-            revisedAmount += itemAmount;
           }
         });
 
@@ -1097,6 +1354,129 @@ export const useErpStore = create<ErpState>((set, get) => ({
       await get().fetchDb();
     } catch (error) {
       console.error("deleteOrder error: ", error);
+    }
+  },
+
+  deleteOrderItem: async (orderId: string, itemId: number) => {
+    try {
+      const order = get().orders.find(o => o.order_id === orderId);
+      if (!order) return;
+
+      const targetItem = order.items.find(i => i.item_id === itemId);
+      if (!targetItem) return;
+
+      const batch = writeBatch(db);
+      const customerId = order.customer_snapshot.customer_id;
+      const customerDocRef = doc(db, 'customers', customerId);
+
+      const customerDetail = get().customers.find(c => c.customer_id === customerId);
+
+      if (customerDetail) {
+        const isWeightTrade = customerDetail.trade_type === 'weight';
+        let revisedGold = customerDetail.gold_balance_24k_g;
+        let revisedAmount = customerDetail.receivable_amount;
+
+        const itemStatus = targetItem.status || order.status || '접수';
+        const division = targetItem.division || '판매';
+
+        // 1. 출고완료 상태 롤백
+        if (itemStatus === '출고완료' && division === '판매') {
+          const lossRate = customerDetail.loss_rate || 0;
+          const lossMultiplier = (1 + lossRate / 100);
+          const purityMultiplier = targetItem.material === '14K' ? (0.585 * lossMultiplier) 
+                                 : targetItem.material === '18K' ? (0.750 * lossMultiplier) 
+                                 : 1.0;
+          
+          const itemGoldWeight24k = (targetItem.estimated_weight_g || 0) * targetItem.quantity * purityMultiplier;
+          const itemAmount = targetItem.calculated_price || 0;
+
+          const baseLabor = targetItem.labor_base || 0;
+          const extraLabor = targetItem.labor_extra || 0;
+          const mainStoneLabor = (targetItem.labor_main || 0) * (targetItem.qty_main || 0);
+          const subStoneLabor = (targetItem.labor_sub || 0) * (targetItem.qty_sub || 0);
+          const totalLaborCost = (baseLabor + extraLabor + mainStoneLabor + subStoneLabor) * targetItem.quantity;
+
+          if (isWeightTrade) {
+            revisedGold = Math.max(0, parseFloat((revisedGold - itemGoldWeight24k).toFixed(3)));
+            revisedAmount = Math.max(0, revisedAmount - totalLaborCost);
+          } else {
+            revisedAmount = Math.max(0, revisedAmount - itemAmount);
+          }
+        }
+
+        // 2. 결제완료 상태 롤백
+        const paymentStatus = targetItem.payment_status || '결제전';
+        if (paymentStatus === '결제완료') {
+          const itemAmount = targetItem.calculated_price || 0;
+          const baseLabor = targetItem.labor_base || 0;
+          const extraLabor = targetItem.labor_extra || 0;
+          const mainStoneLabor = (targetItem.labor_main || 0) * (targetItem.qty_main || 0);
+          const subStoneLabor = (targetItem.labor_sub || 0) * (targetItem.qty_sub || 0);
+          const totalLaborCost = (baseLabor + extraLabor + mainStoneLabor + subStoneLabor) * targetItem.quantity;
+          
+          const priceVal = isWeightTrade ? totalLaborCost : itemAmount;
+          
+          revisedAmount = revisedAmount + priceVal;
+
+          if (isWeightTrade && (division === '결제' || division === '반품')) {
+            const lossRate = customerDetail.loss_rate || 0;
+            const lossMultiplier = (1 + lossRate / 100);
+            const purityMultiplier = targetItem.material === '14K' ? (0.585 * lossMultiplier) 
+                                   : targetItem.material === '18K' ? (0.750 * lossMultiplier) 
+                                   : 1.0;
+            const wt = targetItem.actual_weight_g !== undefined ? targetItem.actual_weight_g : (targetItem.estimated_weight_g || 0);
+            const itemGoldWeight24k = wt * targetItem.quantity * purityMultiplier;
+
+            revisedGold = parseFloat(Math.max(0, revisedGold + itemGoldWeight24k).toFixed(3));
+          }
+        }
+
+        batch.update(customerDocRef, {
+          gold_balance_24k_g: revisedGold,
+          receivable_amount: revisedAmount,
+          updated_at: new Date().toISOString()
+        });
+      }
+
+      // 3. 골드 트랜잭션 삭제
+      const txId1 = `TX-${orderId}-${itemId}`;
+      const txId2 = `TX-PAY-${orderId}-${itemId}`;
+      batch.delete(doc(db, 'gold_transactions', txId1));
+      batch.delete(doc(db, 'gold_transactions', txId2));
+
+      // 4. 주문서 내 품목 리스트 수정 및 업데이트
+      const nextItems = order.items.filter(i => i.item_id !== itemId);
+
+      if (nextItems.length === 0) {
+        batch.delete(doc(db, 'orders', orderId));
+      } else {
+        const revisedTotalAmount = nextItems.reduce((sum, i) => {
+          const sign = i.division === '판매' ? 1 : -1;
+          return sum + ((i.calculated_price || 0) * sign);
+        }, 0);
+
+        const customerLossRate = customerDetail?.loss_rate || 0;
+        const revisedTotalGoldWeight = nextItems.reduce((sum, i) => {
+          const sign = i.division === '판매' ? 1 : -1;
+          const lossMultiplier = (1 + customerLossRate / 100);
+          const purityMultiplier = i.material === '14K' ? (0.585 * lossMultiplier) 
+                                 : i.material === '18K' ? (0.750 * lossMultiplier) 
+                                 : 1.0;
+          return sum + ((i.estimated_weight_g || 0) * i.quantity * purityMultiplier * sign);
+        }, 0);
+
+        batch.update(doc(db, 'orders', orderId), {
+          items: nextItems,
+          total_amount: revisedTotalAmount,
+          total_gold_weight_24k_g: parseFloat(revisedTotalGoldWeight.toFixed(3)),
+          updated_at: new Date().toISOString()
+        });
+      }
+
+      await batch.commit();
+      await get().fetchDb();
+    } catch (error) {
+      console.error("deleteOrderItem error: ", error);
     }
   },
 

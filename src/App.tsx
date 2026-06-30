@@ -1,23 +1,44 @@
 // src/App.tsx
-import { useEffect, useState } from 'react';
+import { useEffect, useState, lazy, Suspense } from 'react';
 import { useErpStore } from './store/useErpStore';
-import { Dashboard } from './components/Dashboard';
-import { OrderGrid } from './components/OrderGrid';
-import { CatalogManager } from './components/CatalogManager';
-import { RatesManager } from './components/RatesManager';
-import { StoneManager } from './components/StoneManager';
-import { StoneRegisterForm } from './components/StoneRegisterForm';
-import { CatalogRegisterForm } from './components/CatalogRegisterForm';
-import { CatalogDetailView } from './components/CatalogDetailView';
-import { CatalogSelectPopup } from './components/CatalogSelectPopup';
-import { CustomerManager } from './components/CustomerManager';
-import { InvoicePrintView } from './components/InvoicePrintView';
-import { OrderList } from './components/OrderList';
-import { JewelryWorkList } from './components/JewelryWorkList';
-import { JewelryWorkListPrint } from './components/JewelryWorkListPrint';
-import { ReleaseList } from './components/ReleaseList';
-import { CompletedLedger } from './components/CompletedLedger';
 import { LayoutDashboard, ShoppingCart, BookOpen, RefreshCw, Coins, Gem, Users, FileText, Package, FileCheck, Menu, X } from 'lucide-react';
+
+// Lazy loaded components
+const Dashboard = lazy(() => import('./components/Dashboard').then(m => ({ default: m.Dashboard })));
+const OrderGrid = lazy(() => import('./components/OrderGrid').then(m => ({ default: m.OrderGrid })));
+const CatalogManager = lazy(() => import('./components/CatalogManager').then(m => ({ default: m.CatalogManager })));
+const RatesManager = lazy(() => import('./components/RatesManager').then(m => ({ default: m.RatesManager })));
+const StoneManager = lazy(() => import('./components/StoneManager').then(m => ({ default: m.StoneManager })));
+const StoneRegisterForm = lazy(() => import('./components/StoneRegisterForm').then(m => ({ default: m.StoneRegisterForm })));
+const CatalogRegisterForm = lazy(() => import('./components/CatalogRegisterForm').then(m => ({ default: m.CatalogRegisterForm })));
+const CatalogDetailView = lazy(() => import('./components/CatalogDetailView').then(m => ({ default: m.CatalogDetailView })));
+const CatalogSelectPopup = lazy(() => import('./components/CatalogSelectPopup').then(m => ({ default: m.CatalogSelectPopup })));
+const CustomerManager = lazy(() => import('./components/CustomerManager').then(m => ({ default: m.CustomerManager })));
+const InvoicePrintView = lazy(() => import('./components/InvoicePrintView').then(m => ({ default: m.InvoicePrintView })));
+const OrderList = lazy(() => import('./components/OrderList').then(m => ({ default: m.OrderList })));
+const JewelryWorkList = lazy(() => import('./components/JewelryWorkList').then(m => ({ default: m.JewelryWorkList })));
+const JewelryWorkListPrint = lazy(() => import('./components/JewelryWorkListPrint').then(m => ({ default: m.JewelryWorkListPrint })));
+const ReleaseList = lazy(() => import('./components/ReleaseList').then(m => ({ default: m.ReleaseList })));
+const CompletedLedger = lazy(() => import('./components/CompletedLedger').then(m => ({ default: m.CompletedLedger })));
+
+// 고급스러운 로딩 대체 UI
+const LoadingFallback = () => (
+  <div style={{
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: '100%',
+    minHeight: '200px',
+    color: 'var(--text-muted)',
+    gap: '12px'
+  }}>
+    <RefreshCw className="animate-spin" size={24} style={{ color: 'var(--primary)' }} />
+    <span style={{ fontSize: '16px', fontWeight: '500', letterSpacing: '0.5px' }}>
+      화면을 불러오는 중...
+    </span>
+  </div>
+);
 
 function App() {
   const { fetchDb, updateGoldRate, currentRates, activeTab, setActiveTab, loading, customers } = useErpStore();
@@ -28,8 +49,22 @@ function App() {
   const popupType = queryParams.get('popup');
 
   useEffect(() => {
-    // Initialize DB and fetch
-    fetchDb();
+    // Initialize DB and fetch based on popupType
+    if (popupType === 'catalog_select') {
+      fetchDb(['catalog']);
+    } else if (popupType === 'stone') {
+      fetchDb(['stones']);
+    } else if (popupType === 'catalog') {
+      fetchDb(['catalog', 'stones']);
+    } else if (popupType === 'catalog_detail') {
+      fetchDb(['catalog', 'stones']);
+    } else if (popupType === 'invoice') {
+      fetchDb(['orders', 'customers', 'gold_rates', 'stones', 'gold_transactions']);
+    } else if (popupType === 'jewelry_work_list_print') {
+      fetchDb(['orders', 'catalog']);
+    } else {
+      fetchDb();
+    }
 
     // Listen for data update messages from child popup windows
     const handleMessage = (event: MessageEvent) => {
@@ -45,31 +80,31 @@ function App() {
     return () => {
       window.removeEventListener('message', handleMessage);
     };
-  }, [fetchDb]);
+  }, [fetchDb, popupType]);
 
   // Render popup forms directly if matching URL query parameter is found
   if (popupType === 'stone') {
-    return <StoneRegisterForm />;
+    return <Suspense fallback={<LoadingFallback />}><StoneRegisterForm /></Suspense>;
   }
 
   if (popupType === 'catalog') {
-    return <CatalogRegisterForm />;
+    return <Suspense fallback={<LoadingFallback />}><CatalogRegisterForm /></Suspense>;
   }
 
   if (popupType === 'catalog_detail') {
-    return <CatalogDetailView />;
+    return <Suspense fallback={<LoadingFallback />}><CatalogDetailView /></Suspense>;
   }
 
   if (popupType === 'catalog_select') {
-    return <CatalogSelectPopup />;
+    return <Suspense fallback={<LoadingFallback />}><CatalogSelectPopup /></Suspense>;
   }
 
   if (popupType === 'invoice') {
-    return <InvoicePrintView />;
+    return <Suspense fallback={<LoadingFallback />}><InvoicePrintView /></Suspense>;
   }
 
   if (popupType === 'jewelry_work_list_print') {
-    return <JewelryWorkListPrint />;
+    return <Suspense fallback={<LoadingFallback />}><JewelryWorkListPrint /></Suspense>;
   }
 
   // 최초 데이터가 없을 때 로딩 중이면, 고급스러운 로딩 오버레이 출력
@@ -88,7 +123,7 @@ function App() {
         gap: '16px'
       }}>
         <RefreshCw className="animate-spin" size={32} style={{ color: 'var(--primary)' }} />
-        <span style={{ fontSize: '14px', fontWeight: '600', letterSpacing: '0.5px' }}>
+        <span style={{ fontSize: '17px', fontWeight: '600', letterSpacing: '0.5px' }}>
           실시간 클라우드 데이터 동기화 중...
         </span>
       </div>
@@ -142,13 +177,13 @@ function App() {
       >
         {/* 모바일 전용 상단 타이틀 바 */}
         <div className="mobile-header-bar" style={{ display: 'none', width: '100%', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span className="gradient-text" style={{ fontFamily: 'var(--font-title)', fontWeight: '700', fontSize: '15px' }}>GOLDLINK B2B ERP</span>
+          <span className="gradient-text" style={{ fontFamily: 'var(--font-title)', fontWeight: '700', fontSize: '18px' }}>GOLDLINK B2B ERP</span>
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="menu-toggle-btn btn-primary"
             style={{
               padding: '6px 12px',
-              fontSize: '12px',
+              fontSize: '15px',
               background: isMenuOpen ? 'rgba(239, 68, 68, 0.1)' : 'rgba(212, 175, 55, 0.1)',
               color: isMenuOpen ? 'var(--danger)' : 'var(--primary)',
               border: isMenuOpen ? '1px solid rgba(239, 68, 68, 0.2)' : '1px solid rgba(212, 175, 55, 0.2)',
@@ -168,14 +203,14 @@ function App() {
           
           {/* 그룹 1: 모니터링 */}
           <div className="nav-group" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span className="nav-group-label" style={{ fontSize: '11px', color: 'rgba(212, 175, 55, 0.7)', fontWeight: '700', marginRight: '2px', borderRight: '1px solid rgba(255,255,255,0.15)', paddingRight: '8px', width: '64px', textAlign: 'right', display: 'inline-block' }}>모니터링</span>
+            <span className="nav-group-label" style={{ fontSize: '14px', color: 'rgba(212, 175, 55, 0.7)', fontWeight: '700', marginRight: '2px', borderRight: '1px solid rgba(255,255,255,0.15)', paddingRight: '8px', width: '64px', textAlign: 'right', display: 'inline-block' }}>모니터링</span>
             <div className="nav-buttons-container">
               <button
                 onClick={() => { setActiveTab('dashboard'); setIsMenuOpen(false); }}
                 className="btn-primary"
                 style={{
                   padding: '6px 12px',
-                  fontSize: '12px',
+                  fontSize: '15px',
                   boxShadow: 'none',
                   background: activeTab === 'dashboard' ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : 'transparent',
                   color: activeTab === 'dashboard' ? 'var(--text-inverse)' : 'var(--text-muted)',
@@ -192,14 +227,14 @@ function App() {
 
           {/* 그룹 2: 마스터 정보 */}
           <div className="nav-group" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span className="nav-group-label" style={{ fontSize: '11px', color: 'rgba(212, 175, 55, 0.7)', fontWeight: '700', marginRight: '2px', borderRight: '1px solid rgba(255,255,255,0.15)', paddingRight: '8px', width: '64px', textAlign: 'right', display: 'inline-block' }}>마스터 정보</span>
+            <span className="nav-group-label" style={{ fontSize: '14px', color: 'rgba(212, 175, 55, 0.7)', fontWeight: '700', marginRight: '2px', borderRight: '1px solid rgba(255,255,255,0.15)', paddingRight: '8px', width: '64px', textAlign: 'right', display: 'inline-block' }}>마스터 정보</span>
             <div className="nav-buttons-container">
               <button
                 onClick={() => { setActiveTab('customers'); setIsMenuOpen(false); }}
                 className="btn-primary"
                 style={{
                   padding: '6px 12px',
-                  fontSize: '12px',
+                  fontSize: '15px',
                   boxShadow: 'none',
                   background: activeTab === 'customers' ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : 'transparent',
                   color: activeTab === 'customers' ? 'var(--text-inverse)' : 'var(--text-muted)',
@@ -217,7 +252,7 @@ function App() {
                 className="btn-primary"
                 style={{
                   padding: '6px 12px',
-                  fontSize: '12px',
+                  fontSize: '15px',
                   boxShadow: 'none',
                   background: activeTab === 'catalog' ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : 'transparent',
                   color: activeTab === 'catalog' ? 'var(--text-inverse)' : 'var(--text-muted)',
@@ -235,7 +270,7 @@ function App() {
                 className="btn-primary"
                 style={{
                   padding: '6px 12px',
-                  fontSize: '12px',
+                  fontSize: '15px',
                   boxShadow: 'none',
                   background: activeTab === 'rates' ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : 'transparent',
                   color: activeTab === 'rates' ? 'var(--text-inverse)' : 'var(--text-muted)',
@@ -253,7 +288,7 @@ function App() {
                 className="btn-primary"
                 style={{
                   padding: '6px 12px',
-                  fontSize: '12px',
+                  fontSize: '15px',
                   boxShadow: 'none',
                   background: activeTab === 'stones' ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : 'transparent',
                   color: activeTab === 'stones' ? 'var(--text-inverse)' : 'var(--text-muted)',
@@ -270,14 +305,14 @@ function App() {
 
           {/* 그룹 3: 주요 공정 */}
           <div className="nav-group" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span className="nav-group-label" style={{ fontSize: '11px', color: 'rgba(212, 175, 55, 0.7)', fontWeight: '700', marginRight: '2px', borderRight: '1px solid rgba(255,255,255,0.15)', paddingRight: '8px', width: '64px', textAlign: 'right', display: 'inline-block' }}>주요 공정</span>
+            <span className="nav-group-label" style={{ fontSize: '14px', color: 'rgba(212, 175, 55, 0.7)', fontWeight: '700', marginRight: '2px', borderRight: '1px solid rgba(255,255,255,0.15)', paddingRight: '8px', width: '64px', textAlign: 'right', display: 'inline-block' }}>주요 공정</span>
             <div className="nav-buttons-container">
               <button
                 onClick={() => { setActiveTab('order'); setIsMenuOpen(false); }}
                 className="btn-primary"
                 style={{
                   padding: '6px 12px',
-                  fontSize: '12px',
+                  fontSize: '15px',
                   boxShadow: 'none',
                   background: activeTab === 'order' ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : 'transparent',
                   color: activeTab === 'order' ? 'var(--text-inverse)' : 'var(--text-muted)',
@@ -296,7 +331,7 @@ function App() {
                 className="btn-primary"
                 style={{
                   padding: '6px 12px',
-                  fontSize: '12px',
+                  fontSize: '15px',
                   boxShadow: 'none',
                   background: activeTab === 'orders' ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : 'transparent',
                   color: activeTab === 'orders' ? 'var(--text-inverse)' : 'var(--text-muted)',
@@ -314,7 +349,7 @@ function App() {
                 className="btn-primary"
                 style={{
                   padding: '6px 12px',
-                  fontSize: '12px',
+                  fontSize: '15px',
                   boxShadow: 'none',
                   background: activeTab === 'work_list' ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : 'transparent',
                   color: activeTab === 'work_list' ? 'var(--text-inverse)' : 'var(--text-muted)',
@@ -332,7 +367,7 @@ function App() {
                 className="btn-primary"
                 style={{
                   padding: '6px 12px',
-                  fontSize: '12px',
+                  fontSize: '15px',
                   boxShadow: 'none',
                   background: activeTab === 'release_list' ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : 'transparent',
                   color: activeTab === 'release_list' ? 'var(--text-inverse)' : 'var(--text-muted)',
@@ -350,7 +385,7 @@ function App() {
                 className="btn-primary"
                 style={{
                   padding: '6px 12px',
-                  fontSize: '12px',
+                  fontSize: '15px',
                   boxShadow: 'none',
                   background: activeTab === 'unpaid_ledger' ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : 'transparent',
                   color: activeTab === 'unpaid_ledger' ? 'var(--text-inverse)' : 'var(--text-muted)',
@@ -368,7 +403,7 @@ function App() {
                 className="btn-primary"
                 style={{
                   padding: '6px 12px',
-                  fontSize: '12px',
+                  fontSize: '15px',
                   boxShadow: 'none',
                   background: activeTab === 'paid_ledger' ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : 'transparent',
                   color: activeTab === 'paid_ledger' ? 'var(--text-inverse)' : 'var(--text-muted)',
@@ -386,7 +421,7 @@ function App() {
                 className="btn-primary"
                 style={{
                   padding: '6px 12px',
-                  fontSize: '12px',
+                  fontSize: '15px',
                   boxShadow: 'none',
                   background: activeTab === 'hold_ledger' ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : 'transparent',
                   color: activeTab === 'hold_ledger' ? 'var(--text-inverse)' : 'var(--text-muted)',
@@ -408,7 +443,7 @@ function App() {
             onClick={handleSimulateRateChange}
             className="btn-primary"
             style={{
-              fontSize: '11px',
+              fontSize: '14px',
               padding: '6px 12px',
               background: 'rgba(255, 255, 255, 0.03)',
               color: 'var(--text-muted)',
@@ -424,20 +459,22 @@ function App() {
 
       {/* Main Feature Rendering Panel */}
       <main style={{ flex: 1, overflowY: 'auto' }}>
-        {activeTab === 'customers' && <CustomerManager />}
-        {activeTab === 'dashboard' && <Dashboard />}
-        {activeTab === 'order' && <OrderGrid />}
-        {activeTab === 'orders' && <OrderList />}
-        {activeTab === 'catalog' && <CatalogManager />}
-        {activeTab === 'rates' && <RatesManager />}
-        {activeTab === 'stones' && <StoneManager />}
-        {activeTab === 'work_list' && <JewelryWorkList />}
-        {activeTab === 'release_list' && <ReleaseList />}
-        {(activeTab === 'unpaid_ledger' || activeTab === 'paid_ledger' || activeTab === 'hold_ledger') && <CompletedLedger />}
+        <Suspense fallback={<LoadingFallback />}>
+          {activeTab === 'customers' && <CustomerManager />}
+          {activeTab === 'dashboard' && <Dashboard />}
+          {activeTab === 'order' && <OrderGrid />}
+          {activeTab === 'orders' && <OrderList />}
+          {activeTab === 'catalog' && <CatalogManager />}
+          {activeTab === 'rates' && <RatesManager />}
+          {activeTab === 'stones' && <StoneManager />}
+          {activeTab === 'work_list' && <JewelryWorkList />}
+          {activeTab === 'release_list' && <ReleaseList />}
+          {(activeTab === 'unpaid_ledger' || activeTab === 'paid_ledger' || activeTab === 'hold_ledger') && <CompletedLedger />}
+        </Suspense>
       </main>
 
       {/* Bottom Footer Info */}
-      <footer style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)', padding: '0 8px' }}>
+      <footer style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: 'var(--text-muted)', padding: '0 8px' }}>
         <span>&copy; 2026 GOLDLINK B2B ERP System. All Rights Reserved.</span>
         <span>클라우드 동기화 상태: 온라인 (Local Mocking)</span>
       </footer>

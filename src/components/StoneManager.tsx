@@ -1,5 +1,5 @@
 // src/components/StoneManager.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useErpStore } from '../store/useErpStore';
 import type { Stone } from '../firebase/mockDb';
 import { Gem, RotateCcw, Plus } from 'lucide-react';
@@ -7,13 +7,19 @@ import { Gem, RotateCcw, Plus } from 'lucide-react';
 export const StoneManager: React.FC = () => {
   const { stones, catalog } = useErpStore();
   const [selectedStoneForUsedList, setSelectedStoneForUsedList] = useState<Stone | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 50;
 
   // 1. Filter & Search States (Matches screenshot header)
   const [filterName, setFilterName] = useState('');
   const [filterShape, setFilterShape] = useState('');
   const [searchCriteria, setSearchCriteria] = useState('stone_name');
   const [searchKeyword, setSearchKeyword] = useState('');
-  const [sortOrder, setSortOrder] = useState('name_asc');
+  const [sortOrder, setSortOrder] = useState('no_asc');
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterName, filterShape, searchKeyword, searchCriteria, sortOrder]);
 
   // Handle Load/Select stone details (Mock load/action from Screenshot)
   const handleSelectStone = (stone: Stone) => {
@@ -52,7 +58,11 @@ export const StoneManager: React.FC = () => {
     }
     return true;
   }).sort((a, b) => {
-    if (sortOrder === 'name_asc') {
+    if (sortOrder === 'no_asc') {
+      const aNo = parseInt(a.stone_id.split('_')[0], 10) || 0;
+      const bNo = parseInt(b.stone_id.split('_')[0], 10) || 0;
+      return aNo - bNo;
+    } else if (sortOrder === 'name_asc') {
       return a.name.localeCompare(b.name);
     } else if (sortOrder === 'name_desc') {
       return b.name.localeCompare(a.name);
@@ -62,6 +72,10 @@ export const StoneManager: React.FC = () => {
     return 0;
   });
 
+  const totalPages = Math.ceil(filteredStones.length / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const paginatedStones = filteredStones.slice(startIndex, startIndex + pageSize);
+
   return (
     <div className="glass-panel animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       
@@ -69,7 +83,7 @@ export const StoneManager: React.FC = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', flexWrap: 'wrap', gap: '12px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <Gem size={18} style={{ color: 'var(--primary)' }} />
-          <h2 style={{ fontSize: '16px', fontFamily: 'var(--font-title)', fontWeight: '600' }}>
+          <h2 style={{ fontSize: '19px', fontFamily: 'var(--font-title)', fontWeight: '600' }}>
             B2B 스톤 목록 및 시세 조회
           </h2>
         </div>
@@ -78,7 +92,7 @@ export const StoneManager: React.FC = () => {
         <button 
           onClick={handleOpenRegisterWindow} 
           className="btn-primary" 
-          style={{ fontSize: '13px', padding: '6px 14px' }}
+          style={{ fontSize: '16px', padding: '6px 14px' }}
         >
           <Plus size={14} /> 신규 스톤 등록 (새창)
         </button>
@@ -90,7 +104,7 @@ export const StoneManager: React.FC = () => {
           value={filterName}
           onChange={(e) => setFilterName(e.target.value)}
           className="input-field"
-          style={{ fontSize: '12px', padding: '4px 8px', width: '110px' }}
+          style={{ fontSize: '15px', padding: '4px 8px', width: '110px' }}
         >
           <option value="">이름구분</option>
           <option value="CZ">CZ (큐빅)</option>
@@ -103,7 +117,7 @@ export const StoneManager: React.FC = () => {
           value={filterShape}
           onChange={(e) => setFilterShape(e.target.value)}
           className="input-field"
-          style={{ fontSize: '12px', padding: '4px 8px', width: '110px' }}
+          style={{ fontSize: '15px', padding: '4px 8px', width: '110px' }}
         >
           <option value="">모양구분</option>
           <option value="RD">RD (라운드)</option>
@@ -116,7 +130,7 @@ export const StoneManager: React.FC = () => {
           value={searchCriteria}
           onChange={(e) => setSearchCriteria(e.target.value)}
           className="input-field"
-          style={{ fontSize: '12px', padding: '4px 8px', width: '100px' }}
+          style={{ fontSize: '15px', padding: '4px 8px', width: '100px' }}
         >
           <option value="stone_name">스톤명</option>
           <option value="note">비고</option>
@@ -126,8 +140,9 @@ export const StoneManager: React.FC = () => {
           value={sortOrder}
           onChange={(e) => setSortOrder(e.target.value)}
           className="input-field"
-          style={{ fontSize: '12px', padding: '4px 8px', width: '100px' }}
+          style={{ fontSize: '15px', padding: '4px 8px', width: '100px' }}
         >
+          <option value="no_asc">등록순▲</option>
           <option value="name_asc">이름순▲</option>
           <option value="name_desc">이름순▼</option>
           <option value="price_desc">공급가▼</option>
@@ -139,7 +154,7 @@ export const StoneManager: React.FC = () => {
           value={searchKeyword}
           onChange={(e) => setSearchKeyword(e.target.value)}
           className="input-field"
-          style={{ fontSize: '12px', padding: '4px 8px', flex: 1 }}
+          style={{ fontSize: '15px', padding: '4px 8px', flex: 1 }}
         />
 
         <button 
@@ -153,30 +168,30 @@ export const StoneManager: React.FC = () => {
       </div>
 
       {/* Count indicators */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: 'var(--text-muted)' }}>
         <div>조회 결과: <strong>{filteredStones.length} 건</strong> / 전체 {stones.length} 건 등록됨</div>
         <div>장부 연동 상태: 양호</div>
       </div>
 
       {/* List Table (Wide full-width size) */}
       <div style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px', minWidth: '950px' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '16px', minWidth: '950px' }}>
           <thead>
             <tr style={{ borderBottom: '2px solid var(--border-color)', color: 'var(--text-muted)', background: 'rgba(255, 255, 255, 0.01)', height: '36px' }}>
-              <th style={{ padding: '8px', width: '50px', textAlign: 'center' }}>No</th>
-              <th style={{ padding: '8px', width: '60px', textAlign: 'center' }}>조회</th>
-              <th style={{ padding: '8px' }}>스톤명</th>
-              <th style={{ padding: '8px', width: '120px' }}>비고</th>
-              <th style={{ padding: '8px', width: '90px', textAlign: 'right' }}>중량(g)</th>
-              <th style={{ padding: '8px', width: '100px', textAlign: 'right' }}>구매단가</th>
-              <th style={{ padding: '8px', width: '80px', textAlign: 'right', color: 'var(--primary)' }}>1등급</th>
-              <th style={{ padding: '8px', width: '80px', textAlign: 'right', color: 'var(--primary)' }}>2등급</th>
-              <th style={{ padding: '8px', width: '80px', textAlign: 'right', color: 'var(--primary)' }}>3등급</th>
-              <th style={{ padding: '8px', width: '80px', textAlign: 'right', color: 'var(--primary)' }}>4등급</th>
+              <th style={{ padding: '8px', width: '50px', textAlign: 'left' }}>No</th>
+              <th style={{ padding: '8px', width: '60px', textAlign: 'left' }}>조회</th>
+              <th style={{ padding: '8px', width: '250px', textAlign: 'left' }}>스톤명</th>
+              <th style={{ padding: '8px', width: '200px', textAlign: 'left' }}>비고</th>
+              <th style={{ padding: '8px', width: '90px', textAlign: 'left' }}>중량(g)</th>
+              <th style={{ padding: '8px', width: '100px', textAlign: 'left' }}>구매단가</th>
+              <th style={{ padding: '8px', width: '80px', textAlign: 'left', color: 'var(--primary)' }}>1등급</th>
+              <th style={{ padding: '8px', width: '80px', textAlign: 'left', color: 'var(--primary)' }}>2등급</th>
+              <th style={{ padding: '8px', width: '80px', textAlign: 'left', color: 'var(--primary)' }}>3등급</th>
+              <th style={{ padding: '8px', width: '80px', textAlign: 'left', color: 'var(--primary)' }}>4등급</th>
             </tr>
           </thead>
           <tbody>
-            {filteredStones.map((s, idx) => (
+            {paginatedStones.map((s, idx) => (
               <tr 
                 key={s.stone_id} 
                 style={{ 
@@ -185,48 +200,52 @@ export const StoneManager: React.FC = () => {
                   backgroundColor: idx % 2 === 0 ? 'transparent' : 'rgba(255, 255, 255, 0.01)'
                 }}
               >
-                <td style={{ padding: '8px', textAlign: 'center', color: 'var(--text-muted)' }}>{idx + 1}</td>
+                <td style={{ padding: '8px', textAlign: 'left', color: 'var(--text-muted)' }}>{startIndex + idx + 1}</td>
                 
                 {/* Action trigger */}
-                <td style={{ padding: '8px', textAlign: 'center' }}>
-                  <button 
-                    onClick={() => handleSelectStone(s)}
-                    style={{ 
-                      background: 'none', 
-                      border: 'none', 
-                      color: 'var(--primary)', 
-                      textDecoration: 'underline', 
-                      cursor: 'pointer',
-                      fontSize: '12px',
-                      fontWeight: '600'
-                    }}
-                  >
-                    조회
-                  </button>
+                <td style={{ padding: '8px', textAlign: 'left' }}>
+                  {catalog.some(c => c.default_stones?.some(ds => ds.stone_id === s.stone_id)) ? (
+                    <button 
+                      onClick={() => handleSelectStone(s)}
+                      style={{ 
+                        background: 'none', 
+                        border: 'none', 
+                        color: 'var(--primary)', 
+                        textDecoration: 'underline', 
+                        cursor: 'pointer',
+                        fontSize: '15px',
+                        fontWeight: '600'
+                      }}
+                    >
+                      조회
+                    </button>
+                  ) : (
+                    ''
+                  )}
                 </td>
                 
-                <td style={{ padding: '8px', fontWeight: '600' }}>{s.name}</td>
-                <td style={{ padding: '8px', color: 'var(--text-muted)', fontSize: '12px' }}>
-                  {s.weight_carat ? `${s.name.split('/')[0]} 규격` : ''}
+                <td style={{ padding: '8px', textAlign: 'left', fontWeight: '600' }}>{s.name}</td>
+                <td style={{ padding: '8px', textAlign: 'left', color: 'var(--text-muted)', fontSize: '15px' }}>
+                  {s.note || '-'}
                 </td>
-                <td style={{ padding: '8px', textAlign: 'right', fontFamily: 'var(--font-title)' }}>
-                  {s.weight_carat ? s.weight_carat.toFixed(5) : '-'}
+                <td style={{ padding: '8px', textAlign: 'left', fontFamily: 'var(--font-title)' }}>
+                  {s.weight_carat ? s.weight_carat.toFixed(3) : '-'}
                 </td>
-                <td style={{ padding: '8px', textAlign: 'right', fontFamily: 'var(--font-title)' }}>
-                  500
+                <td style={{ padding: '8px', textAlign: 'left', fontFamily: 'var(--font-title)' }}>
+                  {s.purchase_price ? s.purchase_price.toLocaleString() : '-'}
                 </td>
                 
                 {/* Mapped columns */}
-                <td style={{ padding: '8px', textAlign: 'right', fontFamily: 'var(--font-title)', fontWeight: '500' }}>
+                <td style={{ padding: '8px', textAlign: 'left', fontFamily: 'var(--font-title)', fontWeight: '500' }}>
                   {s.grade_prices.grade_1.toLocaleString()}
                 </td>
-                <td style={{ padding: '8px', textAlign: 'right', fontFamily: 'var(--font-title)', fontWeight: '500' }}>
+                <td style={{ padding: '8px', textAlign: 'left', fontFamily: 'var(--font-title)', fontWeight: '500' }}>
                   {s.grade_prices.grade_2.toLocaleString()}
                 </td>
-                <td style={{ padding: '8px', textAlign: 'right', fontFamily: 'var(--font-title)', fontWeight: '500' }}>
+                <td style={{ padding: '8px', textAlign: 'left', fontFamily: 'var(--font-title)', fontWeight: '500' }}>
                   {s.grade_prices.grade_3.toLocaleString()}
                 </td>
-                <td style={{ padding: '8px', textAlign: 'right', fontFamily: 'var(--font-title)', fontWeight: '500' }}>
+                <td style={{ padding: '8px', textAlign: 'left', fontFamily: 'var(--font-title)', fontWeight: '500' }}>
                   {s.grade_prices.grade_4.toLocaleString()}
                 </td>
               </tr>
@@ -234,6 +253,68 @@ export const StoneManager: React.FC = () => {
           </tbody>
         </table>
       </div>
+
+      {/* Pagination Control */}
+      {totalPages > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '4px', marginTop: '16px', flexWrap: 'wrap' }}>
+          <button
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+            className="btn-primary"
+            style={{ 
+              fontSize: '12px', 
+              padding: '4px 10px', 
+              background: currentPage === 1 ? 'rgba(0,0,0,0.02)' : 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)', 
+              color: currentPage === 1 ? 'var(--text-muted)' : 'var(--text-inverse)', 
+              border: currentPage === 1 ? '1px solid var(--border-color)' : 'none',
+              boxShadow: currentPage === 1 ? 'none' : '0 2px 6px rgba(170, 133, 19, 0.15)',
+              cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
+            }}
+          >
+            이전
+          </button>
+          
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
+            const isActive = page === currentPage;
+            return (
+              <button
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                style={{
+                  fontSize: '12px',
+                  padding: '4px 10px',
+                  borderRadius: '4px',
+                  border: isActive ? '1px solid var(--primary)' : '1px solid var(--border-color)',
+                  background: isActive ? 'rgba(170, 133, 19, 0.15)' : 'transparent',
+                  color: isActive ? 'var(--primary)' : 'var(--text-main)',
+                  fontWeight: isActive ? 'bold' : 'normal',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+              >
+                {page}
+              </button>
+            );
+          })}
+          
+          <button
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+            className="btn-primary"
+            style={{ 
+              fontSize: '12px', 
+              padding: '4px 10px', 
+              background: currentPage === totalPages ? 'rgba(0,0,0,0.02)' : 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)', 
+              color: currentPage === totalPages ? 'var(--text-muted)' : 'var(--text-inverse)', 
+              border: currentPage === totalPages ? '1px solid var(--border-color)' : 'none',
+              boxShadow: currentPage === totalPages ? 'none' : '0 2px 6px rgba(170, 133, 19, 0.15)',
+              cursor: currentPage === totalPages ? 'not-allowed' : 'pointer'
+            }}
+          >
+            다음
+          </button>
+        </div>
+      )}
 
 
       {/* Used Catalog Items Modal */}
@@ -273,7 +354,7 @@ export const StoneManager: React.FC = () => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Gem size={18} style={{ color: 'var(--primary)' }} />
-                <h3 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--primary)' }}>
+                <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--primary)' }}>
                   [{selectedStoneForUsedList.name} ({selectedStoneForUsedList.shape} / {selectedStoneForUsedList.size})] 사용 상품 목록
                 </h3>
               </div>
@@ -284,7 +365,7 @@ export const StoneManager: React.FC = () => {
                   border: 'none', 
                   color: 'var(--text-muted)', 
                   cursor: 'pointer', 
-                  fontSize: '18px',
+                  fontSize: '21px',
                   fontWeight: '600'
                 }}
               >
@@ -292,13 +373,13 @@ export const StoneManager: React.FC = () => {
               </button>
             </div>
 
-            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+            <div style={{ fontSize: '15px', color: 'var(--text-muted)' }}>
               총 <strong style={{ color: 'var(--primary)' }}>{usedCatalogItems.length}개</strong>의 카탈로그 상품에 기본 세팅으로 사용되고 있습니다.
             </div>
 
             <div style={{ overflowX: 'auto' }}>
               {usedCatalogItems.length > 0 ? (
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12px' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '15px' }}>
                   <thead>
                     <tr style={{ borderBottom: '2px solid var(--border-color)', color: 'var(--text-muted)', height: '32px', background: 'rgba(255,255,255,0.02)' }}>
                       <th style={{ padding: '8px', width: '80px', textAlign: 'center' }}>이미지</th>
@@ -352,7 +433,7 @@ export const StoneManager: React.FC = () => {
                                 backgroundColor: 'rgba(255, 255, 255, 0.05)', 
                                 border: '1px solid rgba(255, 255, 255, 0.1)', 
                                 color: 'var(--text-muted)', 
-                                fontSize: '8px', 
+                                fontSize: '11px', 
                                 display: 'flex', 
                                 alignItems: 'center', 
                                 justifyContent: 'center' 
@@ -379,7 +460,7 @@ export const StoneManager: React.FC = () => {
                   </tbody>
                 </table>
               ) : (
-                <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
+                <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text-muted)', fontSize: '16px' }}>
                   해당 스톤이 사용된 카탈로그 등록 상품이 없습니다.
                 </div>
               )}
@@ -389,7 +470,7 @@ export const StoneManager: React.FC = () => {
               <button 
                 onClick={() => setSelectedStoneForUsedList(null)} 
                 className="btn-primary"
-                style={{ padding: '6px 16px', fontSize: '12px' }}
+                style={{ padding: '6px 16px', fontSize: '15px' }}
               >
                 닫기
               </button>

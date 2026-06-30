@@ -30,6 +30,8 @@ export interface Stone {
   grade_prices: {
     [grade: string]: number; // grade_1, grade_2, grade_3, grade_4
   };
+  purchase_price?: number;
+  note?: string;
   updated_at: string;
 }
 
@@ -40,11 +42,13 @@ export interface Customer {
   grade: number; // 1 to 4
   owner_name: string;
   phone: string;
+  mobile?: string; // 핸드폰
   loss_rate: number; // 해리적용율 (%)
   trade_type: 'weight' | 'price'; // 거래형태: 'weight' (중량), 'price' (시세)
   business_number?: string; // 사업자등록번호
   gold_balance_24k_g: number; // 순금 미수 중량
   receivable_amount: number; // 미수 금액
+  note?: string; // 메모
   created_at: string;
   updated_at: string;
 }
@@ -87,6 +91,17 @@ export interface CatalogItem {
   sold_qty?: number;
   note?: string;
   manual_deduction_weight?: number;
+  labor_fees_v2?: {
+    [material: string]: {
+      type: string;        // '기본', '추가1', '추가2', '추가3'
+      color: string;       // 'YG', 'WG', 'RG', '' (전체색상)
+      cost: number;        // 구매원가
+      grade_1: number;
+      grade_2: number;
+      grade_3: number;
+      grade_4: number;
+    }[];
+  };
 }
 
 export interface OrderItem {
@@ -98,6 +113,7 @@ export interface OrderItem {
   color: string;            // 색상 (YG, WG, RG)
   material: string;         // 재질 (14K, 18K, 24K, Silver)
   status?: '접수' | '공장발주' | '출고대기' | '출고완료' | '보류'; // 품목 개별 상태
+  labor_cost?: number;      // 공임 구매원가 추가
   
   // 스톤 종류 (마스터 연동용 ID 및 명칭)
   stone_main_id: string;    // 중심 스톤 ID
