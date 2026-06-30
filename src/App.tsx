@@ -63,7 +63,8 @@ function App() {
     } else if (popupType === 'jewelry_work_list_print') {
       fetchDb(['orders', 'catalog']);
     } else {
-      fetchDb();
+      // 대시보드와 대장에 필요한 핵심 데이터셋만 우선 로드 (용량이 매우 큰 catalog와 stones 제외)
+      fetchDb(['gold_rates', 'orders', 'customers', 'gold_transactions']);
     }
 
     // Listen for data update messages from child popup windows
@@ -81,6 +82,32 @@ function App() {
       window.removeEventListener('message', handleMessage);
     };
   }, [fetchDb, popupType]);
+
+  // activeTab 전환 시 필요한 데이터를 지연 로딩(Lazy Loading)하는 useEffect
+  useEffect(() => {
+    if (popupType) return; // 팝업 모드일 때는 각 팝업 초기화 로직을 따름
+
+    const state = useErpStore.getState();
+    const neededCollections: ('gold_rates' | 'stones' | 'customers' | 'catalog' | 'orders' | 'gold_transactions')[] = [];
+
+    // 1. 상품(카탈로그) 관련 탭 또는 세공 작업 탭 접근 시 catalog 데이터가 없으면 로드
+    if (['catalog', 'order', 'work_list'].includes(activeTab)) {
+      if (state.catalog.length === 0) {
+        neededCollections.push('catalog');
+      }
+    }
+
+    // 2. 스톤 관련 탭 또는 주문 작성 탭 접근 시 stones 데이터가 없으면 로드
+    if (['stones', 'order', 'catalog'].includes(activeTab)) {
+      if (state.stones.length === 0) {
+        neededCollections.push('stones');
+      }
+    }
+
+    if (neededCollections.length > 0) {
+      fetchDb(neededCollections);
+    }
+  }, [activeTab, fetchDb, popupType]);
 
   // Render popup forms directly if matching URL query parameter is found
   if (popupType === 'stone') {
