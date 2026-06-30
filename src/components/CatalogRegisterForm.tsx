@@ -19,7 +19,7 @@ export const CatalogRegisterForm: React.FC = () => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  const [manufacturer, setManufacturer] = useState('자체제작');
+  const manufacturer = '자체제작';
   const [manufacturerCode, setManufacturerCode] = useState('M-101');
   const [vendor, setVendor] = useState('JP');
   const [modelNo, setModelNo] = useState('');
@@ -28,15 +28,10 @@ export const CatalogRegisterForm: React.FC = () => {
   const [category, setCategory] = useState('Ring');
   const [isSet, setIsSet] = useState(false);
   const [baseMaterial, setBaseMaterial] = useState('14K');
-  const [setClassification, setSetClassification] = useState('N');
-  const [publicYn, setPublicYn] = useState('Y');
   const [discontinuedYn, setDiscontinuedYn] = useState('N');
 
   const [laborFees, setLaborFees] = useState([
-    { type: '기본', color: 'YG', cost: '0', grade1: '0', grade2: '0', grade3: '0', grade4: '0' },
-    { type: '추가1', color: 'WG', cost: '0', grade1: '0', grade2: '0', grade3: '0', grade4: '0' },
-    { type: '추가2', color: 'RG', cost: '0', grade1: '0', grade2: '0', grade3: '0', grade4: '0' },
-    { type: '추가3', color: '', cost: '0', grade1: '0', grade2: '0', grade3: '0', grade4: '0' }
+    { type: '기본', color: 'G', cost: '0', grade1: '0', grade2: '0', grade3: '0', grade4: '0' }
   ]);
 
   const [stoneRows, setStoneRows] = useState(
@@ -54,7 +49,7 @@ export const CatalogRegisterForm: React.FC = () => {
     }))
   );
 
-  const [manualDeductionWeight, setManualDeductionWeight] = useState('0.00000');
+  const [manualDeductionWeight, setManualDeductionWeight] = useState('0.000');
   const [note, setNote] = useState('');
   const [images, setImages] = useState<string[]>([]);
 
@@ -65,53 +60,37 @@ export const CatalogRegisterForm: React.FC = () => {
       const matched = catalog.find(c => c.model_number.toUpperCase() === modelParam.toUpperCase());
       if (matched) {
         setIsEditMode(true);
-        setManufacturer(matched.manufacturer || '자체제작');
         setManufacturerCode(matched.manufacturer_code || '');
         setVendor(matched.vendor || '');
         setModelNo(matched.model_number);
         setRelatedSetNo(matched.set_model_numbers ? matched.set_model_numbers.join(', ') : '');
-        setBaseWeight(matched.base_weight ? String(matched.base_weight) : '0.00');
+        setBaseWeight(matched.base_weight ? Number(matched.base_weight).toFixed(3) : '0.000');
         setCategory(matched.category);
         setIsSet(matched.is_set);
         const mat = matched.materials[0] || '14K';
         setBaseMaterial(mat);
-        setSetClassification(matched.is_set ? 'Y' : 'N');
         
         const baseLabor = matched.base_labor_fees[mat] || matched.base_labor_fees['14K'] || { grade_1: 0, grade_2: 0, grade_3: 0, grade_4: 0 };
         
-        let updatedLaborFees = [];
+        let updatedLaborFees: any[] = [];
         if (matched.labor_fees_v2 && matched.labor_fees_v2[mat] && matched.labor_fees_v2[mat].length > 0) {
-          updatedLaborFees = matched.labor_fees_v2[mat].map(lf => ({
-            type: lf.type || '',
-            color: lf.color || '',
-            cost: String(lf.cost || 0),
-            grade1: String(lf.grade_1 || 0),
-            grade2: String(lf.grade_2 || 0),
-            grade3: String(lf.grade_3 || 0),
-            grade4: String(lf.grade_4 || 0)
-          }));
-          
-          const types = ['기본', '추가1', '추가2', '추가3'];
-          while (updatedLaborFees.length < 4) {
-            const currentIdx = updatedLaborFees.length;
-            const type = types[currentIdx] || `추가${currentIdx}`;
-            const defaultColor = type === '기본' ? 'YG' : type === '추가1' ? 'WG' : type === '추가2' ? 'RG' : '';
-            updatedLaborFees.push({
-              type,
-              color: defaultColor,
-              cost: '0',
-              grade1: '0',
-              grade2: '0',
-              grade3: '0',
-              grade4: '0'
-            });
+          const baseV2 = matched.labor_fees_v2[mat].find(lf => lf.type === '기본');
+          if (baseV2) {
+            updatedLaborFees = [{
+              type: '기본',
+              color: baseV2.color || 'G',
+              cost: String(baseV2.cost || 0),
+              grade1: String(baseV2.grade_1 || 0),
+              grade2: String(baseV2.grade_2 || 0),
+              grade3: String(baseV2.grade_3 || 0),
+              grade4: String(baseV2.grade_4 || 0)
+            }];
           }
-        } else {
+        }
+        
+        if (updatedLaborFees.length === 0) {
           updatedLaborFees = [
-            { type: '기본', color: 'YG', cost: '0', grade1: String(baseLabor.grade_1), grade2: String(baseLabor.grade_2), grade3: String(baseLabor.grade_3), grade4: String(baseLabor.grade_4) },
-            { type: '추가1', color: 'WG', cost: '0', grade1: String(matched.extra_labor_fee), grade2: String(matched.extra_labor_fee), grade3: String(matched.extra_labor_fee), grade4: String(matched.extra_labor_fee) },
-            { type: '추가2', color: 'RG', cost: '0', grade1: '0', grade2: '0', grade3: '0', grade4: '0' },
-            { type: '추가3', color: '', cost: '0', grade1: '0', grade2: '0', grade3: '0', grade4: '0' }
+            { type: '기본', color: 'G', cost: '0', grade1: String(baseLabor.grade_1), grade2: String(baseLabor.grade_2), grade3: String(baseLabor.grade_3), grade4: String(baseLabor.grade_4) }
           ];
         }
         setLaborFees(updatedLaborFees);
@@ -155,7 +134,7 @@ export const CatalogRegisterForm: React.FC = () => {
         setStoneRows(updatedStoneRows);
 
         if (matched.manual_deduction_weight !== undefined) {
-          setManualDeductionWeight(String(matched.manual_deduction_weight));
+          setManualDeductionWeight(Number(matched.manual_deduction_weight).toFixed(3));
         }
         if (matched.note) {
           setNote(matched.note);
@@ -305,7 +284,7 @@ export const CatalogRegisterForm: React.FC = () => {
         return [currentMat];
       })(),
       base_labor_fees: baseLaborFeesMap,
-      extra_labor_fee: parseFloat(laborFees.find(lf => lf.type === '추가1')?.grade2 || '0') || 0,
+      extra_labor_fee: 0,
       labor_fees_v2: {
         ...(existingItem?.labor_fees_v2 || {}),
         [baseMaterial]: laborFees.map(lf => ({
@@ -401,10 +380,6 @@ export const CatalogRegisterForm: React.FC = () => {
               </div>
               <div className="catalog-form-section" style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '10px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '15px', color: '#a3a8b8', marginBottom: '2px', fontWeight: '500' }}>*제조사</label>
-                  <input type="text" value={manufacturer} onChange={e => setManufacturer(e.target.value)} className="input-field" style={{ width: '100%', padding: '5px 10px', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }} required />
-                </div>
-                <div>
                   <label style={{ display: 'block', fontSize: '15px', color: '#a3a8b8', marginBottom: '2px', fontWeight: '500' }}>제조코드(제조번호)</label>
                   <input type="text" value={manufacturerCode} onChange={e => setManufacturerCode(e.target.value)} className="input-field" style={{ width: '100%', padding: '5px 10px', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }} />
                 </div>
@@ -426,7 +401,7 @@ export const CatalogRegisterForm: React.FC = () => {
                 </div>
                 <div style={{ gridColumn: isMobile ? 'auto' : 'span 2' }}>
                   <label style={{ display: 'block', fontSize: '15px', color: '#a3a8b8', marginBottom: '2px', fontWeight: '500' }}>*모델분류</label>
-                  <select value={category} onChange={e => { setCategory(e.target.value); if (e.target.value === 'Set') setIsSet(true); }} className="input-field" style={{ width: '100%', padding: '5px', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }}>
+                  <select value={category} onChange={e => { setCategory(e.target.value); setIsSet(e.target.value === 'Set'); }} className="input-field" style={{ width: '100%', padding: '5px', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }}>
                     <option value="Ring">반지 (Ring)</option>
                     <option value="Necklace">목걸이 (Necklace)</option>
                     <option value="Earring">귀걸이 (Earring)</option>
@@ -442,20 +417,6 @@ export const CatalogRegisterForm: React.FC = () => {
                   <option value="14K">14K</option>
                   <option value="18K">18K</option>
                   <option value="24K">순금</option>
-                </select>
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '15px', color: '#a3a8b8', marginBottom: '2px', fontWeight: '500' }}>세트구분</label>
-                <select value={setClassification} onChange={e => { setSetClassification(e.target.value); setIsSet(e.target.value === 'Y'); }} className="input-field" style={{ width: '100%', padding: '5px', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }}>
-                  <option value="N">N: 단품</option>
-                  <option value="Y">Y: 세트</option>
-                </select>
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '15px', color: '#a3a8b8', marginBottom: '2px', fontWeight: '500' }}>공개여부</label>
-                <select value={publicYn} onChange={e => setPublicYn(e.target.value)} className="input-field" style={{ width: '100%', padding: '5px', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }}>
-                  <option value="Y">Y: 공개</option>
-                  <option value="N">N: 비공개</option>
                 </select>
               </div>
               <div>
@@ -493,9 +454,23 @@ export const CatalogRegisterForm: React.FC = () => {
                       <td style={{ padding: '4px 6px' }}>
                         <select value={lf.color} onChange={e => handleLaborFeeChange(idx, 'color', e.target.value)} className="input-field" style={{ width: '100%', padding: '3px 6px', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }}>
                           <option value="">전체색상</option>
-                          <option value="YG">YG (옐로우)</option>
-                          <option value="WG">WG (화이트)</option>
-                          <option value="RG">RG (핑크)</option>
+                          <option value="G">G</option>
+                          <option value="G/B">G/B</option>
+                          <option value="G/P">G/P</option>
+                          <option value="G/R/W">G/R/W</option>
+                          <option value="G/W">G/W</option>
+                          <option value="G/WP">G/WP</option>
+                          <option value="P">P</option>
+                          <option value="P/G">P/G</option>
+                          <option value="P/W">P/W</option>
+                          <option value="P/엔틱">P/엔틱</option>
+                          <option value="W">W</option>
+                          <option value="W/B">W/B</option>
+                          <option value="W/G">W/G</option>
+                          <option value="W/GP">W/GP</option>
+                          <option value="W/P">W/P</option>
+                          <option value="삼색">삼색</option>
+                          <option value="엔틱">엔틱</option>
                         </select>
                       </td>
                       <td style={{ padding: '4px 6px' }}>
@@ -576,7 +551,7 @@ export const CatalogRegisterForm: React.FC = () => {
                         </select>
                       </td>
                       <td style={{ padding: '2px 4px', textAlign: 'right', color: '#e5e7eb', fontFamily: 'var(--font-title)', fontSize: '15px', fontWeight: '500' }}>
-                        {row.weight ? row.weight.toFixed(5) : '0.00000'}
+                        {row.weight ? row.weight.toFixed(3) : '0.000'}
                       </td>
                       <td style={{ padding: '2px 4px', textAlign: 'right', color: '#e5e7eb', fontFamily: 'var(--font-title)', fontSize: '15px', fontWeight: '500' }}>
                         {row.buy_price.toLocaleString()}
@@ -606,16 +581,16 @@ export const CatalogRegisterForm: React.FC = () => {
             </div>
             <div className="catalog-summary-bar" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px', marginTop: '10px', background: 'rgba(255,255,255,0.02)', padding: '8px', borderRadius: '4px', fontSize: '15px', alignItems: 'center', border: '1px solid rgba(255,255,255,0.05)' }}>
               <div>알수 소계: <strong>{totalStonesQty} 개</strong></div>
-              <div>중량 소계: <strong>{totalStonesWeight.toFixed(5)} g</strong></div>
+              <div>중량 소계: <strong>{totalStonesWeight.toFixed(3)} g</strong></div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                 수동 차감중량: 
-                <input type="number" step="0.0001" value={manualDeductionWeight} onChange={e => setManualDeductionWeight(e.target.value)} className="input-field" style={{ width: '70px', padding: '3px', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)', textAlign: 'right' }} />
+                <input type="number" step="0.001" value={manualDeductionWeight} onChange={e => setManualDeductionWeight(e.target.value)} className="input-field" style={{ width: '70px', padding: '3px', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)', textAlign: 'right' }} />
               </div>
               <div style={{ color: 'var(--warning)', fontWeight: '600' }}>
-                총 차감중량: <strong>{totalDeductionWeight.toFixed(5)} g</strong>
+                총 차감중량: <strong>{totalDeductionWeight.toFixed(3)} g</strong>
               </div>
               <div style={{ color: 'var(--primary)', fontWeight: '600' }}>
-                최종 금중량(종합합계): <strong>{finalTotalWeight.toFixed(5)} g</strong>
+                최종 금중량(종합합계): <strong>{finalTotalWeight.toFixed(3)} g</strong>
               </div>
             </div>
           </div>

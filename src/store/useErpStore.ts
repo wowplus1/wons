@@ -32,9 +32,9 @@ export const getCatalogLaborFees = (
     let isMatched = true;
     if (!matchedFee) {
       isMatched = false;
-      // 매칭되는 색상이 없다면 전체색상('') 행을 조회하고, YG(옐로우)인 경우에 한해서만 최후의 수단으로 '기본' 행으로 매핑
+      // 매칭되는 색상이 없다면 전체색상('') 행을 조회하고, G(옐로우)인 경우에 한해서만 최후의 수단으로 '기본' 행으로 매핑
       matchedFee = fees.find(f => f.color === '');
-      if (!matchedFee && color === 'YG') {
+      if (!matchedFee && (color === 'G' || color === 'YG')) {
         matchedFee = fees.find(f => f.type === '기본');
         isMatched = true;
       }
@@ -55,12 +55,12 @@ export const getCatalogLaborFees = (
   let extra = 0;
   let isMatched = false;
   
-  if (color === 'YG') {
+  if (color === 'G' || color === 'YG') {
     isMatched = laborBase > 0;
   }
   
-  // WG(화이트)인 경우 기존 extra_labor_fee 가산 처리
-  if (color === 'WG') {
+  // W(화이트)인 경우 기존 extra_labor_fee 가산 처리
+  if (color === 'W' || color === 'WG') {
     extra = catalogItem.extra_labor_fee || 0;
     if (extra > 0) {
       isMatched = true;
@@ -122,27 +122,65 @@ interface ErpState {
   prefetchDb: (targetCollections: ('catalog' | 'stones')[]) => Promise<void>;
 }
 
-export const useErpStore = create<ErpState>((set, get) => ({
-  goldRates: [],
-  stones: [],
-  customers: [],
-  catalog: [],
-  orders: [],
-  transactions: [],
-  
-  currentRates: null,
-  totalReceivable: 0,
-  totalGoldBalance24k: 0,
-  
-  loading: false,
-  selectedCustomerForOrder: null,
-  currentOrderItems: [],
-  activeTab: 'dashboard',
-  editingOrderId: null,
+const LOCAL_STORAGE_KEY = 'wons_erp_cache';
 
-  setActiveTab: (tab) => set({ activeTab: tab }),
+// 로컬스토리지에 데이터 캐시 저장
+const saveCacheToLocalStorage = (data: {
+  goldRates?: any[];
+  stones?: any[];
+  customers?: any[];
+  catalog?: any[];
+  orders?: any[];
+  transactions?: any[];
+}) => {
+  try {
+    const existing = localStorage.getItem(LOCAL_STORAGE_KEY);
+    const existingData = existing ? JSON.parse(existing) : {};
+    const merged = { ...existingData, ...data, cached_at: new Date().toISOString() };
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(merged));
+  } catch (e) {
+    console.error("Failed to save local storage cache", e);
+  }
+};
 
-  fetchDb: async (targetCollections) => {
+// 로컬스토리지에서 캐시 데이터 로드
+const loadCacheFromLocalStorage = () => {
+  try {
+    const cached = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (cached) {
+      return JSON.parse(cached);
+    }
+  } catch (e) {
+    console.error("Failed to load local storage cache", e);
+  }
+  return null;
+};
+
+export const useErpStore = create<ErpState>((set, get) => {
+  const cachedData = loadCacheFromLocalStorage() || {};
+  const sortedRates = cachedData.goldRates ? [...cachedData.goldRates].sort((a: any, b: any) => b.date.localeCompare(a.date)) : [];
+
+  return {
+    goldRates: cachedData.goldRates || [],
+    stones: cachedData.stones || [],
+    customers: cachedData.customers || [],
+    catalog: cachedData.catalog || [],
+    orders: cachedData.orders || [],
+    transactions: cachedData.transactions || [],
+    
+    currentRates: sortedRates[0] || null,
+    totalReceivable: cachedData.customers ? cachedData.customers.reduce((sum: number, c: any) => sum + c.receivable_amount, 0) : 0,
+    totalGoldBalance24k: cachedData.customers ? cachedData.customers.reduce((sum: number, c: any) => sum + c.gold_balance_24k_g, 0) : 0,
+    
+    loading: false,
+    selectedCustomerForOrder: null,
+    currentOrderItems: [],
+    activeTab: 'dashboard',
+    editingOrderId: null,
+
+    setActiveTab: (tab) => set({ activeTab: tab }),
+
+    fetchDb: async (targetCollections) => {
     set({ loading: true });
     try {
       const collectionsToFetch = targetCollections || [
@@ -183,6 +221,18 @@ export const useErpStore = create<ErpState>((set, get) => ({
       });
 
       set(updates);
+
+      // 로컬스토리지 캐시 동기화
+      const storeState = get();
+      saveCacheToLocalStorage({
+        goldRates: storeState.goldRates,
+        stones: storeState.stones,
+        customers: storeState.customers,
+        catalog: storeState.catalog,
+        orders: storeState.orders,
+        transactions: storeState.transactions
+      });
+
     } catch (error) {
       console.error("fetchDb error: ", error);
     } finally {
@@ -207,6 +257,14 @@ export const useErpStore = create<ErpState>((set, get) => ({
         }
       });
       set(updates);
+
+      // 로컬스토리지 캐시 동기화
+      const storeState = get();
+      saveCacheToLocalStorage({
+        catalog: storeState.catalog,
+        stones: storeState.stones
+      });
+
     } catch (error) {
       console.error("prefetchDb error: ", error);
     }
@@ -1577,4 +1635,5 @@ export const useErpStore = create<ErpState>((set, get) => ({
       console.error("deleteTransaction error: ", error);
     }
   }
-}));
+};
+});
