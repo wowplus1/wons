@@ -1,7 +1,7 @@
 // src/components/ReleaseList.tsx
 import React, { useState, useEffect } from 'react';
-import { useErpStore } from '../store/useErpStore';
-import { Package, CheckCircle, Eye, EyeOff, X, Wrench } from 'lucide-react';
+import { useErpStore, getCatalogLaborFees } from '../store/useErpStore';
+import { Package, CheckCircle, X, Wrench } from 'lucide-react';
 
 interface ReleaseItemRow {
   id: string; // `release-item::${order_id}::${item_id}::${itemIdx}`
@@ -25,12 +25,22 @@ interface ReleaseItemRow {
   actualWeightG?: number;
   division?: string;
   stepWeights?: any;
+
+  buyPrice: number;
+  laborSingleText: string;
+  stonesCountTotal: number;
+  goldWeightG: number;
+  stonesWeightTotal: number;
+  qtyMain: number;
+  qtySub: number;
+  stoneMainId?: string;
+  stoneSubId?: string;
 }
 
 export const ReleaseList: React.FC = () => {
-  const { orders, catalog, customers, updateMultipleItemsStatus, updateItemStepWeightsAndActualWeight, fetchDb, setActiveTab } = useErpStore();
+  const { orders, catalog, stones, updateMultipleItemsStatus, updateItemStepWeightsAndActualWeight, fetchDb, setActiveTab } = useErpStore();
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
-  const [showPrice, setShowPrice] = useState<boolean>(true);
+
 
   // 세공 무게(손실) 입력을 위한 모달 상태
   const [activeWeightModalItem, setActiveWeightModalItem] = useState<any | null>(null);
@@ -73,7 +83,6 @@ export const ReleaseList: React.FC = () => {
     
     const actualWt = stepWeights.step3.after;
     
-    // 통합 업데이트 함수 호출 (await로 처리 보장)
     await updateItemStepWeightsAndActualWeight(
       activeWeightModalItem.orderId,
       activeWeightModalItem.itemId,
@@ -91,7 +100,7 @@ export const ReleaseList: React.FC = () => {
     fetchDb();
   }, [fetchDb]);
 
-  // 1. 현재 '출고대기' 상태인 주문에서 가공 품목('판매' 및 '반품') 필터링하여 테이블 행 구축
+  // 1. 현재 '출고대기' 상태인 주문에서 가공 품목 필터링하여 테이블 행 구축
   const releaseItems = React.useMemo(() => {
     const items: ReleaseItemRow[] = [];
 
@@ -103,13 +112,61 @@ export const ReleaseList: React.FC = () => {
             const itemStatus = item.status || order.status || '접수';
             if (itemStatus !== '출고대기') return;
 
-            const catalogItem = catalog.find(c => c.model_number === item.model_number);
+            const normModel = (m: string) => (m || '').replace(/\s+/g, '').toUpperCase();
+            const catalogItem = catalog.find(c => normModel(c.model_number) === normModel(item.model_number));
             const imageUrl = catalogItem?.images?.[0] || '';
 
             // 개당 공임비 (기본+추가+스톤공임)
             const baseExtra = (item.labor_base || 0) + (item.labor_extra || 0);
             const stoneLabor = ((item.labor_main || 0) * (item.qty_main || 0)) + ((item.labor_sub || 0) * (item.qty_sub || 0));
             const laborSingle = baseExtra + stoneLabor;
+
+            // 공임단가 표시 텍스트 (기본/추가/중심/보조)
+            const laborSingleText = `${(item.labor_base || 0).toLocaleString()} / ${(item.labor_extra || 0).toLocaleString()} / ${(item.labor_main || 0).toLocaleString()} / ${(item.labor_sub || 0).toLocaleString()}`;
+
+            // 알수합계
+            const stonesCountTotal = (item.qty_main || 0) + (item.qty_sub || 0);
+
+            // 중량(스톤)
+            let subStoneWeightEa = 0;
+            if (item.stone_sub_id) {
+              const subStone = stones.find(s => s.stone_id === item.stone_sub_id);
+              subStoneWeightEa = subStone?.weight_carat || 0;
+            }
+            const stonesWeightTotal = (item.qty_main || 0) * (item.stone_weight_ea || 0) + (item.qty_sub || 0) * subStoneWeightEa;
+
+            // 모델 구매원가 계산
+            let modelCost = item.labor_cost || 0;
+            if (catalogItem) {
+              const feeData = getCatalogLaborFees(catalogItem, item.material, item.color, item.grade || 1);
+              modelCost = feeData.laborCost || modelCost;
+            }
+
+            // 스톤 구매단가 합계 계산 (카탈로그 기본 스톤 기준 우선 연산)
+            let totalStonePurchaseCost = 0;
+            if (catalogItem && catalogItem.default_stones && catalogItem.default_stones.length > 0) {
+              catalogItem.default_stones.forEach(ds => {
+                const stone = stones.find(s => s.stone_id === ds.stone_id);
+                const purchasePrice = stone?.purchase_price || 0;
+                totalStonePurchaseCost += ds.quantity * purchasePrice;
+              });
+            } else {
+              // 폴백: 주문서에 기입된 스펙 기준
+              let mainStonePurchasePrice = 0;
+              if (item.stone_main_id) {
+                const mainStone = stones.find(s => s.stone_id === item.stone_main_id);
+                mainStonePurchasePrice = mainStone?.purchase_price || 0;
+              }
+
+              let subStonePurchasePrice = 0;
+              if (item.stone_sub_id) {
+                const subStone = stones.find(s => s.stone_id === item.stone_sub_id);
+                subStonePurchasePrice = subStone?.purchase_price || 0;
+              }
+
+              totalStonePurchaseCost = ((item.qty_main || 0) * mainStonePurchasePrice) + ((item.qty_sub || 0) * subStonePurchasePrice);
+            }
+            const finalLaborCost = modelCost + totalStonePurchaseCost;
 
             items.push({
               id: `release-item::${order.order_id}::${item.item_id}::${itemIdx}`,
@@ -132,7 +189,17 @@ export const ReleaseList: React.FC = () => {
               itemId: item.item_id,
               actualWeightG: item.actual_weight_g,
               division: item.division,
-              stepWeights: item.step_weights
+              stepWeights: item.step_weights,
+              
+              buyPrice: finalLaborCost,
+              laborSingleText,
+              stonesCountTotal,
+              goldWeightG: item.gold_weight || 0,
+              stonesWeightTotal,
+              qtyMain: item.qty_main || 0,
+              qtySub: item.qty_sub || 0,
+              stoneMainId: item.stone_main_id,
+              stoneSubId: item.stone_sub_id
             });
           } catch (itemErr) {
             console.error("ReleaseList item mapping error:", itemErr, item);
@@ -144,7 +211,7 @@ export const ReleaseList: React.FC = () => {
     });
 
     return items;
-  }, [orders, catalog]);
+  }, [orders, catalog, stones]);
 
   // 체크박스 제어
   const isAllChecked = releaseItems.length > 0 && releaseItems.every(r => checkedItems.has(r.id));
@@ -214,7 +281,7 @@ export const ReleaseList: React.FC = () => {
     }
   };
 
-  // 개별 세공작업(공장발주) 되돌리기
+  // 개별 세공작업 되돌리기
   const handleRevertToWork = async (orderId: string, itemId: number) => {
     try {
       const isConfirm = window.confirm("선택하신 품목을 '세공 작업(공장발주)' 상태로 되돌리시겠습니까?\n되돌린 후 주얼리 세공리스트로 자동 이동합니다.");
@@ -233,8 +300,6 @@ export const ReleaseList: React.FC = () => {
       console.error("handleRevertToWork error:", err);
     }
   };
-
-
 
   return (
     <div className="glass-panel animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '15px' }}>
@@ -285,20 +350,9 @@ export const ReleaseList: React.FC = () => {
 
       {/* Control Actions Toolbar */}
       <div className="release-action-toolbar" style={{ display: 'flex', gap: '12px', alignItems: 'center', background: 'rgba(255,255,255,0.01)', padding: '10px 14px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
-        
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontWeight: '700', color: 'var(--text-muted)', userSelect: 'none' }}>
-            <input 
-              type="checkbox" 
-              checked={showPrice} 
-              onChange={(e) => setShowPrice(e.target.checked)} 
-              style={{ cursor: 'pointer' }}
-            />
-            {showPrice ? <Eye size={14} style={{ color: 'var(--primary)' }} /> : <EyeOff size={14} style={{ color: 'var(--text-muted)' }} />}
-            금액/공임 정보 노출
-          </label>
+        <div style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
+          출고할 품목을 체크하신 후 오른쪽의 '출고 완료 처리' 버튼을 누르시면 매출 장부에 반영됩니다.
         </div>
-
         {/* Action Buttons */}
         <div className="release-action-group" style={{ marginLeft: 'auto', display: 'flex', gap: '8px', alignItems: 'center' }}>
           {checkedItems.size > 0 && (
@@ -330,25 +384,26 @@ export const ReleaseList: React.FC = () => {
 
       {/* Main Table Grid */}
       <div className="table-responsive" style={{ overflowX: 'auto' }}>
-        <table className="excel-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '1200px', fontSize: '14px', tableLayout: 'fixed' }}>
+        <table className="excel-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '1350px', fontSize: '14px', tableLayout: 'fixed' }}>
           <colgroup>
-            <col style={{ width: '3%' }} />
-            <col style={{ width: '3%' }} />
-            <col style={{ width: '5%' }} />
-            <col style={{ width: '13%' }} />
-            <col style={{ width: '7%' }} />
-            <col style={{ width: '11%' }} />
-            <col style={{ width: '4%' }} />
-            <col style={{ width: '3%' }} />
-            <col style={{ width: '3%' }} />
-            <col style={{ width: '3%' }} />
-            <col style={{ width: '9%' }} />
-            <col style={{ width: '12%' }} />
-            <col style={{ width: '16%' }} />
-            {showPrice && <col style={{ width: '5%' }} />}
-            {showPrice && <col style={{ width: '6%' }} />}
-            <col style={{ width: '5%' }} />
-            <col style={{ width: '5%' }} />
+            <col style={{ width: '3%' }} /> {/* checkbox */}
+            <col style={{ width: '3%' }} /> {/* No */}
+            <col style={{ width: '5%' }} /> {/* 의뢰일 */}
+            <col style={{ width: '4%' }} /> {/* 구분 */}
+            <col style={{ width: '12%' }} /> {/* 세공 요청사항 */}
+            <col style={{ width: '11%' }} /> {/* 모델 */}
+            <col style={{ width: '4%' }} /> {/* 재질 */}
+            <col style={{ width: '3%' }} /> {/* 색상 */}
+            <col style={{ width: '9%' }} /> {/* 스톤세팅스펙 */}
+            <col style={{ width: '6%' }} /> {/* 구매단가 */}
+            <col style={{ width: '7%' }} /> {/* 공임단가 */}
+            <col style={{ width: '4%' }} /> {/* 알수합계 */}
+            <col style={{ width: '3%' }} /> {/* 수량 */}
+            <col style={{ width: '4%' }} /> {/* 중량(금) */}
+            <col style={{ width: '5%' }} /> {/* 중량(스톤) */}
+            <col style={{ width: '14%' }} /> {/* 단계별 세공 무게 */}
+            <col style={{ width: '4%' }} /> {/* 합계 금액 */}
+            <col style={{ width: '4%' }} /> {/* 되돌리기 */}
           </colgroup>
           <thead>
             <tr style={{ background: 'rgba(255, 255, 255, 0.03)', borderBottom: '2px solid var(--border-color)', color: 'var(--text-muted)' }}>
@@ -362,20 +417,21 @@ export const ReleaseList: React.FC = () => {
               </th>
               <th style={{ padding: '8px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>No</th>
               <th style={{ padding: '8px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>의뢰일</th>
-              <th style={{ padding: '8px 4px', border: '1px solid var(--border-color)' }}>거래처</th>
-              <th style={{ padding: '8px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>제품 사진</th>
-              <th style={{ padding: '8px 4px', border: '1px solid var(--border-color)' }}>모델번호</th>
+              <th style={{ padding: '8px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>구분</th>
+              <th style={{ padding: '8px 4px', border: '1px solid var(--border-color)' }}>세공 요청사항 (비고)</th>
+              <th style={{ padding: '8px 4px', border: '1px solid var(--border-color)' }}>모델</th>
               <th style={{ padding: '8px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>재질</th>
               <th style={{ padding: '8px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>색상</th>
-              <th style={{ padding: '8px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>사이즈</th>
-              <th style={{ padding: '8px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>수량</th>
               <th style={{ padding: '8px 4px', border: '1px solid var(--border-color)' }}>스톤 세팅 스펙</th>
-              <th style={{ padding: '8px 4px', border: '1px solid var(--border-color)' }}>세공 요청사항 (비고)</th>
-              <th style={{ padding: '8px 4px', border: '1px solid var(--border-color)' }}>세공 해리 (혜리)</th>
-              {showPrice && <th style={{ padding: '8px 4px', textAlign: 'right', border: '1px solid var(--border-color)' }}>공임비</th>}
-              {showPrice && <th style={{ padding: '8px 4px', textAlign: 'right', border: '1px solid var(--border-color)' }}>합계</th>}
-              <th style={{ padding: '8px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>상태</th>
-              <th style={{ padding: '8px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>작업</th>
+              <th style={{ padding: '8px 4px', textAlign: 'right', border: '1px solid var(--border-color)' }}>구매단가</th>
+              <th style={{ padding: '8px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>공임단가</th>
+              <th style={{ padding: '8px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>알수합계</th>
+              <th style={{ padding: '8px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>수량</th>
+              <th style={{ padding: '8px 4px', textAlign: 'right', border: '1px solid var(--border-color)' }}>중량(금)</th>
+              <th style={{ padding: '8px 4px', textAlign: 'right', border: '1px solid var(--border-color)' }}>중량(스톤)</th>
+              <th style={{ padding: '8px 4px', border: '1px solid var(--border-color)' }}>단계별 세공 무게 (해리)</th>
+              <th style={{ padding: '8px 4px', textAlign: 'right', border: '1px solid var(--border-color)' }}>합계</th>
+              <th style={{ padding: '8px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>되돌리기</th>
             </tr>
           </thead>
           <tbody>
@@ -416,38 +472,54 @@ export const ReleaseList: React.FC = () => {
                       })()}
                     </td>
 
-                    {/* 거래처 */}
-                    <td style={{ padding: '6px 4px', verticalAlign: 'middle' }}>
-                      <div style={{ fontWeight: '600' }}>{row.customerName}</div>
+                    {/* 구분 */}
+                    <td style={{ padding: '6px 4px', textAlign: 'center', verticalAlign: 'middle' }}>
                       {(() => {
-                        const cust = customers.find(c => c.customer_id === row.customerId);
-                        if (!cust) return null;
+                        const div = row.division || '판매';
+                        let bg = 'rgba(16, 185, 129, 0.1)';
+                        let color = '#10b981';
+                        let border = '1px solid rgba(16, 185, 129, 0.2)';
+                        if (div === '결제') {
+                          bg = 'rgba(56, 189, 248, 0.1)';
+                          color = '#38bdf8';
+                          border = '1px solid rgba(56, 189, 248, 0.2)';
+                        } else if (div === '반품') {
+                          bg = 'rgba(239, 68, 68, 0.1)';
+                          color = '#ef4444';
+                          border = '1px solid rgba(239, 68, 68, 0.2)';
+                        } else if (div === 'DC') {
+                          bg = 'rgba(168, 85, 247, 0.1)';
+                          color = '#a855f7';
+                          border = '1px solid rgba(168, 85, 247, 0.2)';
+                        }
                         return (
-                          <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '2px', lineHeight: '1.1' }}>
-                            미수: {cust.receivable_amount.toLocaleString()}원 / 금: {cust.gold_balance_24k_g.toFixed(2)}g
-                          </div>
+                          <span style={{ 
+                            padding: '2px 6px', 
+                            borderRadius: '4px', 
+                            fontSize: '12px', 
+                            fontWeight: 'bold',
+                            backgroundColor: bg,
+                            color: color,
+                            border: border,
+                            display: 'inline-block'
+                          }}>
+                            {div}
+                          </span>
                         );
                       })()}
                     </td>
 
-                    {/* 이미지 썸네일 */}
-                    <td style={{ padding: '4px', textAlign: 'center', verticalAlign: 'middle' }}>
-                      {row.imageUrl ? (
-                        <img 
-                          src={row.imageUrl} 
-                          alt={row.model} 
-                          style={{ maxWidth: '50px', maxHeight: '50px', objectFit: 'contain', borderRadius: '4px', display: 'block', margin: '0 auto', border: '1px solid var(--border-color)' }}
-                        />
-                      ) : (
-                        <div style={{ width: '40px', height: '40px', margin: '0 auto', background: 'rgba(255,255,255,0.03)', borderRadius: '4px', display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--text-muted)', fontSize: '11px' }}>
-                          No Image
-                        </div>
-                      )}
+                    {/* 비고 (요청사항) */}
+                    <td style={{ padding: '6px 4px', verticalAlign: 'middle', color: '#fbbf24', fontWeight: 'bold' }}>
+                      {row.note || '-'}
                     </td>
 
                     {/* 모델 */}
-                    <td style={{ padding: '6px 4px', fontWeight: '700', color: '#38bdf8', verticalAlign: 'middle' }}>
-                      {row.model}
+                    <td style={{ padding: '6px 4px', verticalAlign: 'middle' }}>
+                      <div style={{ fontWeight: '700', color: '#38bdf8' }}>{row.model}</div>
+                      <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                        {row.customerName}
+                      </div>
                     </td>
 
                     {/* 재질 */}
@@ -460,16 +532,6 @@ export const ReleaseList: React.FC = () => {
                       {row.color}
                     </td>
 
-                    {/* 사이즈 */}
-                    <td style={{ padding: '6px 4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle' }}>
-                      {row.size || '-'}
-                    </td>
-
-                    {/* 수량 */}
-                    <td style={{ padding: '6px 4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle', fontSize: '15px' }}>
-                      {row.quantity}
-                    </td>
-
                     {/* 스톤 세팅 스펙 */}
                     <td style={{ padding: '6px 4px', lineHeight: '1.3', verticalAlign: 'middle' }}>
                       {row.stoneMainText && <div style={{ color: 'var(--text-main)' }}>{row.stoneMainText}</div>}
@@ -477,15 +539,40 @@ export const ReleaseList: React.FC = () => {
                       {!row.stoneMainText && !row.stoneSubText && <span style={{ color: 'var(--text-muted)' }}>스톤 없음</span>}
                     </td>
 
-                    {/* 비고 */}
-                    <td style={{ padding: '6px 4px', verticalAlign: 'middle', color: '#fbbf24', fontWeight: 'bold' }}>
-                      {row.note || '-'}
+                    {/* 구매단가 */}
+                    <td style={{ padding: '6px 4px', textAlign: 'right', verticalAlign: 'middle', fontWeight: 'bold', color: '#10b981' }}>
+                      {row.buyPrice.toLocaleString()}원
                     </td>
 
-                    {/* 세공 손실 (혜리) */}
+                    {/* 공임단가 */}
+                    <td style={{ padding: '6px 4px', textAlign: 'center', verticalAlign: 'middle', color: 'var(--text-muted)', fontSize: '13px' }}>
+                      {row.laborSingleText}
+                    </td>
+
+                    {/* 알수합계 */}
+                    <td style={{ padding: '6px 4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle' }}>
+                      {row.stonesCountTotal}알
+                    </td>
+
+                    {/* 수량 */}
+                    <td style={{ padding: '6px 4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle', fontSize: '15px' }}>
+                      {row.quantity}
+                    </td>
+
+                    {/* 중량(금) */}
+                    <td style={{ padding: '6px 4px', textAlign: 'right', verticalAlign: 'middle', fontWeight: 'bold' }}>
+                      {row.goldWeightG > 0 ? `${row.goldWeightG.toFixed(2)}g` : '-'}
+                    </td>
+
+                    {/* 중량(스톤) */}
+                    <td style={{ padding: '6px 4px', textAlign: 'right', verticalAlign: 'middle', color: 'var(--text-muted)' }}>
+                      {row.stonesWeightTotal > 0 ? `${row.stonesWeightTotal.toFixed(3)}g` : '-'}
+                    </td>
+
+                    {/* 세공 손실 (해리) */}
                     <td style={{ padding: '8px 6px', verticalAlign: 'middle', color: 'var(--text-main)' }}>
                       {row.division === '결제' || row.model === '디자인출력' ? (
-                        <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '14px', fontStyle: 'italic' }}>
+                        <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px', fontStyle: 'italic' }}>
                           {row.model === '디자인출력' ? '디자인출력 (해리 없음)' : '결제 구분 (해리 없음)'}
                         </div>
                       ) : (() => {
@@ -505,7 +592,7 @@ export const ReleaseList: React.FC = () => {
                                 className="btn-primary"
                                 style={{
                                   padding: '4px 8px',
-                                  fontSize: '14px',
+                                  fontSize: '13px',
                                   background: 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)',
                                   color: 'var(--text-inverse)',
                                   border: 'none',
@@ -542,7 +629,7 @@ export const ReleaseList: React.FC = () => {
                         const totalLossPct = initialBefore > 0 ? ((totalLoss / initialBefore) * 100).toFixed(2) : '0.00';
 
                         return (
-                          <div style={{ fontSize: '14px', display: 'flex', flexDirection: 'column', gap: '3px', lineHeight: '1.2' }}>
+                          <div style={{ fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '3px', lineHeight: '1.2' }}>
                             {before1 > 0 || after1 > 0 ? (
                               <div>1단계: {before1.toFixed(2)}g → {after1.toFixed(2)}g (해리 {loss1.toFixed(2)}g / {pct1}%)</div>
                             ) : null}
@@ -567,8 +654,8 @@ export const ReleaseList: React.FC = () => {
                                 type="button"
                                 onClick={() => handleOpenWeightModal(row)}
                                 style={{
-                                  padding: '1px 6px',
-                                  fontSize: '13px',
+                                  padding: '1px 4px',
+                                  fontSize: '12px',
                                   background: 'rgba(255,255,255,0.05)',
                                   border: '1px solid var(--border-color)',
                                   borderRadius: '3px',
@@ -585,28 +672,12 @@ export const ReleaseList: React.FC = () => {
                       })()}
                     </td>
 
-                    {/* 공임비 */}
-                    {showPrice && (
-                      <td style={{ padding: '6px 4px', textAlign: 'right', verticalAlign: 'middle' }}>
-                        {row.laborSingle.toLocaleString()}원
-                      </td>
-                    )}
-
                     {/* 합계 */}
-                    {showPrice && (
-                      <td style={{ padding: '6px 4px', textAlign: 'right', fontWeight: '700', verticalAlign: 'middle' }}>
-                        {row.totalAmount.toLocaleString()}원
-                      </td>
-                    )}
-
-                    {/* 상태 배지 */}
-                    <td style={{ padding: '6px 4px', textAlign: 'center', verticalAlign: 'middle' }}>
-                      <span className="badge" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '3px 8px', borderRadius: '12px', fontSize: '13px', fontWeight: 'bold' }}>
-                        출고 대기
-                      </span>
+                    <td style={{ padding: '6px 4px', textAlign: 'right', fontWeight: '700', verticalAlign: 'middle' }}>
+                      {row.totalAmount.toLocaleString()}원
                     </td>
 
-                    {/* 액션 (세공작업 되돌리기 버튼) */}
+                    {/* 되돌리기 (작업) */}
                     <td style={{ padding: '6px 4px', textAlign: 'center', verticalAlign: 'middle' }}>
                       <button
                         type="button"
