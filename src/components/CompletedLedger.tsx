@@ -62,19 +62,6 @@ export const CompletedLedger: React.FC = () => {
     }
   };
 
-  const handlePrintInvoice = (orderId: string) => {
-    const w = 1150;
-    const h = 850;
-    const left = window.screen.width / 2 - w / 2;
-    const top = window.screen.height / 2 - h / 2;
-
-    window.open(
-      `./?popup=invoice&orderId=${orderId}`,
-      `invoice_popup_${orderId}`,
-      `width=${w},height=${h},top=${top},left=${left},resizable=yes,scrollbars=yes`
-    );
-  };
-
   const handleOpenDetailWindow = (modelNumber: string) => {
     const w = 860;
     const h = 900;
@@ -439,13 +426,11 @@ export const CompletedLedger: React.FC = () => {
             <col style={{ width: '3%' }} />
             <col style={{ width: '5%' }} />
             <col style={{ width: '4%' }} />
-            <col style={{ width: '9%' }} />
-            <col style={{ width: '4%' }} />
-            <col style={{ width: '8%' }} />
             <col style={{ width: '12%' }} />
+            <col style={{ width: '18%' }} />
             <col style={{ width: '4%' }} />
             <col style={{ width: '3%' }} />
-            <col style={{ width: '3%' }} />
+            <col style={{ width: '6%' }} />
             <col style={{ width: '5%' }} />
             <col style={{ width: '5%' }} />
             <col style={{ width: '6%' }} />
@@ -471,8 +456,6 @@ export const CompletedLedger: React.FC = () => {
               <th rowSpan={2} style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>일자</th>
               <th rowSpan={2} style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>구분</th>
               <th rowSpan={2} style={{ padding: '6px 4px', border: '1px solid var(--border-color)' }}>거래처</th>
-              <th rowSpan={2} style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>거래No</th>
-              <th rowSpan={2} style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>시리얼<br/>주문번호</th>
               <th rowSpan={2} style={{ padding: '6px 4px', border: '1px solid var(--border-color)' }}>모델</th>
               <th rowSpan={2} style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>재질</th>
               <th rowSpan={2} style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>색상</th>
@@ -549,26 +532,6 @@ export const CompletedLedger: React.FC = () => {
                     {/* 거래처 */}
                     <td style={{ padding: '6px 4px', fontWeight: '600' }}>
                       {row.customerName}
-                    </td>
-
-                    {/* 거래No (인쇄 팝업 호출) */}
-                    <td 
-                      style={{ 
-                        padding: '6px 4px', 
-                        textAlign: 'center', 
-                        color: '#f472b6', 
-                        fontWeight: '700', 
-                        textDecoration: 'underline', 
-                        cursor: 'pointer'
-                      }}
-                      onClick={() => handlePrintInvoice(row.orderId)}
-                    >
-                      {row.tradeNo}
-                    </td>
-
-                    {/* 시리얼 주문번호 */}
-                    <td style={{ padding: '6px 4px', textAlign: 'center' }}>
-                      {row.serialNo}
                     </td>
 
                     {/* 모델 (상세 조회 팝업) */}
@@ -689,7 +652,7 @@ export const CompletedLedger: React.FC = () => {
               })
             ) : (
               <tr>
-                <td colSpan={21} style={{ padding: '30px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                <td colSpan={19} style={{ padding: '30px', textAlign: 'center', color: 'var(--text-muted)' }}>
                   {activeTab === 'unpaid_ledger' ? '결제전 미수금 내역이 존재하지 않습니다.' : '결제 완료된 내역이 존재하지 않습니다.'}
                 </td>
               </tr>
