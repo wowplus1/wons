@@ -318,7 +318,6 @@ export const useErpStore = create<ErpState>((set, get) => {
 
   updateOrderItem: (index: number, updatedItem: Partial<OrderItem>, forceModelLoad?: boolean) => {
     const items = [...get().currentOrderItems];
-    const prevItem = { ...items[index] }; // 변경 전 원본 상태 백업
     const isModelChanged = forceModelLoad || (updatedItem.model_number !== undefined && updatedItem.model_number.toUpperCase().trim() !== (items[index].model_number || '').toUpperCase().trim());
     const isDivisionChanged = updatedItem.division !== undefined && updatedItem.division !== items[index].division;
     
@@ -470,7 +469,7 @@ export const useErpStore = create<ErpState>((set, get) => {
             updatedItem.color !== undefined ||
             updatedItem.grade !== undefined
           ) {
-            const { laborBase, laborCost, isMatched } = getCatalogLaborFees(catalogItem, mat, item.color || 'YG', grade);
+            const { laborBase, laborCost } = getCatalogLaborFees(catalogItem, mat, item.color || 'YG', grade);
             
             // 단가 매칭 결과 적용 (롤백 및 알림 경고 제거)
             item.labor_base = laborBase;

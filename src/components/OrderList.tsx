@@ -56,18 +56,7 @@ export const OrderList: React.FC = () => {
     }
   };
 
-  const handlePrintInvoice = (orderId: string) => {
-    const w = 1150;
-    const h = 850;
-    const left = window.screen.width / 2 - w / 2;
-    const top = window.screen.height / 2 - h / 2;
 
-    window.open(
-      `./?popup=invoice&orderId=${orderId}`,
-      `invoice_popup_${orderId}`,
-      `width=${w},height=${h},top=${top},left=${left},resizable=yes,scrollbars=yes`
-    );
-  };
 
   const handleOpenDetailWindow = (modelNumber: string) => {
     const w = 860;
