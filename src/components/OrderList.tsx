@@ -435,16 +435,17 @@ export const OrderList: React.FC = () => {
           <colgroup>
             <col style={{ width: '4%' }} />
             <col style={{ width: '8%' }} />
-            <col style={{ width: '10%' }} />
+            <col style={{ width: '9%' }} />
             <col style={{ width: '6%' }} />
-            <col style={{ width: '15%' }} />
+            <col style={{ width: '12%' }} />
             <col style={{ width: '6%' }} />
             <col style={{ width: '6%' }} />
-            <col style={{ width: '10%' }} />
-            <col style={{ width: '10%' }} />
+            <col style={{ width: '9%' }} />
+            <col style={{ width: '9%' }} />
             <col style={{ width: '6%' }} />
             <col style={{ width: '5%' }} />
-            <col style={{ width: '15%' }} />
+            <col style={{ width: '9%' }} />
+            <col style={{ width: '12%' }} />
             <col style={{ width: '4%' }} />
             <col style={{ width: '5%' }} />
           </colgroup>
@@ -469,6 +470,7 @@ export const OrderList: React.FC = () => {
               <th style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>보조</th>
               <th style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>사이즈</th>
               <th style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>수량</th>
+              <th style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)', color: 'var(--primary)' }}>공임합계</th>
               <th style={{ padding: '6px 4px', border: '1px solid var(--border-color)' }}>비고</th>
               <th style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>수정</th>
               <th style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>삭제</th>
@@ -579,6 +581,11 @@ export const OrderList: React.FC = () => {
                     {/* 수량 */}
                     <td style={{ padding: '6px 4px', textAlign: 'center', fontWeight: 'bold' }}>{row.quantity}</td>
 
+                    {/* 공임합계 */}
+                    <td style={{ padding: '6px 4px', textAlign: 'right', fontWeight: 'bold', color: 'var(--primary)' }}>
+                      {row.totalAmount !== undefined ? `${row.totalAmount.toLocaleString()}원` : '-'}
+                    </td>
+
                     {/* 비고 */}
                     <td 
                       style={{ 
@@ -652,7 +659,7 @@ export const OrderList: React.FC = () => {
               })
             ) : (
               <tr>
-                <td colSpan={15} style={{ padding: '30px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                <td colSpan={16} style={{ padding: '30px', textAlign: 'center', color: 'var(--text-muted)' }}>
                   접수 및 접수 진행 중인 주문 내역이 없습니다.
                 </td>
               </tr>
