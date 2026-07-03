@@ -437,15 +437,14 @@ export const OrderList: React.FC = () => {
             <col style={{ width: '8%' }} />
             <col style={{ width: '10%' }} />
             <col style={{ width: '6%' }} />
-            <col style={{ width: '12%' }} />
+            <col style={{ width: '15%' }} />
             <col style={{ width: '6%' }} />
             <col style={{ width: '6%' }} />
             <col style={{ width: '10%' }} />
             <col style={{ width: '10%' }} />
             <col style={{ width: '6%' }} />
             <col style={{ width: '5%' }} />
-            <col style={{ width: '12%' }} />
-            <col style={{ width: '6%' }} />
+            <col style={{ width: '15%' }} />
             <col style={{ width: '4%' }} />
             <col style={{ width: '5%' }} />
           </colgroup>
@@ -471,7 +470,6 @@ export const OrderList: React.FC = () => {
               <th style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>사이즈</th>
               <th style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>수량</th>
               <th style={{ padding: '6px 4px', border: '1px solid var(--border-color)' }}>비고</th>
-              <th style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>제조사</th>
               <th style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>수정</th>
               <th style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>삭제</th>
             </tr>
@@ -599,8 +597,7 @@ export const OrderList: React.FC = () => {
                       {row.note || '-'}
                     </td>
 
-                    {/* 제조사 */}
-                    <td style={{ padding: '6px 4px', textAlign: 'center' }}>{row.manufacturer || '-'}</td>
+
 
                     {/* 수정 */}
                     <td style={{ padding: '6px 4px', textAlign: 'center' }}>
