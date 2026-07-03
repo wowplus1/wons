@@ -1,0 +1,1 @@
+var e=e=>{if(e==null||e===``)return``;let t=e.toString().replace(/[^0-9.-]/g,``).split(`.`);return t[0]=t[0].replace(/\B(?=(\d{3})+(?!\d))/g,`,`),t.join(`.`)},t=e=>{let t=e.replace(/,/g,``);return parseInt(t,10)||0};export{e as n,t};
