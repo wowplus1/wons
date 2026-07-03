@@ -25,6 +25,68 @@ export const OrderGrid: React.FC = () => {
 
   const containerRef = useRef<HTMLDivElement>(null);
   
+  // 거래처 검색어 및 드롭다운 열림 상태 추가
+  const [customerSearchText, setCustomerSearchText] = useState('');
+  const [isCustomerDropdownOpen, setIsCustomerDropdownOpen] = useState(false);
+
+  useEffect(() => {
+    if (selectedCustomerForOrder) {
+      setCustomerSearchText(`${selectedCustomerForOrder.name} (${selectedCustomerForOrder.code})`);
+    } else {
+      setCustomerSearchText('');
+    }
+  }, [selectedCustomerForOrder]);
+
+  // 외부 클릭 시 거래처 드롭다운 닫기
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.order-header-select-group')) {
+        setIsCustomerDropdownOpen(false);
+        if (!selectedCustomerForOrder) {
+          setCustomerSearchText('');
+        } else {
+          setCustomerSearchText(`${selectedCustomerForOrder.name} (${selectedCustomerForOrder.code})`);
+        }
+      }
+    };
+    document.addEventListener('click', handleOutsideClick);
+    return () => document.removeEventListener('click', handleOutsideClick);
+  }, [selectedCustomerForOrder]);
+
+  const filteredCustomers = React.useMemo(() => {
+    const q = (customerSearchText || '').trim().toLowerCase();
+    if (!q) return customers;
+    return customers.filter(c => 
+      c.name.toLowerCase().includes(q) || 
+      c.code.toLowerCase().includes(q)
+    );
+  }, [customers, customerSearchText]);
+
+  const handleSelectCustomer = (customer: any) => {
+    selectCustomer(customer);
+    if (customer) {
+      addOrderItem({ 
+        item_id: 1, 
+        quantity: 1, 
+        grade: 3,
+        material: '14K',
+        color: 'G',
+        manufacturer: '자체제작',
+        qty_main: 0,
+        qty_sub: 0,
+        stone_weight_ea: 0,
+        labor_base: 0,
+        labor_extra: 0,
+        labor_main: 0,
+        labor_sub: 0,
+        labor_stone_total: 0,
+        division: '판매',
+        note: ''
+      });
+    }
+  };
+
   // 상세설정 토글 상태 관리 (아코디언)
   const [expandedItems, setExpandedItems] = useState<Record<number, boolean>>({});
   
@@ -103,32 +165,7 @@ export const OrderGrid: React.FC = () => {
     }, 50);
   };
  
-  const handleCustomerChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const customer = customers.find(c => c.customer_id === e.target.value) || null;
-    selectCustomer(customer);
-    
-    if (customer) {
-      // Create first empty row with default grade
-      addOrderItem({ 
-        item_id: 1, 
-        quantity: 1, 
-        grade: 3, // 초기 공임급 일반(3) 고정
-        material: '14K',
-        color: 'G',
-        manufacturer: '자체제작',
-        qty_main: 0,
-        qty_sub: 0,
-        stone_weight_ea: 0,
-        labor_base: 0,
-        labor_extra: 0,
-        labor_main: 0,
-        labor_sub: 0,
-        labor_stone_total: 0,
-        division: '판매',
-        note: ''
-      });
-    }
-  };
+  
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -193,22 +230,109 @@ export const OrderGrid: React.FC = () => {
       
       {/* Top Header & Customer Selection */}
       <div className="order-grid-header">
-        <div className="order-header-select-group">
+        <div className="order-header-select-group" style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <label style={{ fontSize: '15px', fontWeight: '700', color: 'var(--primary)' }}>거래처 선택 (필수):</label>
-          <select
-            value={selectedCustomerForOrder?.customer_id || ''}
-            onChange={handleCustomerChange}
-            disabled={!!editingOrderId}
-            className="input-field"
-            style={{ padding: '6px 12px', fontSize: '15px', cursor: editingOrderId ? 'not-allowed' : 'default', opacity: editingOrderId ? 0.6 : 1 }}
-          >
-            <option value="">-- 거래처를 먼저 선택해 주세요 --</option>
-            {customers.map(c => (
-              <option key={c.customer_id} value={c.customer_id}>
-                {c.name} ({c.code}) - {c.grade}등급 ({c.trade_type === 'weight' ? '중량' : '시세'})
-              </option>
-            ))}
-          </select>
+          <div style={{ position: 'relative', width: '300px' }}>
+            <input
+              type="text"
+              placeholder="거래처 이름 또는 코드 입력..."
+              value={customerSearchText}
+              onChange={(e) => {
+                setCustomerSearchText(e.target.value);
+                setIsCustomerDropdownOpen(true);
+              }}
+              onFocus={() => setIsCustomerDropdownOpen(true)}
+              disabled={!!editingOrderId}
+              className="input-field"
+              style={{
+                width: '100%',
+                padding: '6px 12px',
+                fontSize: '15px',
+                cursor: editingOrderId ? 'not-allowed' : 'text',
+                opacity: editingOrderId ? 0.6 : 1
+              }}
+            />
+            {selectedCustomerForOrder && !editingOrderId && (
+              <button
+                type="button"
+                onClick={() => {
+                  selectCustomer(null);
+                  setCustomerSearchText('');
+                  setIsCustomerDropdownOpen(false);
+                }}
+                style={{
+                  position: 'absolute',
+                  right: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--text-muted)',
+                  cursor: 'pointer',
+                  fontSize: '16px'
+                }}
+              >
+                ✕
+              </button>
+            )}
+
+            {isCustomerDropdownOpen && !editingOrderId && (
+              <div
+                className="glass-panel"
+                style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  width: '100%',
+                  maxHeight: '220px',
+                  overflowY: 'auto',
+                  zIndex: 9999,
+                  background: '#18181b', // 어두운 테마용 단색 고정 배경
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '4px',
+                  marginTop: '4px',
+                  boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.4)'
+                }}
+              >
+                {filteredCustomers.length > 0 ? (
+                  filteredCustomers.map(c => (
+                    <div
+                      key={c.customer_id}
+                      onMouseDown={() => {
+                        handleSelectCustomer(c);
+                        setCustomerSearchText(`${c.name} (${c.code})`);
+                        setIsCustomerDropdownOpen(false);
+                      }}
+                      style={{
+                        padding: '8px 12px',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        borderBottom: '1px solid rgba(255, 255, 255, 0.03)',
+                        transition: 'background 0.2s',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        color: 'var(--text-main)'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(212, 175, 55, 0.15)'}
+                      onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                    >
+                      <div>
+                        <strong>{c.name}</strong> <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>({c.code})</span>
+                      </div>
+                      <span style={{ fontSize: '11px', background: 'rgba(255,255,255,0.05)', padding: '2px 5px', borderRadius: '3px', color: 'var(--primary)', fontWeight: 'bold' }}>
+                        {c.grade}등급 • {c.trade_type === 'weight' ? '중량' : '시세'}
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <div style={{ padding: '12px', color: 'var(--text-muted)', fontSize: '14px', textAlign: 'center' }}>
+                    일치하는 거래처가 없습니다.
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         <h2 style={{ fontSize: '19px', display: 'flex', alignItems: 'center', gap: '8px' }}>
