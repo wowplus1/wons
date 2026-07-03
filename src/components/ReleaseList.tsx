@@ -1,7 +1,7 @@
 // src/components/ReleaseList.tsx
 import React, { useState, useEffect } from 'react';
 import { useErpStore, getCatalogLaborFees } from '../store/useErpStore';
-import { Package, CheckCircle, X, Wrench } from 'lucide-react';
+import { Package, CheckCircle } from 'lucide-react';
 
 interface ReleaseItemRow {
   id: string; // `release-item::${order_id}::${item_id}::${itemIdx}`
@@ -27,73 +27,16 @@ interface ReleaseItemRow {
   stepWeights?: any;
 
   buyPrice: number;
-  laborSingleText: string;
+  laborBaseExtra: number;
+  laborMainSub: number;
   stonesCountTotal: number;
   goldWeightG: number;
   stonesWeightTotal: number;
-  qtyMain: number;
-  qtySub: number;
-  stoneMainId?: string;
-  stoneSubId?: string;
 }
 
 export const ReleaseList: React.FC = () => {
-  const { orders, catalog, stones, updateMultipleItemsStatus, updateItemStepWeightsAndActualWeight, fetchDb, setActiveTab } = useErpStore();
+  const { orders, catalog, stones, updateMultipleItemsStatus, fetchDb, setActiveTab } = useErpStore();
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
-
-
-  // 세공 무게(손실) 입력을 위한 모달 상태
-  const [activeWeightModalItem, setActiveWeightModalItem] = useState<any | null>(null);
-  const [step1Before, setStep1Before] = useState<string>('');
-  const [step1After, setStep1After] = useState<string>('');
-  const [step2Before, setStep2Before] = useState<string>('');
-  const [step2After, setStep2After] = useState<string>('');
-  const [step3Before, setStep3Before] = useState<string>('');
-  const [step3After, setStep3After] = useState<string>('');
-
-  const handleOpenWeightModal = (item: any) => {
-    const sw = item.stepWeights || {};
-    setStep1Before(String(sw.step1?.before || ''));
-    setStep1After(String(sw.step1?.after || ''));
-    setStep2Before(String(sw.step2?.before || ''));
-    setStep2After(String(sw.step2?.after || ''));
-    setStep3Before(String(sw.step3?.before || ''));
-    setStep3After(String(sw.step3?.after || ''));
-    
-    setActiveWeightModalItem({
-      orderId: item.orderId,
-      itemId: item.itemId,
-      stepWeights: sw
-    });
-  };
-
-  const handleSaveStepWeights = async () => {
-    if (!activeWeightModalItem) return;
-    
-    const parseVal = (val: string) => {
-      const num = parseFloat(val);
-      return isNaN(num) ? 0 : parseFloat(num.toFixed(2));
-    };
-
-    const stepWeights = {
-      step1: { before: parseVal(step1Before), after: parseVal(step1After) },
-      step2: { before: parseVal(step2Before), after: parseVal(step2After) },
-      step3: { before: parseVal(step3Before), after: parseVal(step3After) }
-    };
-    
-    const actualWt = stepWeights.step3.after;
-    
-    await updateItemStepWeightsAndActualWeight(
-      activeWeightModalItem.orderId,
-      activeWeightModalItem.itemId,
-      stepWeights,
-      actualWt > 0 ? actualWt : undefined
-    );
-    
-    alert('세공 손실 무게 및 실제 중량이 재계산되어 정상 반영되었습니다.');
-    setActiveWeightModalItem(null);
-    fetchDb();
-  };
 
   // 컴포넌트 마운트 시 최신 데이터 동기화
   useEffect(() => {
@@ -121,8 +64,9 @@ export const ReleaseList: React.FC = () => {
             const stoneLabor = ((item.labor_main || 0) * (item.qty_main || 0)) + ((item.labor_sub || 0) * (item.qty_sub || 0));
             const laborSingle = baseExtra + stoneLabor;
 
-            // 공임단가 표시 텍스트 (기본/추가/중심/보조)
-            const laborSingleText = `${(item.labor_base || 0).toLocaleString()} / ${(item.labor_extra || 0).toLocaleString()} / ${(item.labor_main || 0).toLocaleString()} / ${(item.labor_sub || 0).toLocaleString()}`;
+            // 공임단가 세부 계산
+            const laborBaseExtra = (item.labor_base || 0) + (item.labor_extra || 0);
+            const laborMainSub = (item.labor_main || 0) + (item.labor_sub || 0);
 
             // 알수합계
             const stonesCountTotal = (item.qty_main || 0) + (item.qty_sub || 0);
@@ -142,7 +86,7 @@ export const ReleaseList: React.FC = () => {
               modelCost = feeData.laborCost || modelCost;
             }
 
-            // 스톤 구매단가 합계 계산 (카탈로그 기본 스톤 기준 우선 연산)
+            // 스톤 구매단가 합계 계산
             let totalStonePurchaseCost = 0;
             if (catalogItem && catalogItem.default_stones && catalogItem.default_stones.length > 0) {
               catalogItem.default_stones.forEach(ds => {
@@ -151,7 +95,6 @@ export const ReleaseList: React.FC = () => {
                 totalStonePurchaseCost += ds.quantity * purchasePrice;
               });
             } else {
-              // 폴백: 주문서에 기입된 스펙 기준
               let mainStonePurchasePrice = 0;
               if (item.stone_main_id) {
                 const mainStone = stones.find(s => s.stone_id === item.stone_main_id);
@@ -192,14 +135,11 @@ export const ReleaseList: React.FC = () => {
               stepWeights: item.step_weights,
               
               buyPrice: finalLaborCost,
-              laborSingleText,
+              laborBaseExtra,
+              laborMainSub,
               stonesCountTotal,
               goldWeightG: item.gold_weight || 0,
-              stonesWeightTotal,
-              qtyMain: item.qty_main || 0,
-              qtySub: item.qty_sub || 0,
-              stoneMainId: item.stone_main_id,
-              stoneSubId: item.stone_sub_id
+              stonesWeightTotal
             });
           } catch (itemErr) {
             console.error("ReleaseList item mapping error:", itemErr, item);
@@ -313,47 +253,11 @@ export const ReleaseList: React.FC = () => {
         </h2>
       </div>
 
-      {/* 실시간 출고 동기화 자가진단 패널 */}
-      <div className="release-diagnostic-panel" style={{
-        padding: '10px 14px',
-        background: 'rgba(212, 175, 55, 0.05)',
-        border: '1px solid rgba(212, 175, 55, 0.2)',
-        borderRadius: '6px',
-        display: 'flex',
-        gap: '24px',
-        alignItems: 'center',
-        fontSize: '14px',
-        color: 'var(--text-main)'
-      }}>
-        <strong style={{ color: 'var(--primary)' }}>⚡ [실시간 출고 동기화 자가진단]</strong>
-        <span>• 스토어 로드된 총 주문: <strong>{orders.length}</strong>건</span>
-        <span>• '출고대기'(세공완료) 주문: <strong style={{ color: '#10b981' }}>{orders.filter(o => (o.status || '').trim() === '출고대기').length}</strong>건</span>
-        <span>• 출고 대기 품목 수: <strong style={{ color: '#38bdf8' }}>{releaseItems.length}</strong>건</span>
-        <button 
-          type="button"
-          onClick={() => { fetchDb(); alert('가상 DB 동기화 완료!'); }}
-          className="release-refresh-btn"
-          style={{
-            marginLeft: 'auto',
-            padding: '2px 8px',
-            fontSize: '13px',
-            background: 'rgba(255,255,255,0.05)',
-            border: '1px solid var(--border-color)',
-            borderRadius: '4px',
-            color: 'var(--text-muted)',
-            cursor: 'pointer'
-          }}
-        >
-          데이터 새로고침
-        </button>
-      </div>
-
       {/* Control Actions Toolbar */}
       <div className="release-action-toolbar" style={{ display: 'flex', gap: '12px', alignItems: 'center', background: 'rgba(255,255,255,0.01)', padding: '10px 14px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
         <div style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
           출고할 품목을 체크하신 후 오른쪽의 '출고 완료 처리' 버튼을 누르시면 매출 장부에 반영됩니다.
         </div>
-        {/* Action Buttons */}
         <div className="release-action-group" style={{ marginLeft: 'auto', display: 'flex', gap: '8px', alignItems: 'center' }}>
           {checkedItems.size > 0 && (
             <span style={{ fontSize: '14px', color: 'var(--primary)', fontWeight: 'bold', marginRight: '8px' }}>
@@ -389,21 +293,20 @@ export const ReleaseList: React.FC = () => {
             <col style={{ width: '3%' }} /> {/* checkbox */}
             <col style={{ width: '3%' }} /> {/* No */}
             <col style={{ width: '5%' }} /> {/* 의뢰일 */}
-            <col style={{ width: '4%' }} /> {/* 구분 */}
-            <col style={{ width: '12%' }} /> {/* 세공 요청사항 */}
-            <col style={{ width: '11%' }} /> {/* 모델 */}
+            <col style={{ width: '8%' }} /> {/* 거래처 */}
+            <col style={{ width: '8%' }} /> {/* 모델 */}
             <col style={{ width: '4%' }} /> {/* 재질 */}
             <col style={{ width: '3%' }} /> {/* 색상 */}
-            <col style={{ width: '9%' }} /> {/* 스톤세팅스펙 */}
-            <col style={{ width: '6%' }} /> {/* 구매단가 */}
-            <col style={{ width: '7%' }} /> {/* 공임단가 */}
-            <col style={{ width: '4%' }} /> {/* 알수합계 */}
-            <col style={{ width: '3%' }} /> {/* 수량 */}
-            <col style={{ width: '4%' }} /> {/* 중량(금) */}
-            <col style={{ width: '5%' }} /> {/* 중량(스톤) */}
-            <col style={{ width: '14%' }} /> {/* 단계별 세공 무게 */}
-            <col style={{ width: '4%' }} /> {/* 합계 금액 */}
-            <col style={{ width: '4%' }} /> {/* 되돌리기 */}
+            <col style={{ width: '10%' }} /> {/* 비고 */}
+            <col style={{ width: '6%' }} /> {/* 중량(금) */}
+            <col style={{ width: '6%' }} /> {/* 중량(스톤) */}
+            <col style={{ width: '8%' }} /> {/* 구매단가 */}
+            <col style={{ width: '8%' }} /> {/* 공임단가(기본+추가) */}
+            <col style={{ width: '8%' }} /> {/* 공임단가(중심+보조) */}
+            <col style={{ width: '5%' }} /> {/* 알수 */}
+            <col style={{ width: '4%' }} /> {/* 수량 */}
+            <col style={{ width: '6%' }} /> {/* 합계 */}
+            <col style={{ width: '5%' }} /> {/* 되돌리기 */}
           </colgroup>
           <thead>
             <tr style={{ background: 'rgba(255, 255, 255, 0.03)', borderBottom: '2px solid var(--border-color)', color: 'var(--text-muted)' }}>
@@ -417,472 +320,68 @@ export const ReleaseList: React.FC = () => {
               </th>
               <th style={{ padding: '8px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>No</th>
               <th style={{ padding: '8px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>의뢰일</th>
-              <th style={{ padding: '8px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>구분</th>
-              <th style={{ padding: '8px 4px', border: '1px solid var(--border-color)' }}>세공 요청사항 (비고)</th>
+              <th style={{ padding: '8px 4px', border: '1px solid var(--border-color)' }}>거래처</th>
               <th style={{ padding: '8px 4px', border: '1px solid var(--border-color)' }}>모델</th>
               <th style={{ padding: '8px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>재질</th>
               <th style={{ padding: '8px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>색상</th>
-              <th style={{ padding: '8px 4px', border: '1px solid var(--border-color)' }}>스톤 세팅 스펙</th>
-              <th style={{ padding: '8px 4px', textAlign: 'right', border: '1px solid var(--border-color)' }}>구매단가</th>
-              <th style={{ padding: '8px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>공임단가</th>
-              <th style={{ padding: '8px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>알수합계</th>
-              <th style={{ padding: '8px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>수량</th>
+              <th style={{ padding: '8px 4px', border: '1px solid var(--border-color)' }}>비고</th>
               <th style={{ padding: '8px 4px', textAlign: 'right', border: '1px solid var(--border-color)' }}>중량(금)</th>
               <th style={{ padding: '8px 4px', textAlign: 'right', border: '1px solid var(--border-color)' }}>중량(스톤)</th>
-              <th style={{ padding: '8px 4px', border: '1px solid var(--border-color)' }}>단계별 세공 무게 (해리)</th>
+              <th style={{ padding: '8px 4px', textAlign: 'right', border: '1px solid var(--border-color)' }}>구매단가</th>
+              <th style={{ padding: '8px 4px', textAlign: 'right', border: '1px solid var(--border-color)' }}>공임단가(기본+추가)</th>
+              <th style={{ padding: '8px 4px', textAlign: 'right', border: '1px solid var(--border-color)' }}>공임단가(중심+보조)</th>
+              <th style={{ padding: '8px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>알수</th>
+              <th style={{ padding: '8px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>수량</th>
               <th style={{ padding: '8px 4px', textAlign: 'right', border: '1px solid var(--border-color)' }}>합계</th>
               <th style={{ padding: '8px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>되돌리기</th>
             </tr>
           </thead>
           <tbody>
             {releaseItems.length > 0 ? (
-              releaseItems.map((row, idx) => {
-                return (
-                  <tr 
-                    key={row.id} 
-                    style={{ 
-                      borderBottom: '1px solid var(--border-color)',
-                      backgroundColor: idx % 2 === 0 ? 'transparent' : 'rgba(255, 255, 255, 0.01)'
-                    }}
-                  >
-                    {/* ✔ */}
-                    <td style={{ padding: '6px 4px', textAlign: 'center', verticalAlign: 'middle' }}>
-                      <input 
-                        type="checkbox" 
-                        checked={checkedItems.has(row.id)}
-                        onChange={() => handleToggleRow(row.id)}
-                        style={{ cursor: 'pointer' }}
-                      />
-                    </td>
-
-                    {/* No */}
-                    <td style={{ padding: '6px 4px', textAlign: 'center', color: 'var(--text-muted)', verticalAlign: 'middle' }}>
-                      {idx + 1}
-                    </td>
-
-                    {/* 의뢰일 */}
-                    <td style={{ padding: '6px 4px', textAlign: 'center', color: 'var(--text-muted)', verticalAlign: 'middle' }}>
-                      {(() => {
-                        try {
-                          const d = new Date(row.orderDate);
-                          return isNaN(d.getTime()) ? '-' : d.toISOString().slice(5, 10);
-                        } catch {
-                          return '-';
-                        }
-                      })()}
-                    </td>
-
-                    {/* 구분 */}
-                    <td style={{ padding: '6px 4px', textAlign: 'center', verticalAlign: 'middle' }}>
-                      {(() => {
-                        const div = row.division || '판매';
-                        let bg = 'rgba(16, 185, 129, 0.1)';
-                        let color = '#10b981';
-                        let border = '1px solid rgba(16, 185, 129, 0.2)';
-                        if (div === '결제') {
-                          bg = 'rgba(56, 189, 248, 0.1)';
-                          color = '#38bdf8';
-                          border = '1px solid rgba(56, 189, 248, 0.2)';
-                        } else if (div === '반품') {
-                          bg = 'rgba(239, 68, 68, 0.1)';
-                          color = '#ef4444';
-                          border = '1px solid rgba(239, 68, 68, 0.2)';
-                        } else if (div === 'DC') {
-                          bg = 'rgba(168, 85, 247, 0.1)';
-                          color = '#a855f7';
-                          border = '1px solid rgba(168, 85, 247, 0.2)';
-                        }
-                        return (
-                          <span style={{ 
-                            padding: '2px 6px', 
-                            borderRadius: '4px', 
-                            fontSize: '12px', 
-                            fontWeight: 'bold',
-                            backgroundColor: bg,
-                            color: color,
-                            border: border,
-                            display: 'inline-block'
-                          }}>
-                            {div}
-                          </span>
-                        );
-                      })()}
-                    </td>
-
-                    {/* 비고 (요청사항) */}
-                    <td style={{ padding: '6px 4px', verticalAlign: 'middle', color: '#fbbf24', fontWeight: 'bold' }}>
-                      {row.note || '-'}
-                    </td>
-
-                    {/* 모델 */}
-                    <td style={{ padding: '6px 4px', verticalAlign: 'middle' }}>
-                      <div style={{ fontWeight: '700', color: '#38bdf8' }}>{row.model}</div>
-                      <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                        {row.customerName}
-                      </div>
-                    </td>
-
-                    {/* 재질 */}
-                    <td style={{ padding: '6px 4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle' }}>
-                      {row.material}
-                    </td>
-
-                    {/* 색상 */}
-                    <td style={{ padding: '6px 4px', textAlign: 'center', verticalAlign: 'middle' }}>
-                      {row.color}
-                    </td>
-
-                    {/* 스톤 세팅 스펙 */}
-                    <td style={{ padding: '6px 4px', lineHeight: '1.3', verticalAlign: 'middle' }}>
-                      {row.stoneMainText && <div style={{ color: 'var(--text-main)' }}>{row.stoneMainText}</div>}
-                      {row.stoneSubText && <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{row.stoneSubText}</div>}
-                      {!row.stoneMainText && !row.stoneSubText && <span style={{ color: 'var(--text-muted)' }}>스톤 없음</span>}
-                    </td>
-
-                    {/* 구매단가 */}
-                    <td style={{ padding: '6px 4px', textAlign: 'right', verticalAlign: 'middle', fontWeight: 'bold', color: '#10b981' }}>
-                      {row.buyPrice.toLocaleString()}원
-                    </td>
-
-                    {/* 공임단가 */}
-                    <td style={{ padding: '6px 4px', textAlign: 'center', verticalAlign: 'middle', color: 'var(--text-muted)', fontSize: '13px' }}>
-                      {row.laborSingleText}
-                    </td>
-
-                    {/* 알수합계 */}
-                    <td style={{ padding: '6px 4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle' }}>
-                      {row.stonesCountTotal}알
-                    </td>
-
-                    {/* 수량 */}
-                    <td style={{ padding: '6px 4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle', fontSize: '15px' }}>
-                      {row.quantity}
-                    </td>
-
-                    {/* 중량(금) */}
-                    <td style={{ padding: '6px 4px', textAlign: 'right', verticalAlign: 'middle', fontWeight: 'bold' }}>
-                      {row.goldWeightG > 0 ? `${row.goldWeightG.toFixed(2)}g` : '-'}
-                    </td>
-
-                    {/* 중량(스톤) */}
-                    <td style={{ padding: '6px 4px', textAlign: 'right', verticalAlign: 'middle', color: 'var(--text-muted)' }}>
-                      {row.stonesWeightTotal > 0 ? `${row.stonesWeightTotal.toFixed(3)}g` : '-'}
-                    </td>
-
-                    {/* 세공 손실 (해리) */}
-                    <td style={{ padding: '8px 6px', verticalAlign: 'middle', color: 'var(--text-main)' }}>
-                      {row.division === '결제' || row.model === '디자인출력' ? (
-                        <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px', fontStyle: 'italic' }}>
-                          {row.model === '디자인출력' ? '디자인출력 (해리 없음)' : '결제 구분 (해리 없음)'}
-                        </div>
-                      ) : (() => {
-                        const sw = row.stepWeights;
-                        const hasWeights = sw && (
-                          (sw.step1?.before || sw.step1?.after || 
-                           sw.step2?.before || sw.step2?.after || 
-                           sw.step3?.before || sw.step3?.after)
-                        );
-                        
-                        if (!hasWeights) {
-                          return (
-                            <div style={{ textAlign: 'center' }}>
-                              <button
-                                type="button"
-                                onClick={() => handleOpenWeightModal(row)}
-                                className="btn-primary"
-                                style={{
-                                  padding: '4px 8px',
-                                  fontSize: '13px',
-                                  background: 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)',
-                                  color: 'var(--text-inverse)',
-                                  border: 'none',
-                                  borderRadius: '4px',
-                                  cursor: 'pointer'
-                                }}
-                              >
-                                무게입력
-                              </button>
-                            </div>
-                          );
-                        }
-
-                        const before1 = sw.step1?.before || 0;
-                        const after1 = sw.step1?.after || 0;
-                        const before2 = sw.step2?.before || 0;
-                        const after2 = sw.step2?.after || 0;
-                        const before3 = sw.step3?.before || 0;
-                        const after3 = sw.step3?.after || 0;
-
-                        const loss1 = parseFloat(Math.max(0, before1 - after1).toFixed(2));
-                        const loss2 = parseFloat(Math.max(0, before2 - after2).toFixed(2));
-                        const loss3 = parseFloat(Math.max(0, before3 - after3).toFixed(2));
-                        const totalLoss = parseFloat((loss1 + loss2 + loss3).toFixed(2));
-
-                        const pct1 = before1 > 0 ? ((loss1 / before1) * 100).toFixed(2) : '0.00';
-                        const pct2 = before2 > 0 ? ((loss2 / before2) * 100).toFixed(2) : '0.00';
-                        const pct3 = before3 > 0 ? ((loss3 / before3) * 100).toFixed(2) : '0.00';
-
-                        let initialBefore = 0;
-                        if (before1 > 0) initialBefore = before1;
-                        else if (before2 > 0) initialBefore = before2;
-                        else if (before3 > 0) initialBefore = before3;
-                        const totalLossPct = initialBefore > 0 ? ((totalLoss / initialBefore) * 100).toFixed(2) : '0.00';
-
-                        return (
-                          <div style={{ fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '3px', lineHeight: '1.2' }}>
-                            {before1 > 0 || after1 > 0 ? (
-                              <div>1단계: {before1.toFixed(2)}g → {after1.toFixed(2)}g (해리 {loss1.toFixed(2)}g / {pct1}%)</div>
-                            ) : null}
-                            {before2 > 0 || after2 > 0 ? (
-                              <div>2단계: {before2.toFixed(2)}g → {after2.toFixed(2)}g (해리 {loss2.toFixed(2)}g / {pct2}%)</div>
-                            ) : null}
-                            {before3 > 0 || after3 > 0 ? (
-                              <div>3단계: {before3.toFixed(2)}g → {after3.toFixed(2)}g (해리 {loss3.toFixed(2)}g / {pct3}%)</div>
-                            ) : null}
-                            <div style={{ 
-                              fontWeight: 'bold', 
-                              color: 'var(--primary)', 
-                              borderTop: '1px solid rgba(255,255,255,0.08)', 
-                              paddingTop: '3px', 
-                              marginTop: '2px', 
-                              display: 'flex', 
-                              justifyContent: 'space-between', 
-                              alignItems: 'center' 
-                            }}>
-                              <span>총 해리: {totalLoss.toFixed(2)}g ({totalLossPct}%)</span>
-                              <button
-                                type="button"
-                                onClick={() => handleOpenWeightModal(row)}
-                                style={{
-                                  padding: '1px 4px',
-                                  fontSize: '12px',
-                                  background: 'rgba(255,255,255,0.05)',
-                                  border: '1px solid var(--border-color)',
-                                  borderRadius: '3px',
-                                  color: 'var(--text-muted)',
-                                  cursor: 'pointer',
-                                  marginLeft: '4px'
-                                }}
-                              >
-                                수정
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })()}
-                    </td>
-
-                    {/* 합계 */}
-                    <td style={{ padding: '6px 4px', textAlign: 'right', fontWeight: '700', verticalAlign: 'middle' }}>
-                      {row.totalAmount.toLocaleString()}원
-                    </td>
-
-                    {/* 되돌리기 (작업) */}
-                    <td style={{ padding: '6px 4px', textAlign: 'center', verticalAlign: 'middle' }}>
-                      <button
-                        type="button"
-                        onClick={() => handleRevertToWork(row.orderId, row.itemId)}
-                        className="btn-primary"
-                        style={{
-                          padding: '4px 8px',
-                          fontSize: '13px',
-                          background: 'rgba(245, 158, 11, 0.1)',
-                          color: '#fbbf24',
-                          border: '1px solid rgba(245, 158, 11, 0.3)',
-                          borderRadius: '4px',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        되돌리기
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })
+              releaseItems.map((row, idx) => (
+                <tr key={row.id} style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: idx % 2 === 0 ? 'transparent' : 'rgba(255, 255, 255, 0.01)' }}>
+                  <td style={{ padding: '6px 4px', textAlign: 'center', verticalAlign: 'middle' }}>
+                    <input type="checkbox" checked={checkedItems.has(row.id)} onChange={() => handleToggleRow(row.id)} style={{ cursor: 'pointer' }} />
+                  </td>
+                  <td style={{ padding: '6px 4px', textAlign: 'center', color: 'var(--text-muted)', verticalAlign: 'middle' }}>{idx + 1}</td>
+                  <td style={{ padding: '6px 4px', textAlign: 'center', color: 'var(--text-muted)', verticalAlign: 'middle' }}>
+                    {(() => {
+                      try {
+                        const d = new Date(row.orderDate);
+                        return isNaN(d.getTime()) ? '-' : d.toISOString().slice(5, 10);
+                      } catch {
+                        return '-';
+                      }
+                    })()}
+                  </td>
+                  <td style={{ padding: '6px 4px', verticalAlign: 'middle', fontWeight: 'bold' }}>{row.customerName}</td>
+                  <td style={{ padding: '6px 4px', verticalAlign: 'middle', fontWeight: '700', color: '#38bdf8' }}>{row.model}</td>
+                  <td style={{ padding: '6px 4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle' }}>{row.material}</td>
+                  <td style={{ padding: '6px 4px', textAlign: 'center', verticalAlign: 'middle' }}>{row.color}</td>
+                  <td style={{ padding: '6px 4px', verticalAlign: 'middle', color: '#fbbf24', fontWeight: 'bold' }}>{row.note || '-'}</td>
+                  <td style={{ padding: '6px 4px', textAlign: 'right', verticalAlign: 'middle', fontWeight: 'bold' }}>{row.goldWeightG > 0 ? `${row.goldWeightG.toFixed(2)}g` : '-'}</td>
+                  <td style={{ padding: '6px 4px', textAlign: 'right', verticalAlign: 'middle', color: 'var(--text-muted)' }}>{row.stonesWeightTotal > 0 ? `${row.stonesWeightTotal.toFixed(3)}g` : '-'}</td>
+                  <td style={{ padding: '6px 4px', textAlign: 'right', verticalAlign: 'middle', fontWeight: 'bold', color: '#10b981' }}>{row.buyPrice.toLocaleString()}원</td>
+                  <td style={{ padding: '6px 4px', textAlign: 'right', verticalAlign: 'middle', color: 'var(--text-main)' }}>{row.laborBaseExtra.toLocaleString()}원</td>
+                  <td style={{ padding: '6px 4px', textAlign: 'right', verticalAlign: 'middle', color: 'var(--text-main)' }}>{row.laborMainSub.toLocaleString()}원</td>
+                  <td style={{ padding: '6px 4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle' }}>{row.stonesCountTotal}알</td>
+                  <td style={{ padding: '6px 4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle', fontSize: '15px' }}>{row.quantity}</td>
+                  <td style={{ padding: '6px 4px', textAlign: 'right', fontWeight: '700', verticalAlign: 'middle' }}>{row.totalAmount.toLocaleString()}원</td>
+                  <td style={{ padding: '6px 4px', textAlign: 'center', verticalAlign: 'middle' }}>
+                    <button type="button" onClick={() => handleRevertToWork(row.orderId, row.itemId)} style={{ padding: '4px 8px', fontSize: '13px', background: 'rgba(245, 158, 11, 0.1)', color: '#fbbf24', border: '1px solid rgba(245, 158, 11, 0.3)', borderRadius: '4px', cursor: 'pointer' }}>되돌리기</button>
+                  </td>
+                </tr>
+              ))
             ) : (
               <tr>
-                <td colSpan={20} style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '15px' }}>
-                  현재 출고 대기 중인 세공완료 품목이 없습니다.<br />
-                  <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>[주얼리 세공리스트] 탭에서 작업을 완료하시면 이곳으로 품목이 이동되어 최종 출고 처리를 진행할 수 있습니다.</span>
+                <td colSpan={17} style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '15px' }}>
+                  현재 출고 대기 중인 세공완료 품목이 없습니다.
                 </td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
-
-      {/* 세공 무게 입력/수정 모달 */}
-      {activeWeightModalItem && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          background: 'rgba(0,0,0,0.6)',
-          backdropFilter: 'blur(4px)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 9999
-        }}>
-          <div className="glass-panel" style={{
-            width: '450px',
-            background: 'var(--bg-surface-solid)',
-            border: '1px solid var(--border-color)',
-            borderRadius: '8px',
-            padding: '20px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '16px',
-            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4)'
-          }}>
-            {/* 헤더 */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-              <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Wrench size={16} style={{ color: 'var(--primary)' }} />
-                <span>단계별 세공 무게 입력 (손실/혜리 기록)</span>
-              </h3>
-              <button 
-                type="button" 
-                onClick={() => setActiveWeightModalItem(null)}
-                style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            {/* 폼 영역 */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              
-              {/* 1단계 */}
-              <div style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '12px' }}>
-                <div style={{ fontWeight: 'bold', color: 'var(--text-main)', marginBottom: '8px', fontSize: '15px' }}>1단계 공정</div>
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '14px', color: 'var(--text-muted)' }}>작업 전 무게 (g)</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      placeholder="0.00"
-                      value={step1Before}
-                      onChange={(e) => setStep1Before(e.target.value)}
-                      className="input-field"
-                      style={{ width: '100%', fontSize: '15px', padding: '6px 8px' }}
-                    />
-                  </div>
-                  <span style={{ color: 'var(--text-muted)', marginTop: '14px' }}>→</span>
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '14px', color: 'var(--text-muted)' }}>작업 후 무게 (g)</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      placeholder="0.00"
-                      value={step1After}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setStep1After(val);
-                        setStep2Before(val);
-                      }}
-                      className="input-field"
-                      style={{ width: '100%', fontSize: '15px', padding: '6px 8px' }}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* 2단계 */}
-              <div style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '12px' }}>
-                <div style={{ fontWeight: 'bold', color: 'var(--text-main)', marginBottom: '8px', fontSize: '15px' }}>2단계 공정</div>
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '14px', color: 'var(--text-muted)' }}>작업 전 무게 (g)</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      placeholder="0.00"
-                      value={step2Before}
-                      onChange={(e) => setStep2Before(e.target.value)}
-                      className="input-field"
-                      style={{ width: '100%', fontSize: '15px', padding: '6px 8px' }}
-                    />
-                  </div>
-                  <span style={{ color: 'var(--text-muted)', marginTop: '14px' }}>→</span>
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '14px', color: 'var(--text-muted)' }}>작업 후 무게 (g)</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      placeholder="0.00"
-                      value={step2After}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setStep2After(val);
-                        setStep3Before(val);
-                      }}
-                      className="input-field"
-                      style={{ width: '100%', fontSize: '15px', padding: '6px 8px' }}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* 3단계 */}
-              <div style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '12px' }}>
-                <div style={{ fontWeight: 'bold', color: 'var(--text-main)', marginBottom: '8px', fontSize: '15px' }}>3단계 공정</div>
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '14px', color: 'var(--text-muted)' }}>작업 전 무게 (g)</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      placeholder="0.00"
-                      value={step3Before}
-                      onChange={(e) => setStep3Before(e.target.value)}
-                      className="input-field"
-                      style={{ width: '100%', fontSize: '15px', padding: '6px 8px' }}
-                    />
-                  </div>
-                  <span style={{ color: 'var(--text-muted)', marginTop: '14px' }}>→</span>
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '14px', color: 'var(--text-muted)' }}>작업 후 무게 (g)</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      placeholder="0.00"
-                      value={step3After}
-                      onChange={(e) => setStep3After(e.target.value)}
-                      className="input-field"
-                      style={{ width: '100%', fontSize: '15px', padding: '6px 8px' }}
-                    />
-                  </div>
-                </div>
-              </div>
-
-            </div>
-
-            {/* 하단 푸터 버튼 */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid var(--border-color)', paddingTop: '12px', marginTop: '4px' }}>
-              <button 
-                type="button" 
-                onClick={() => setActiveWeightModalItem(null)} 
-                className="btn-primary" 
-                style={{ padding: '6px 14px', background: 'rgba(255,255,255,0.05)', color: 'var(--text-muted)', border: '1px solid var(--border-color)', boxShadow: 'none' }}
-              >
-                취소
-              </button>
-              <button 
-                type="button" 
-                onClick={handleSaveStepWeights} 
-                className="btn-primary" 
-                style={{ padding: '6px 16px' }}
-              >
-                저장 완료
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
     </div>
   );
