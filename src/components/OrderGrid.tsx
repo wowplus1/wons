@@ -287,11 +287,11 @@ export const OrderGrid: React.FC = () => {
                   maxHeight: '220px',
                   overflowY: 'auto',
                   zIndex: 9999,
-                  background: '#18181b', // 어두운 테마용 단색 고정 배경
-                  border: '1px solid var(--border-color)',
-                  borderRadius: '4px',
+                  background: '#ffffff', // 백색 단색 배경으로 변경 (가독성 극대화)
+                  border: '1px solid #d4af37', // 골드 테두리로 고급화
+                  borderRadius: '6px',
                   marginTop: '4px',
-                  boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.4)'
+                  boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.15)'
                 }}
               >
                 {filteredCustomers.length > 0 ? (
@@ -304,29 +304,29 @@ export const OrderGrid: React.FC = () => {
                         setIsCustomerDropdownOpen(false);
                       }}
                       style={{
-                        padding: '8px 12px',
+                        padding: '10px 14px',
                         cursor: 'pointer',
                         fontSize: '14px',
-                        borderBottom: '1px solid rgba(255, 255, 255, 0.03)',
+                        borderBottom: '1px solid #f3f4f6',
                         transition: 'background 0.2s',
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
-                        color: 'var(--text-main)'
+                        color: '#1f2937' // 명확하고 진한 글자색
                       }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(212, 175, 55, 0.15)'}
+                      onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(212, 175, 55, 0.12)'}
                       onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                     >
                       <div>
-                        <strong>{c.name}</strong> <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>({c.code})</span>
+                        <strong style={{ color: '#111827' }}>{c.name}</strong> <span style={{ color: '#6b7280', fontSize: '12px' }}>({c.code})</span>
                       </div>
-                      <span style={{ fontSize: '11px', background: 'rgba(255,255,255,0.05)', padding: '2px 5px', borderRadius: '3px', color: 'var(--primary)', fontWeight: 'bold' }}>
+                      <span style={{ fontSize: '11px', background: 'rgba(212, 175, 55, 0.15)', padding: '3px 6px', borderRadius: '3px', color: '#aa8513', fontWeight: 'bold' }}>
                         {c.grade}등급 • {c.trade_type === 'weight' ? '중량' : '시세'}
                       </span>
                     </div>
                   ))
                 ) : (
-                  <div style={{ padding: '12px', color: 'var(--text-muted)', fontSize: '14px', textAlign: 'center' }}>
+                  <div style={{ padding: '16px', color: '#9ca3af', fontSize: '14px', textAlign: 'center' }}>
                     일치하는 거래처가 없습니다.
                   </div>
                 )}
