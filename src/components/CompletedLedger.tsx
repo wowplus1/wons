@@ -21,6 +21,8 @@ interface LedgerRowData {
   note: string;
   weightGoldDon: number;
   weightPureGoldDon: number;
+  weightGoldG?: number; // 금중량 (g)
+  weightPureGoldG?: number; // 순금중량 (g)
   purchasePrice: number;
   laborBaseExtra: number;
   laborStone: number;
@@ -152,6 +154,10 @@ export const CompletedLedger: React.FC = () => {
         const singleGoldSalesDon = Math.floor((weightGoldDon * purity * (1 + lossRate / 100)) * 1000) / 1000;
         const weightPureGoldDon = singleGoldSalesDon * qty;
 
+        // 소수점 오차 없는 그람(g) 단위 중량 연산
+        const weightGoldG = pureGoldWeightG;
+        const weightPureGoldG = weightPureGoldDon * 3.75;
+
         const baseLabor = item.labor_base || 0;
         const extraLabor = item.labor_extra || 0;
         const laborBaseExtra = baseLabor + extraLabor;
@@ -194,6 +200,8 @@ export const CompletedLedger: React.FC = () => {
           note: item.note || '',
           weightGoldDon,
           weightPureGoldDon,
+          weightGoldG,
+          weightPureGoldG,
           purchasePrice,
           laborBaseExtra,
           laborStone,
@@ -593,12 +601,12 @@ export const CompletedLedger: React.FC = () => {
 
                     {/* 중량: 금 */}
                     <td style={{ padding: '6px 4px', textAlign: 'right', color: '#a78bfa', fontWeight: 'bold' }}>
-                      {row.weightGoldDon > 0 ? row.weightGoldDon.toFixed(2) : '0.00'}
+                      {row.weightGoldG && row.weightGoldG > 0 ? row.weightGoldG.toFixed(2) : '0.00'}
                     </td>
 
                     {/* 중량: 순금 */}
                     <td style={{ padding: '6px 4px', textAlign: 'right', fontWeight: 'bold' }}>
-                      {row.weightPureGoldDon > 0 ? row.weightPureGoldDon.toFixed(3) : '0.000'}
+                      {row.weightPureGoldG && row.weightPureGoldG > 0 ? row.weightPureGoldG.toFixed(3) : '0.000'}
                     </td>
 
                     {/* 구매단가 */}
