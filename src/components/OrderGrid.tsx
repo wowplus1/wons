@@ -650,8 +650,9 @@ export const OrderGrid: React.FC = () => {
                         >
                           <option value="14K">14K</option>
                           <option value="18K">18K</option>
-                          <option value="24K">순금</option>
-                          <option value="Silver">은</option>
+                          <option value="24K">24K</option>
+                          <option value="다이아">다이아</option>
+                          <option value="은">은</option>
                         </select>
                       </div>
 

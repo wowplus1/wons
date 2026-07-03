@@ -460,7 +460,9 @@ export const CatalogRegisterForm: React.FC = () => {
                   <select value={baseMaterial} onChange={e => setBaseMaterial(e.target.value)} className="input-field" style={{ width: '100%', padding: '5px', fontSize: '15px', border: '1px solid var(--border-color)', background: 'var(--bg-surface)' }}>
                     <option value="14K">14K</option>
                     <option value="18K">18K</option>
-                    <option value="24K">순금</option>
+                    <option value="24K">24K</option>
+                    <option value="다이아">다이아</option>
+                    <option value="은">은</option>
                   </select>
                 </div>
                 <div>
