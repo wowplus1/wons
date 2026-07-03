@@ -102,34 +102,71 @@ export const CatalogManager: React.FC = () => {
                   <span style={{ fontSize: '14px' }}>이미지 없음</span>
                 </div>
               )}
-              <div style={{ padding: '10px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div style={{ padding: '10px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '17px', fontWeight: '700', color: 'var(--primary)', fontFamily: 'var(--font-title)' }}>
                     {item.model_number}
                   </span>
                   {item.is_set && (
-                    <span className="badge badge-success" style={{ fontSize: '15px', padding: '2px 5px' }}>
-                      SET 묶음
+                    <span className="badge badge-success" style={{ fontSize: '13px', padding: '1px 4px' }}>
+                      SET
                     </span>
                   )}
                 </div>
-                <div style={{ fontSize: '15px', color: 'var(--text-muted)' }}>
-                  카테고리: <strong>{item.category}</strong>
-                </div>
-                <div style={{ fontSize: '15px', color: 'var(--text-muted)' }}>
-                  중량: <strong>{item.materials.join(', ')}[{pureGoldWeight.toFixed(2)}]</strong>
-                </div>
-                <div style={{ fontSize: '15px', color: 'var(--text-muted)' }}>
-                  스톤: <strong>{totalStonesWeight.toFixed(3)} g</strong>
-                </div>
-                <div style={{ fontSize: '15px', color: 'var(--text-muted)' }}>
-                  공임({mainMaterial} 1등급): <strong>{(item.base_labor_fees[mainMaterial]?.grade_1 || 0).toLocaleString()}원</strong>
-                </div>
-                {item.default_stones && item.default_stones.length > 0 && (
-                  <div style={{ fontSize: '15px', color: 'var(--primary)', marginTop: '4px', borderTop: '1px dashed var(--border-color)', paddingTop: '4px' }}>
-                    매핑스톤: {item.default_stones.length}종 세팅됨
-                  </div>
-                )}
+                
+                {(() => {
+                  const materialLaborMap = (() => {
+                    if (item.labor_fees_v2 && item.labor_fees_v2[mainMaterial]) {
+                      const baseFee = item.labor_fees_v2[mainMaterial].find(f => f.type === '기본');
+                      if (baseFee) {
+                        return {
+                          grade_1: Number(baseFee.grade_1) || 0,
+                          color: baseFee.color || '전체'
+                        };
+                      }
+                    }
+                    return {
+                      grade_1: item.base_labor_fees[mainMaterial]?.grade_1 ?? 60000,
+                      color: 'G'
+                    };
+                  })();
+
+                  const stoneQty = item.default_stones.reduce((sum, s) => sum + s.quantity, 0);
+                  const grade1StoneLaborSum = item.default_stones.reduce((sum, ds) => {
+                    const matchedStone = stones.find(s => s.stone_id === ds.stone_id);
+                    if (!matchedStone) return sum;
+                    const gradePrice = Number(matchedStone.grade_prices[`grade_1`]) || 0;
+                    return sum + (gradePrice * ds.quantity);
+                  }, 0);
+                  const grade1StoneLaborTotal = grade1StoneLaborSum + (stoneQty * item.extra_labor_fee);
+
+                  return (
+                    <>
+                      <div style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: '1.4', marginTop: '10px' }}>
+                        {materialLaborMap.color}, {mainMaterial}[{pureGoldWeight.toFixed(2)}]
+                      </div>
+                      <div style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
+                        스톤: {totalDeductionWeight.toFixed(3)} g
+                      </div>
+                      <div style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
+                        공임(1등): {materialLaborMap.grade_1.toLocaleString()}원
+                      </div>
+                      <div style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
+                        스톤(1등): {grade1StoneLaborTotal.toLocaleString()}원
+                      </div>
+                      {item.default_stones.length > 0 && (
+                        <div style={{ borderTop: '1px dashed var(--border-color)', marginTop: '4px', paddingTop: '4px', fontSize: '13px', color: 'var(--primary)', opacity: '0.85', lineHeight: '1.4' }}>
+                          {item.default_stones.map(ds => {
+                            const matched = stones.find(s => s.stone_id === ds.stone_id);
+                            const name = matched ? matched.name : ds.stone_id;
+                            const desc = ds.description ? `/${ds.description}` : '';
+                            return `[${ds.quantity}]${name}${desc}`;
+                          }).join(', ')}
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             </div>
           );

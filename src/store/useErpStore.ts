@@ -22,28 +22,44 @@ export const getCatalogLaborFees = (
   const mat = material || '14K';
   const itemGradeKey = `grade_${grade}`;
 
+  // 색상값 표준 변환 헬퍼 (YG/G/Yellow -> G, WG/W/White -> W, RG/PG/P/Pink -> P)
+  const normColor = (c: string) => {
+    const uc = (c || '').toUpperCase().trim();
+    if (uc === 'YG' || uc === 'G' || uc === 'YELLOW' || uc === '옐로우') return 'G';
+    if (uc === 'WG' || uc === 'W' || uc === 'WHITE' || uc === '화이트') return 'W';
+    if (uc === 'RG' || uc === 'PG' || uc === 'P' || uc === 'PINK' || uc === 'ROSE' || uc === '핑크') return 'P';
+    return uc;
+  };
+
+  const targetNorm = normColor(color);
+
   // 1. 색상별 공임 데이터(v2)가 존재하는 경우
   if (catalogItem.labor_fees_v2 && catalogItem.labor_fees_v2[mat]) {
     const fees = catalogItem.labor_fees_v2[mat];
     
-    // 해당 색상과 정확히 일치하는 행 조회
-    let matchedFee = fees.find(f => f.color === color);
+    // 해당 색상과 매칭되는 행 조회 (유연한 문자열 대조)
+    let matchedFee = fees.find(f => normColor(f.color) === targetNorm);
     
     let isMatched = true;
     if (!matchedFee) {
-      isMatched = false;
-      // 매칭되는 색상이 없다면 전체색상('') 행을 조회하고, G(옐로우)인 경우에 한해서만 최후의 수단으로 '기본' 행으로 매핑
+      // 매칭되는 색상이 없다면 전체색상('') 행을 조회
       matchedFee = fees.find(f => f.color === '');
-      if (!matchedFee && (color === 'G' || color === 'YG')) {
-        matchedFee = fees.find(f => f.type === '기본');
+      if (matchedFee) {
         isMatched = true;
+      } else {
+        isMatched = false;
+        // G(옐로우)인 경우 최후의 수단으로 '기본' 행으로 매핑
+        if (targetNorm === 'G') {
+          matchedFee = fees.find(f => f.type === '기본');
+          isMatched = true;
+        }
       }
     }
     
     if (matchedFee) {
       const laborBase = (matchedFee as any)[itemGradeKey] || 0;
       const laborCost = matchedFee.cost || 0;
-      return { laborBase, laborCost, isMatched: isMatched && laborBase > 0 };
+      return { laborBase, laborCost, isMatched };
     }
     return { laborBase: 0, laborCost: 0, isMatched: false };
   }
@@ -55,12 +71,12 @@ export const getCatalogLaborFees = (
   let extra = 0;
   let isMatched = false;
   
-  if (color === 'G' || color === 'YG') {
+  if (targetNorm === 'G' || targetNorm === 'P') {
     isMatched = laborBase > 0;
   }
   
   // W(화이트)인 경우 기존 extra_labor_fee 가산 처리
-  if (color === 'W' || color === 'WG') {
+  if (targetNorm === 'W') {
     extra = catalogItem.extra_labor_fee || 0;
     if (extra > 0) {
       isMatched = true;
@@ -99,7 +115,7 @@ interface ErpState {
   updateGoldRate: (rates: GoldRates) => Promise<void>;
   selectCustomer: (customer: Customer | null) => void;
   addOrderItem: (item: Partial<OrderItem>) => void;
-  updateOrderItem: (index: number, item: Partial<OrderItem>) => void;
+  updateOrderItem: (index: number, item: Partial<OrderItem>, forceModelLoad?: boolean) => void;
   removeOrderItem: (index: number) => void;
   clearOrderForm: () => void;
   submitOrder: () => Promise<string | null>;
@@ -119,6 +135,7 @@ interface ErpState {
   deleteOrderItem: (orderId: string, itemId: number) => Promise<void>;
   deleteTransaction: (transactionId: string) => Promise<void>;
   saveCatalogItem: (item: CatalogItem) => Promise<void>;
+  deleteCatalogItem: (modelNumber: string) => Promise<void>;
   prefetchDb: (targetCollections: ('catalog' | 'stones')[]) => Promise<void>;
 }
 
@@ -299,10 +316,10 @@ export const useErpStore = create<ErpState>((set, get) => {
     });
   },
 
-  updateOrderItem: (index: number, updatedItem: Partial<OrderItem>) => {
+  updateOrderItem: (index: number, updatedItem: Partial<OrderItem>, forceModelLoad?: boolean) => {
     const items = [...get().currentOrderItems];
     const prevItem = { ...items[index] }; // 변경 전 원본 상태 백업
-    const isModelChanged = updatedItem.model_number !== undefined && updatedItem.model_number !== items[index].model_number;
+    const isModelChanged = forceModelLoad || (updatedItem.model_number !== undefined && updatedItem.model_number.toUpperCase().trim() !== (items[index].model_number || '').toUpperCase().trim());
     const isDivisionChanged = updatedItem.division !== undefined && updatedItem.division !== items[index].division;
     
     items[index] = { ...items[index], ...updatedItem };
@@ -358,7 +375,7 @@ export const useErpStore = create<ErpState>((set, get) => {
           item.manufacturer = 'JP';
           item.material = item.material || '14K';
           item.color = item.color || 'YG';
-          item.grade = selectedCustomer.grade || 3;
+          item.grade = item.grade || 3;
           
           item.labor_base = 0;
           item.labor_extra = 0;
@@ -379,21 +396,31 @@ export const useErpStore = create<ErpState>((set, get) => {
           item.release_date = date.toISOString().split('T')[0];
         }
       } else {
-        const catalogItem = get().catalog.find(c => c.model_number === item.model_number);
+        const catalogItem = get().catalog.find(c => (c.model_number || '').toUpperCase().trim() === (item.model_number || '').toUpperCase().trim());
         if (catalogItem) {
           const mat = isModelChanged
             ? (catalogItem.materials[0] || '14K')
             : (item.material || catalogItem.materials[0] || '14K');
-          const grade = item.grade || selectedCustomer.grade || 3;
+          const grade = item.grade || 3;
           const itemGradeKey = `grade_${grade}`;
 
           if (isModelChanged) {
-            item.manufacturer = 'JP';
+            item.manufacturer = catalogItem.manufacturer || '자체제작';
             item.material = mat;
-            item.color = item.color || 'YG';
+            
+            // 해당 모델의 첫 번째 가용 색상을 찾아 자동 기입 (카탈로그 고유 색상 그대로 기입)
+            let defaultColor = 'G';
+            if (catalogItem.labor_fees_v2 && catalogItem.labor_fees_v2[mat]) {
+              const fees = catalogItem.labor_fees_v2[mat];
+              const validFee = fees.find(f => f.color !== '') || fees[0];
+              if (validFee) {
+                defaultColor = validFee.color || 'G';
+              }
+            }
+            item.color = defaultColor;
             item.grade = grade;
             
-            const { laborBase, laborCost } = getCatalogLaborFees(catalogItem, mat, item.color || 'YG', grade);
+            const { laborBase, laborCost } = getCatalogLaborFees(catalogItem, mat, item.color, grade);
             
             item.labor_base = laborBase;
             item.labor_cost = laborCost;
@@ -408,7 +435,8 @@ export const useErpStore = create<ErpState>((set, get) => {
               item.stone_main_name = stoneDetail?.name || dsMain.stone_id;
               item.qty_main = dsMain.quantity;
               item.labor_main = stoneDetail?.grade_prices[itemGradeKey] || 0;
-              item.stone_weight_ea = stoneDetail?.weight_carat || 0;
+              const mainStoneWeight = (stoneDetail?.weight_carat || 0) + (stoneDetail?.deduction_weight || 0);
+              item.stone_weight_ea = mainStoneWeight + (catalogItem.manual_deduction_weight || 0);
             } else {
               item.stone_main_id = '';
               item.stone_main_name = '';
@@ -430,6 +458,8 @@ export const useErpStore = create<ErpState>((set, get) => {
               item.labor_sub = 0;
             }
             
+            item.labor_stone_total = (item.labor_main || 0) * (item.qty_main || 0) + (item.labor_sub || 0) * (item.qty_sub || 0);
+
             const date = new Date();
             date.setDate(date.getDate() + 7);
             item.release_date = date.toISOString().split('T')[0];
@@ -442,36 +472,29 @@ export const useErpStore = create<ErpState>((set, get) => {
           ) {
             const { laborBase, laborCost, isMatched } = getCatalogLaborFees(catalogItem, mat, item.color || 'YG', grade);
             
-            // 색상 변경 시에만 alert 알림창을 띄우고 이전 값으로 롤백 수행
-            if (updatedItem.color !== undefined && !isMatched && item.model_number !== '임시제품' && item.model_number !== '디자인출력') {
-              alert(`[알림] 선택하신 모델 [${item.model_number}]의 ${item.color || 'YG'} 색상 공임 단가가 등록되어 있지 않거나 0원입니다.\n정확한 정산을 위해 B2B 카탈로그에서 단가를 보완해 주세요.`);
-              
-              // 롤백: 색상값만 이전 값으로 복원
-              item.color = prevItem.color;
-              
-              // 원복된 색상 기준으로 단가 재조회
-              const rollbackColor = item.color || 'YG';
-              const rollbackFees = getCatalogLaborFees(catalogItem, mat, rollbackColor, grade);
-              
-              item.labor_base = rollbackFees.laborBase;
-              item.labor_cost = rollbackFees.laborCost;
-            } else {
-              // 색상 외 변경이거나 단가 매칭이 성공한 경우
-              item.labor_base = laborBase;
-              item.labor_cost = laborCost;
-            }
-            
-            const currentGrade = item.grade || selectedCustomer.grade || 3;
-            const currentGradeKey = `grade_${currentGrade}`;
+            // 단가 매칭 결과 적용 (롤백 및 알림 경고 제거)
+            item.labor_base = laborBase;
+            item.labor_cost = laborCost;
             
             if (item.stone_main_id) {
               const stoneDetail = get().stones.find(s => s.stone_id === item.stone_main_id);
-              item.labor_main = stoneDetail?.grade_prices[currentGradeKey] || 0;
+              item.labor_main = stoneDetail?.grade_prices[itemGradeKey] || 0;
             }
             if (item.stone_sub_id) {
               const stoneDetail = get().stones.find(s => s.stone_id === item.stone_sub_id);
-              item.labor_sub = stoneDetail?.grade_prices[currentGradeKey] || 0;
+              item.labor_sub = stoneDetail?.grade_prices[itemGradeKey] || 0;
             }
+            item.labor_stone_total = (item.labor_main || 0) * (item.qty_main || 0) + (item.labor_sub || 0) * (item.qty_sub || 0);
+          }
+
+          // 수량이나 스톤 단가 수동 수정 시 자동 합산
+          if (
+            updatedItem.qty_main !== undefined ||
+            updatedItem.qty_sub !== undefined ||
+            updatedItem.labor_main !== undefined ||
+            updatedItem.labor_sub !== undefined
+          ) {
+            item.labor_stone_total = (item.labor_main || 0) * (item.qty_main || 0) + (item.labor_sub || 0) * (item.qty_sub || 0);
           }
         }
       }
@@ -481,9 +504,8 @@ export const useErpStore = create<ErpState>((set, get) => {
       if (item.division === '결제' || item.division === 'DC') {
         const baseLabor = item.labor_base || 0;
         const extraLabor = item.labor_extra || 0;
-        const mainStoneLabor = (item.labor_main || 0) * (item.qty_main || 0);
-        const subStoneLabor = (item.labor_sub || 0) * (item.qty_sub || 0);
-        const totalLaborCost = baseLabor + extraLabor + mainStoneLabor + subStoneLabor;
+        const stoneLabor = item.labor_stone_total !== undefined ? item.labor_stone_total : ((item.labor_main || 0) * (item.qty_main || 0) + (item.labor_sub || 0) * (item.qty_sub || 0));
+        const totalLaborCost = baseLabor + extraLabor + stoneLabor;
 
         item.calculated_price = Math.round(totalLaborCost * (item.quantity || 1));
         item.estimated_weight_g = 0;
@@ -494,15 +516,16 @@ export const useErpStore = create<ErpState>((set, get) => {
         item.stones = [];
       } else if (item.model_number === '디자인출력') {
         const baseLabor = item.labor_base || 0;
-        item.calculated_price = Math.round(baseLabor * (item.quantity || 1));
+        const extraLabor = item.labor_extra || 0;
+        item.calculated_price = Math.round((baseLabor + extraLabor) * (item.quantity || 1));
         item.estimated_weight_g = 0;
         item.labor_fee_snapshot = {
           base_labor_fee: baseLabor,
-          extra_labor_fee: 0
+          extra_labor_fee: extraLabor
         };
         item.stones = [];
       } else if (item.model_number) {
-        const catalogItem = get().catalog.find(c => c.model_number === item.model_number);
+        const catalogItem = get().catalog.find(c => (c.model_number || '').toUpperCase().trim() === (item.model_number || '').toUpperCase().trim());
         const baseWeight = catalogItem?.base_weight || 0;
         
         let subStoneWeightEa = 0;
@@ -525,9 +548,8 @@ export const useErpStore = create<ErpState>((set, get) => {
         
         const baseLabor = item.labor_base || 0;
         const extraLabor = item.labor_extra || 0;
-        const mainStoneLabor = (item.labor_main || 0) * (item.qty_main || 0);
-        const subStoneLabor = (item.labor_sub || 0) * (item.qty_sub || 0);
-        const totalLaborCost = baseLabor + extraLabor + mainStoneLabor + subStoneLabor;
+        const stoneLabor = item.labor_stone_total !== undefined ? item.labor_stone_total : ((item.labor_main || 0) * (item.qty_main || 0) + (item.labor_sub || 0) * (item.qty_sub || 0));
+        const totalLaborCost = baseLabor + extraLabor + stoneLabor;
         
         const singlePrice = goldCost + totalLaborCost;
         item.calculated_price = Math.round(singlePrice * (item.quantity || 1));
@@ -609,7 +631,7 @@ export const useErpStore = create<ErpState>((set, get) => {
           phone: selectedCustomerForOrder.phone,
           loss_rate: selectedCustomerForOrder.loss_rate,
           trade_type: selectedCustomerForOrder.trade_type,
-          business_number: selectedCustomerForOrder.business_number
+          business_number: selectedCustomerForOrder.business_number || ''
         },
         gold_rate_snapshot: {
           buy_14k_per_g: currentRates.buy_rates.gold_14k_per_g,
@@ -762,8 +784,9 @@ export const useErpStore = create<ErpState>((set, get) => {
       get().clearOrderForm();
       set({ activeTab: 'orders' });
       return orderId;
-    } catch (error) {
+    } catch (error: any) {
       console.error("submitOrder error: ", error);
+      alert(`[주문 저장 실패]\n오류 원인: ${error.message || error}`);
       return null;
     }
   },
@@ -940,6 +963,16 @@ export const useErpStore = create<ErpState>((set, get) => {
     }
   },
 
+  deleteCatalogItem: async (modelNumber: string) => {
+    try {
+      await deleteDoc(doc(db, 'catalog', modelNumber));
+      await get().fetchDb();
+    } catch (error) {
+      console.error("deleteCatalogItem error: ", error);
+      throw error;
+    }
+  },
+
   saveCustomer: async (customer: Customer) => {
     try {
       await setDoc(doc(db, 'customers', customer.customer_id), customer);
@@ -1112,9 +1145,8 @@ export const useErpStore = create<ErpState>((set, get) => {
         const goldCost = actualWeightG * sellRate;
         const baseLabor = item.labor_base || 0;
         const extraLabor = item.labor_extra || 0;
-        const mainStoneLabor = (item.labor_main || 0) * (item.qty_main || 0);
-        const subStoneLabor = (item.labor_sub || 0) * (item.qty_sub || 0);
-        const totalLaborCost = baseLabor + extraLabor + mainStoneLabor + subStoneLabor;
+        const stoneLabor = item.labor_stone_total !== undefined ? item.labor_stone_total : ((item.labor_main || 0) * (item.qty_main || 0) + (item.labor_sub || 0) * (item.qty_sub || 0));
+        const totalLaborCost = baseLabor + extraLabor + stoneLabor;
         
         item.calculated_price = Math.round((goldCost + totalLaborCost) * item.quantity);
       }
@@ -1158,9 +1190,8 @@ export const useErpStore = create<ErpState>((set, get) => {
           const itemAmount = i.calculated_price || 0;
           const baseLabor = i.labor_base || 0;
           const extraLabor = i.labor_extra || 0;
-          const mainStoneLabor = (i.labor_main || 0) * (i.qty_main || 0);
-          const subStoneLabor = (i.labor_sub || 0) * (i.qty_sub || 0);
-          const totalLaborCost = (baseLabor + extraLabor + mainStoneLabor + subStoneLabor) * i.quantity;
+          const stoneLabor = i.labor_stone_total !== undefined ? i.labor_stone_total : ((i.labor_main || 0) * (i.qty_main || 0) + (i.labor_sub || 0) * (i.qty_sub || 0));
+          const totalLaborCost = (baseLabor + extraLabor + stoneLabor) * i.quantity;
 
           if (division === '판매') {
             if (isWeightTrade) {
@@ -1247,9 +1278,8 @@ export const useErpStore = create<ErpState>((set, get) => {
           const goldCost = actualWeightG * sellRate;
           const baseLabor = item.labor_base || 0;
           const extraLabor = item.labor_extra || 0;
-          const mainStoneLabor = (item.labor_main || 0) * (item.qty_main || 0);
-          const subStoneLabor = (item.labor_sub || 0) * (item.qty_sub || 0);
-          const totalLaborCost = baseLabor + extraLabor + mainStoneLabor + subStoneLabor;
+          const stoneLabor = item.labor_stone_total !== undefined ? item.labor_stone_total : ((item.labor_main || 0) * (item.qty_main || 0) + (item.labor_sub || 0) * (item.qty_sub || 0));
+          const totalLaborCost = baseLabor + extraLabor + stoneLabor;
           
           item.calculated_price = Math.round((goldCost + totalLaborCost) * item.quantity);
         }
@@ -1637,3 +1667,9 @@ export const useErpStore = create<ErpState>((set, get) => {
   }
 };
 });
+
+if (typeof window !== 'undefined') {
+  (window as any).syncErpDb = () => {
+    useErpStore.getState().fetchDb();
+  };
+}

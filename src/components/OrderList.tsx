@@ -28,10 +28,14 @@ interface RowData {
   quantity: number;
   totalAmount?: number;
   vat?: string;
+  stoneMainName: string;
+  stoneSubName: string;
+  size: string;
+  manufacturer: string;
 }
 
 export const OrderList: React.FC = () => {
-  const { orders, customers, transactions, updateMultipleItemsStatus, setActiveTab, deleteOrder, deleteOrderItem, deleteTransaction, startEditOrder } = useErpStore();
+  const { catalog, orders, customers, transactions, updateMultipleItemsStatus, setActiveTab, deleteOrder, deleteOrderItem, deleteTransaction, startEditOrder } = useErpStore();
   const [filterCustomer, setFilterCustomer] = useState('');
   const [filterType, setFilterType] = useState<'전체' | '판매' | '결제' | '반품' | 'DC'>('전체');
   const [checkedRows, setCheckedRows] = useState<Set<string>>(new Set());
@@ -200,7 +204,11 @@ export const OrderList: React.FC = () => {
           laborStone,
           stoneQty: item.qty_main || undefined,
           quantity: qty,
-          totalAmount
+          totalAmount,
+          stoneMainName: item.stone_main_name || '',
+          stoneSubName: item.stone_sub_name || '',
+          size: item.size || '',
+          manufacturer: item.manufacturer || ''
         });
       });
     });
@@ -234,7 +242,11 @@ export const OrderList: React.FC = () => {
         note: tx.note || '',
         weightGoldDon,
         weightPureGoldDon,
-        quantity: 1
+        quantity: 1,
+        stoneMainName: '',
+        stoneSubName: '',
+        size: '',
+        manufacturer: ''
       });
     });
 
@@ -432,32 +444,25 @@ export const OrderList: React.FC = () => {
       <div className="table-responsive" style={{ overflowX: 'auto' }}>
         <table className="excel-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '1200px', fontSize: '14px', tableLayout: 'fixed' }}>
           <colgroup>
-            <col style={{ width: '3%' }} />
-            <col style={{ width: '3%' }} />
-            <col style={{ width: '5%' }} />
             <col style={{ width: '4%' }} />
             <col style={{ width: '8%' }} />
-            <col style={{ width: '4%' }} />
-            <col style={{ width: '7%' }} />
             <col style={{ width: '10%' }} />
-            <col style={{ width: '4%' }} />
-            <col style={{ width: '3%' }} />
-            <col style={{ width: '3%' }} />
+            <col style={{ width: '6%' }} />
+            <col style={{ width: '12%' }} />
+            <col style={{ width: '6%' }} />
+            <col style={{ width: '6%' }} />
+            <col style={{ width: '10%' }} />
+            <col style={{ width: '10%' }} />
+            <col style={{ width: '6%' }} />
             <col style={{ width: '5%' }} />
+            <col style={{ width: '12%' }} />
             <col style={{ width: '6%' }} />
-            <col style={{ width: '6%' }} />
-            <col style={{ width: '6%' }} />
-            <col style={{ width: '6%' }} />
-            <col style={{ width: '3%' }} />
-            <col style={{ width: '3%' }} />
-            <col style={{ width: '7%' }} />
-            <col style={{ width: '3%' }} />
-            <col style={{ width: '6%' }} />
+            <col style={{ width: '4%' }} />
+            <col style={{ width: '5%' }} />
           </colgroup>
           <thead>
-            <tr style={{ background: 'rgba(255, 255, 255, 0.03)', borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
-              <th rowSpan={2} style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>No</th>
-              <th rowSpan={2} style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>
+            <tr style={{ background: 'rgba(255, 255, 255, 0.03)', borderBottom: '2px solid var(--border-color)', color: 'var(--text-muted)', height: '40px' }}>
+              <th style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>
                 <input 
                   type="checkbox" 
                   checked={isAllChecked} 
@@ -466,36 +471,25 @@ export const OrderList: React.FC = () => {
                   title="전체 가공 품목 선택/해제"
                 />
               </th>
-              <th rowSpan={2} style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>일자</th>
-              <th rowSpan={2} style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>구분</th>
-              <th rowSpan={2} style={{ padding: '6px 4px', border: '1px solid var(--border-color)' }}>거래처</th>
-              <th rowSpan={2} style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>거래No</th>
-              <th rowSpan={2} style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>시리얼<br/>주문번호</th>
-              <th rowSpan={2} style={{ padding: '6px 4px', border: '1px solid var(--border-color)' }}>모델</th>
-              <th rowSpan={2} style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>재질</th>
-              <th rowSpan={2} style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>색상</th>
-              <th rowSpan={2} style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>비고</th>
-              <th colSpan={2} style={{ padding: '4px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>중량(g)</th>
-              <th rowSpan={2} style={{ padding: '6px 4px', textAlign: 'right', border: '1px solid var(--border-color)' }}>구매<br/>단가</th>
-              <th colSpan={2} style={{ padding: '4px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>공임단가</th>
-              <th rowSpan={2} style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>알수</th>
-              <th rowSpan={2} style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>수량</th>
-              <th rowSpan={2} style={{ padding: '6px 4px', textAlign: 'right', border: '1px solid var(--border-color)' }}>합계</th>
-              <th rowSpan={2} style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>VAT</th>
-              <th rowSpan={2} style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>관리</th>
-            </tr>
-            <tr style={{ background: 'rgba(255, 255, 255, 0.03)', borderBottom: '2px solid var(--border-color)', color: 'var(--text-muted)' }}>
-              <th style={{ padding: '4px 4px', textAlign: 'center', border: '1px solid var(--border-color)', fontSize: '13px' }}>금</th>
-              <th style={{ padding: '4px 4px', textAlign: 'center', border: '1px solid var(--border-color)', fontSize: '13px' }}>순금</th>
-              <th style={{ padding: '4px 4px', textAlign: 'center', border: '1px solid var(--border-color)', fontSize: '13px' }}>기+추</th>
-              <th style={{ padding: '4px 4px', textAlign: 'center', border: '1px solid var(--border-color)', fontSize: '13px' }}>중+보</th>
+              <th style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>일자</th>
+              <th style={{ padding: '6px 4px', border: '1px solid var(--border-color)' }}>거래처</th>
+              <th style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>사진</th>
+              <th style={{ padding: '6px 4px', border: '1px solid var(--border-color)' }}>모델</th>
+              <th style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>재질</th>
+              <th style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>색상</th>
+              <th style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>중심</th>
+              <th style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>보조</th>
+              <th style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>사이즈</th>
+              <th style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>수량</th>
+              <th style={{ padding: '6px 4px', border: '1px solid var(--border-color)' }}>비고</th>
+              <th style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>제조사</th>
+              <th style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>수정</th>
+              <th style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>삭제</th>
             </tr>
           </thead>
           <tbody>
             {filteredRows.length > 0 ? (
               filteredRows.map((row, idx) => {
-                const isManualTx = !row.orderId;
-
                 // 구분(type)별 텍스트 색상
                 const getDivisionColor = (type: string) => {
                   switch (type) {
@@ -513,15 +507,10 @@ export const OrderList: React.FC = () => {
                     style={{ 
                       borderBottom: '1px solid var(--border-color)',
                       backgroundColor: idx % 2 === 0 ? 'transparent' : 'rgba(255, 255, 255, 0.01)',
-                      height: '32px'
+                      height: '48px'
                     }}
                   >
-                    {/* No */}
-                    <td style={{ padding: '6px 4px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                      {idx + 1}
-                    </td>
-
-                    {/* ✔ */}
+                    {/* 체크박스 */}
                     <td style={{ padding: '6px 4px', textAlign: 'center' }}>
                       <input 
                         type="checkbox" 
@@ -536,49 +525,35 @@ export const OrderList: React.FC = () => {
                       {row.dateDisplay}
                     </td>
 
-                    {/* 구분 */}
-                    <td style={{ 
-                      padding: '6px 4px', 
-                      textAlign: 'center', 
-                      fontWeight: 'bold', 
-                      color: getDivisionColor(row.type)
-                    }}
-                    >
-                      {row.type}
-                    </td>
-
                     {/* 거래처 */}
                     <td style={{ padding: '6px 4px', fontWeight: '600' }}>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--text-main)' }}>
                         {row.customerName}
-                        <span style={{ color: isManualTx ? '#38bdf8' : '#a78bfa', fontSize: '12px' }}>◆</span>
+                        <span style={{ color: getDivisionColor(row.type), fontSize: '12px' }} title={row.type}>
+                          {row.type === '판매' ? '●' : row.type === '결제' ? '■' : row.type === '반품' ? '▲' : '◆'}
+                        </span>
                       </span>
                     </td>
 
-                    {/* 거래No */}
-                    <td 
-                      style={{ 
-                        padding: '6px 4px', 
-                        textAlign: 'center', 
-                        color: '#f472b6', 
-                        fontWeight: '700', 
-                        textDecoration: row.orderId ? 'underline' : 'none', 
-                        cursor: row.orderId ? 'pointer' : 'default' 
-                      }}
-                      onClick={() => row.orderId && handlePrintInvoice(row.orderId)}
-                    >
-                      {row.tradeNo}
-                    </td>
-
-                    {/* 시리얼 주문번호 */}
-                    <td 
-                      style={{ 
-                        padding: '6px 4px', 
-                        textAlign: 'center', 
-                        color: isManualTx ? 'transparent' : 'var(--text-main)'
-                      }}
-                    >
-                      {isManualTx ? '' : row.serialNo}
+                    {/* 사진 */}
+                    <td style={{ padding: '6px 4px', textAlign: 'center' }}>
+                      {(() => {
+                        const matched = catalog.find(c => c.model_number.toUpperCase() === row.model.toUpperCase());
+                        const imageUrl = matched?.images?.[0];
+                        if (imageUrl) {
+                          return (
+                            <img 
+                              src={imageUrl} 
+                              alt={row.model} 
+                              style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px', border: '1px solid var(--border-color)' }}
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = 'none';
+                              }}
+                            />
+                          );
+                        }
+                        return <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>-</span>;
+                      })()}
                     </td>
 
                     {/* 모델 */}
@@ -605,111 +580,93 @@ export const OrderList: React.FC = () => {
                     {/* 색상 */}
                     <td style={{ padding: '6px 4px', textAlign: 'center' }}>{row.color || ''}</td>
 
-                    {/* 비고 */}
-                    <td 
-                      style={{ padding: '6px 4px', textAlign: 'center', color: '#f472b6', fontWeight: 'bold', cursor: 'pointer', textDecoration: 'underline' }}
-                      onClick={() => row.note && alert(`[거래 메모]\n${row.note}`)}
-                    >
-                      {row.note ? '※' : ''}
-                    </td>
+                    {/* 중심 */}
+                    <td style={{ padding: '6px 4px', textAlign: 'center' }}>{row.stoneMainName || '-'}</td>
 
-                    {/* 중량: 금 */}
-                    <td style={{ 
-                      padding: '6px 4px', 
-                      textAlign: 'right', 
-                      color: isManualTx ? 'var(--text-main)' : '#a78bfa', 
-                      textDecoration: isManualTx ? 'none' : 'underline',
-                      fontWeight: isManualTx ? 'normal' : 'bold'
-                    }}>
-                      {row.weightGoldDon > 0 ? row.weightGoldDon.toFixed(2) : '0.00'}
-                    </td>
+                    {/* 보조 */}
+                    <td style={{ padding: '6px 4px', textAlign: 'center' }}>{row.stoneSubName || '-'}</td>
 
-                    {/* 중량: 순금 */}
-                    <td style={{ padding: '6px 4px', textAlign: 'right', fontWeight: 'bold' }}>
-                      {row.weightPureGoldDon > 0 ? row.weightPureGoldDon.toFixed(3) : '0.000'}
-                    </td>
-
-                    {/* 구매단가 */}
-                    <td style={{ padding: '6px 4px', textAlign: 'right' }}>
-                      {row.purchasePrice ? row.purchasePrice.toLocaleString() : ''}
-                    </td>
-
-                    {/* 공임단가 기+추 */}
-                    <td style={{ padding: '6px 4px', textAlign: 'right' }}>
-                      {row.laborBaseExtra ? row.laborBaseExtra.toLocaleString() : ''}
-                    </td>
-
-                    {/* 공임단가 중+보 */}
-                    <td style={{ padding: '6px 4px', textAlign: 'right' }}>
-                      {row.laborStone ? row.laborStone.toLocaleString() : ''}
-                    </td>
-
-                    {/* 알수 */}
-                    <td style={{ padding: '6px 4px', textAlign: 'center' }}>{row.stoneQty || ''}</td>
+                    {/* 사이즈 */}
+                    <td style={{ padding: '6px 4px', textAlign: 'center' }}>{row.size || '-'}</td>
 
                     {/* 수량 */}
                     <td style={{ padding: '6px 4px', textAlign: 'center', fontWeight: 'bold' }}>{row.quantity}</td>
 
-                    {/* 합계 */}
-                    <td style={{ padding: '6px 4px', textAlign: 'right', fontWeight: '700' }}>
-                      {row.totalAmount ? row.totalAmount.toLocaleString() : ''}
+                    {/* 비고 */}
+                    <td 
+                      style={{ 
+                        padding: '6px 4px', 
+                        color: 'var(--text-muted)', 
+                        fontSize: '13px', 
+                        whiteSpace: 'nowrap', 
+                        overflow: 'hidden', 
+                        textOverflow: 'ellipsis',
+                        cursor: row.note ? 'pointer' : 'default',
+                        textDecoration: row.note ? 'underline' : 'none'
+                      }}
+                      title={row.note}
+                      onClick={() => row.note && alert(`[거래 메모]\n${row.note}`)}
+                    >
+                      {row.note || '-'}
                     </td>
 
-                    {/* VAT */}
-                    <td style={{ padding: '6px 4px', textAlign: 'center' }}>{row.vat || ''}</td>
+                    {/* 제조사 */}
+                    <td style={{ padding: '6px 4px', textAlign: 'center' }}>{row.manufacturer || '-'}</td>
 
-                    {/* 관리 (수정 / 삭제) */}
+                    {/* 수정 */}
                     <td style={{ padding: '6px 4px', textAlign: 'center' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                        {row.orderId ? (
-                          <button
-                            type="button"
-                            onClick={() => startEditOrder(row.orderId!)}
-                            className="btn-primary"
-                            style={{
-                              padding: '2px 6px',
-                              fontSize: '13px',
-                              background: 'rgba(212, 175, 55, 0.15)',
-                              border: '1px solid rgba(212, 175, 55, 0.4)',
-                              color: 'var(--primary)',
-                              borderRadius: '3px',
-                              cursor: 'pointer',
-                              boxShadow: 'none'
-                            }}
-                            title="주문서 수정"
-                          >
-                            수정
-                          </button>
-                        ) : (
-                          <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>-</span>
-                        )}
+                      {row.orderId ? (
                         <button
                           type="button"
-                          onClick={() => handleDeleteRow(row)}
+                          onClick={() => startEditOrder(row.orderId!)}
+                          className="btn-primary"
                           style={{
-                            background: 'rgba(239, 68, 68, 0.15)',
-                            border: '1px solid rgba(239, 68, 68, 0.4)',
-                            color: '#ef4444',
-                            cursor: 'pointer',
-                            fontSize: '13px',
-                            fontWeight: 'bold',
                             padding: '2px 6px',
+                            fontSize: '13px',
+                            background: 'rgba(212, 175, 55, 0.15)',
+                            border: '1px solid rgba(212, 175, 55, 0.4)',
+                            color: 'var(--primary)',
                             borderRadius: '3px',
-                            display: 'inline-flex',
-                            alignItems: 'center'
+                            cursor: 'pointer',
+                            boxShadow: 'none'
                           }}
-                          title="해당 데이터 영구 삭제"
+                          title="주문서 수정"
                         >
-                          ✕
+                          수정
                         </button>
-                      </div>
+                      ) : (
+                        <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>-</span>
+                      )}
+                    </td>
+
+                    {/* 삭제 */}
+                    <td style={{ padding: '6px 4px', textAlign: 'center' }}>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteRow(row)}
+                        style={{
+                          background: 'rgba(239, 68, 68, 0.15)',
+                          border: '1px solid rgba(239, 68, 68, 0.4)',
+                          color: '#ef4444',
+                          cursor: 'pointer',
+                          fontSize: '13px',
+                          fontWeight: 'bold',
+                          padding: '2px 6px',
+                          borderRadius: '3px',
+                          display: 'inline-flex',
+                          alignItems: 'center'
+                        }}
+                        title="해당 데이터 영구 삭제"
+                      >
+                        ✕
+                      </button>
                     </td>
                   </tr>
                 );
               })
             ) : (
               <tr>
-                <td colSpan={21} style={{ padding: '30px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                <td colSpan={15} style={{ padding: '30px', textAlign: 'center', color: 'var(--text-muted)' }}>
                   접수 및 접수 진행 중인 주문 내역이 없습니다.
                 </td>
               </tr>

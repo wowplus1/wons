@@ -2,6 +2,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useErpStore } from '../store/useErpStore';
 import { Plus, Trash2, CheckCircle2, Search, X, ChevronDown } from 'lucide-react';
+import { toCommaString, fromCommaStringInt } from '../utils/numberFormat';
+
 
 export const OrderGrid: React.FC = () => {
   const {
@@ -17,17 +19,23 @@ export const OrderGrid: React.FC = () => {
     submitOrder,
     clearOrderForm,
     editingOrderId,
-    cancelEditOrder
+    cancelEditOrder,
+    setActiveTab
   } = useErpStore();
 
   const containerRef = useRef<HTMLDivElement>(null);
   
+  // 상세설정 토글 상태 관리 (아코디언)
+  const [expandedItems, setExpandedItems] = useState<Record<number, boolean>>({});
+  
+  // 모델 검색 자동완성 드롭다운을 활성화할 행 인덱스
+  const [activeModelDropdownIndex, setActiveModelDropdownIndex] = useState<number | null>(null);
+
   // Stone Search Modal states
   const [stoneModalTarget, setStoneModalTarget] = useState<{ rowIndex: number; type: 'main' | 'sub' } | null>(null);
   const [stoneSearchText, setStoneSearchText] = useState('');
 
-  // Image Loading Error States
-  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
+
 
   const handleOpenCatalogPopup = (rowIndex: number) => {
     if (!selectedCustomerForOrder) return;
@@ -69,10 +77,10 @@ export const OrderGrid: React.FC = () => {
     addOrderItem({ 
       item_id: currentOrderItems.length + 1, 
       quantity: 1,
-      grade: selectedCustomerForOrder.grade || 3, // 거래처 등급 상속
+      grade: 3, // 초기 공임급 일반(3) 고정
       material: '14K',
-      color: 'YG',
-      manufacturer: 'JP',
+      color: 'G',
+      manufacturer: '자체제작',
       qty_main: 0,
       qty_sub: 0,
       stone_weight_ea: 0,
@@ -80,6 +88,7 @@ export const OrderGrid: React.FC = () => {
       labor_extra: 0,
       labor_main: 0,
       labor_sub: 0,
+      labor_stone_total: 0,
       division: '판매',
       note: ''
     });
@@ -99,14 +108,14 @@ export const OrderGrid: React.FC = () => {
     selectCustomer(customer);
     
     if (customer) {
-      // Create first empty row with customer's default grade
+      // Create first empty row with default grade
       addOrderItem({ 
         item_id: 1, 
         quantity: 1, 
-        grade: customer.grade || 3, // 거래처 등급 상속
+        grade: 3, // 초기 공임급 일반(3) 고정
         material: '14K',
-        color: 'YG',
-        manufacturer: 'JP',
+        color: 'G',
+        manufacturer: '자체제작',
         qty_main: 0,
         qty_sub: 0,
         stone_weight_ea: 0,
@@ -114,6 +123,7 @@ export const OrderGrid: React.FC = () => {
         labor_extra: 0,
         labor_main: 0,
         labor_sub: 0,
+        labor_stone_total: 0,
         division: '판매',
         note: ''
       });
@@ -134,6 +144,7 @@ export const OrderGrid: React.FC = () => {
       } else {
         alert(`주문서가 정상 접수되었습니다. (주문번호: ${orderId})`);
       }
+      setActiveTab('orders');
     } else {
       alert('등록할 주문 항목이 없습니다. 모델번호와 수량을 정확히 입력해 주세요.');
     }
@@ -155,7 +166,7 @@ export const OrderGrid: React.FC = () => {
         stone_main_id: stoneDetail.stone_id,
         stone_main_name: stoneDetail.name,
         labor_main: price,
-        stone_weight_ea: stoneDetail.weight_carat
+        stone_weight_ea: (stoneDetail.weight_carat || 0) + (stoneDetail.deduction_weight || 0)
       });
     } else {
       updateOrderItem(rowIndex, {
@@ -234,8 +245,7 @@ export const OrderGrid: React.FC = () => {
           {/* Card Item List */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '20px' }}>
             {currentOrderItems.map((item, index) => {
-              const matchedCatalog = catalog.find(c => c.model_number === item.model_number);
-              
+
               return (
                 <div 
                   key={item.item_id} 
@@ -283,14 +293,12 @@ export const OrderGrid: React.FC = () => {
                     </button>
                   </div>
 
-                  {/* 1단계: 기본 정보 (구분, 주문모델, 제조사, 수량, 색상, 재질) */}
-                  <div>
-                    <div style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--primary)', marginBottom: '8px', letterSpacing: '0.5px' }}>
-                      [1단계] 기본 사양 정보
-                    </div>
-                    <div className="order-form-step-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(24, minmax(0, 1fr))', gap: '12px', alignItems: 'end' }}>
+                  {/* 1단계: 기본 정보 (가로 1줄 콤팩트 배치) */}
+                  <div style={{ marginBottom: expandedItems[item.item_id || 0] ? '12px' : '0px' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'end' }}>
+
                       {/* 구분 */}
-                      <div style={{ gridColumn: 'span 3' }}>
+                      <div style={{ width: '80px' }}>
                         <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>구분</label>
                         <select
                           value={item.division || '판매'}
@@ -314,7 +322,7 @@ export const OrderGrid: React.FC = () => {
                       </div>
 
                       {/* ★ 주문모델 */}
-                      <div style={{ gridColumn: 'span 7' }}>
+                      <div style={{ width: '180px', position: 'relative' }}>
                         <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>★ 주문모델</label>
                         <div style={{ 
                           display: 'flex', 
@@ -326,15 +334,34 @@ export const OrderGrid: React.FC = () => {
                           padding: '0 8px', 
                           height: '32px', 
                           boxSizing: 'border-box',
-                          opacity: item.division === '결제' ? 0.6 : 1
+                          opacity: item.division === '결제' ? 0.6 : 1,
+                          position: 'relative'
                         }}>
                           <input
                             type="text"
                             placeholder="모델 검색"
                             value={item.model_number || ''}
                             data-field="model_number"
-                            disabled={item.division === '결제'}
-                            onChange={(e) => updateOrderItem(index, { model_number: e.target.value.toUpperCase() })}
+                            disabled={item.division === '결제' || (item.model_number !== '' && item.model_number !== undefined && catalog.some(c => c.model_number === item.model_number))}
+                            onChange={(e) => {
+                              updateOrderItem(index, { model_number: e.target.value.toUpperCase() });
+                              setActiveModelDropdownIndex(index);
+                            }}
+                            onFocus={() => {
+                              if (item.division !== '결제') {
+                                setActiveModelDropdownIndex(index);
+                              }
+                            }}
+                            onBlur={(e) => {
+                              const val = e.target.value.toUpperCase().trim();
+                              const isExist = catalog.some(c => c.model_number.toUpperCase().trim() === val);
+                              if (isExist) {
+                                updateOrderItem(index, { model_number: val }, true);
+                              }
+                              setTimeout(() => {
+                                setActiveModelDropdownIndex(null);
+                              }, 200);
+                            }}
                             onKeyDown={(e) => handleKeyDown(e, index, 'model_number')}
                             className="excel-input"
                             style={{ 
@@ -346,10 +373,50 @@ export const OrderGrid: React.FC = () => {
                               fontWeight: 'bold', 
                               outline: 'none', 
                               fontSize: '15px',
-                              cursor: item.division === '결제' ? 'not-allowed' : 'text'
+                              cursor: item.division === '결제' ? 'not-allowed' : 'text',
+                              paddingRight: (item.model_number && catalog.some(c => c.model_number === item.model_number)) ? '20px' : '0px'
                             }}
                             required={item.division !== '결제' && item.division !== 'DC'}
                           />
+                          
+                          {/* X 초기화 버튼 */}
+                          {item.model_number && catalog.some(c => c.model_number === item.model_number) && item.division !== '결제' && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                updateOrderItem(index, { 
+                                  model_number: '',
+                                  labor_base: 0,
+                                  labor_main: 0,
+                                  labor_sub: 0,
+                                  labor_stone_total: 0,
+                                  stone_main_name: '',
+                                  stone_sub_name: '',
+                                  qty_main: 0,
+                                  qty_sub: 0,
+                                  stone_weight_ea: 0
+                                });
+                                // 상세 토글 닫기
+                                setExpandedItems(prev => ({ ...prev, [item.item_id || 0]: false }));
+                              }}
+                              style={{
+                                position: 'absolute',
+                                right: '30px',
+                                background: 'transparent',
+                                border: 'none',
+                                color: 'var(--danger)',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                padding: '4px',
+                                zIndex: 10
+                              }}
+                              title="모델 선택 취소"
+                            >
+                              <X size={14} />
+                            </button>
+                          )}
+
                           <button
                             type="button"
                             onClick={() => handleOpenCatalogPopup(index)}
@@ -368,20 +435,69 @@ export const OrderGrid: React.FC = () => {
                           >
                             <ChevronDown size={14} />
                           </button>
-                          {matchedCatalog && matchedCatalog.images && matchedCatalog.images[0] && !imageErrors[matchedCatalog.model_number] && (
-                            <img 
-                              src={matchedCatalog.images[0]} 
-                              alt="thumbnail" 
-                              style={{ width: '22px', height: '22px', borderRadius: '2px', objectFit: 'cover' }} 
-                              onError={() => setImageErrors(prev => ({ ...prev, [matchedCatalog.model_number]: true }))}
-                            />
-                          )}
                         </div>
+
+                        {/* 자동완성 드롭다운 */}
+                        {activeModelDropdownIndex === index && item.model_number && !catalog.some(c => c.model_number === item.model_number) && (
+                          <div 
+                            style={{
+                              position: 'absolute',
+                              top: '100%',
+                              left: 0,
+                              right: 0,
+                              background: 'var(--card-bg)',
+                              border: '1px solid var(--border-color)',
+                              borderRadius: '6px',
+                              maxHeight: '200px',
+                              overflowY: 'auto',
+                              zIndex: 9999, 
+                              boxShadow: 'var(--glass-shadow)',
+                              padding: '4px 0',
+                              marginTop: '4px'
+                            }}
+                          >
+                            {(() => {
+                              const filterQuery = (item.model_number || '').toUpperCase().trim();
+                              const filtered = catalog.filter(c => 
+                                c.model_number.toUpperCase().trim().includes(filterQuery)
+                              );
+                              if (filtered.length === 0) {
+                                return (
+                                  <div style={{ padding: '8px 12px', color: 'var(--text-muted)', fontSize: '14px' }}>
+                                    검색된 모델 없음
+                                  </div>
+                                );
+                              }
+                              return filtered.map(c => (
+                                <div 
+                                  key={c.model_number}
+                                  onClick={() => {
+                                    updateOrderItem(index, { model_number: c.model_number }, true);
+                                    setActiveModelDropdownIndex(null);
+                                  }}
+                                  style={{ 
+                                    padding: '8px 12px', 
+                                    cursor: 'pointer', 
+                                    fontSize: '14px',
+                                    color: item.model_number === c.model_number ? 'var(--primary)' : 'var(--text-main)',
+                                    background: item.model_number === c.model_number ? 'rgba(170, 133, 19, 0.1)' : 'transparent',
+                                    transition: 'background 0.2s',
+                                    whiteSpace: 'nowrap'
+                                  }}
+                                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(170, 133, 19, 0.18)'; }}
+                                  onMouseLeave={e => { e.currentTarget.style.background = item.model_number === c.model_number ? 'rgba(170, 133, 19, 0.1)' : 'transparent'; }}
+                                >
+                                  {c.model_number}
+                                </div>
+                              ));
+                            })()}
+                          </div>
+                        )}
                       </div>
 
-                      {/* ★ 제조사 */}
-                      <div style={{ gridColumn: 'span 6' }}>
-                        <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>★ 제조사</label>
+                      {/* 제조사 */}
+                      <div style={{ width: '90px' }}>
+                        <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>제조사</label>
                         <input
                           type="text"
                           value={item.manufacturer || ''}
@@ -402,7 +518,7 @@ export const OrderGrid: React.FC = () => {
                       </div>
 
                       {/* 수량 */}
-                      <div style={{ gridColumn: 'span 2' }}>
+                      <div style={{ width: '60px' }}>
                         <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>수량</label>
                         <input
                           type="number"
@@ -425,11 +541,33 @@ export const OrderGrid: React.FC = () => {
                         />
                       </div>
 
+                      {/* 사이즈 */}
+                      <div style={{ width: '90px' }}>
+                        <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>사이즈</label>
+                        <input
+                          type="text"
+                          placeholder={(item.division === '결제' || item.model_number === '디자인출력') ? '입력 안 함' : '예: 12호'}
+                          value={item.size || ''}
+                          disabled={item.division === '결제' || item.model_number === '디자인출력'}
+                          onChange={(e) => updateOrderItem(index, { size: e.target.value })}
+                          onKeyDown={(e) => handleKeyDown(e, index, 'size')}
+                          className="input-field"
+                          style={{ 
+                            width: '100%', 
+                            height: '32px', 
+                            padding: '4px 8px', 
+                            fontSize: '15px',
+                            cursor: (item.division === '결제' || item.model_number === '디자인출력') ? 'not-allowed' : 'text',
+                            opacity: (item.division === '결제' || item.model_number === '디자인출력') ? 0.6 : 1
+                          }}
+                        />
+                      </div>
+
                       {/* 색상 */}
-                      <div style={{ gridColumn: 'span 3' }}>
+                      <div style={{ width: '80px' }}>
                         <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>색상</label>
                         <select
-                          value={item.color || 'YG'}
+                          value={item.color || 'G'}
                           disabled={item.division === '결제' || item.model_number === '디자인출력'}
                           onChange={(e) => updateOrderItem(index, { color: e.target.value })}
                           onKeyDown={(e) => handleKeyDown(e, index, 'color')}
@@ -443,14 +581,57 @@ export const OrderGrid: React.FC = () => {
                             opacity: (item.division === '결제' || item.model_number === '디자인출력') ? 0.6 : 1
                           }}
                         >
-                          <option value="YG">YG</option>
-                          <option value="WG">WG</option>
-                          <option value="RG">RG</option>
+                          {(() => {
+                            const CATALOG_COLORS = [
+                              'G', 'G/B', 'G/P', 'G/R/W', 'G/W', 'G/WP',
+                              'P', 'P/G', 'P/W', 'P/엔틱',
+                              'W', 'W/B', 'W/G', 'W/GP', 'W/P',
+                              '삼색', '엔틱'
+                            ];
+
+                            if (item.model_number === '디자인출력' || item.model_number === '결제') {
+                              return CATALOG_COLORS.map(color => (
+                                <option key={color} value={color}>{color}</option>
+                              ));
+                            }
+                            const catalogItem = catalog.find(c => c.model_number.toUpperCase().trim() === (item.model_number || '').toUpperCase().trim());
+                            if (!catalogItem) {
+                              return CATALOG_COLORS.map(color => (
+                                <option key={color} value={color}>{color}</option>
+                              ));
+                            }
+                            const mat = item.material || '14K';
+                            let colors: string[] = [];
+                            if (catalogItem.labor_fees_v2 && catalogItem.labor_fees_v2[mat]) {
+                              colors = catalogItem.labor_fees_v2[mat]
+                                .map(fee => fee.color)
+                                .filter((c): c is string => !!c && c.trim() !== '');
+                            }
+                            if (catalogItem.labor_fees_v2) {
+                              Object.keys(catalogItem.labor_fees_v2).forEach(m => {
+                                const fees = catalogItem.labor_fees_v2?.[m];
+                                if (fees) {
+                                  fees.forEach(fee => {
+                                    if (fee.color && fee.color.trim() !== '') {
+                                      colors.push(fee.color);
+                                    }
+                                  });
+                                }
+                              });
+                            }
+                            // 카탈로그 전체 색상 리스트를 하단에 병합하여 언제든지 수정 가능하게 함
+                            colors.push(...CATALOG_COLORS);
+                            const uniqueColors = Array.from(new Set(colors));
+                            
+                            return uniqueColors.map(color => (
+                              <option key={color} value={color}>{color}</option>
+                            ));
+                          })()}
                         </select>
                       </div>
 
                       {/* 재질 */}
-                      <div style={{ gridColumn: 'span 3' }}>
+                      <div style={{ width: '80px' }}>
                         <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>재질</label>
                         <select
                           value={item.material || '14K'}
@@ -473,19 +654,149 @@ export const OrderGrid: React.FC = () => {
                           <option value="Silver">은</option>
                         </select>
                       </div>
+
+                      {/* 중량 (g) */}
+                      <div style={{ width: '90px' }}>
+                        <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>중량 (g)</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={item.gold_weight === 0 ? '' : item.gold_weight}
+                          disabled={item.division === '결제' || item.model_number === '디자인출력'}
+                          onChange={(e) => updateOrderItem(index, { gold_weight: parseFloat(e.target.value) || 0 })}
+                          onKeyDown={(e) => handleKeyDown(e, index, 'gold_weight')}
+                          placeholder="0.00"
+                          className="input-field"
+                          style={{ 
+                            width: '100%', 
+                            height: '32px', 
+                            padding: '4px 8px', 
+                            fontSize: '15px', 
+                            textAlign: 'right',
+                            cursor: (item.division === '결제' || item.model_number === '디자인출력') ? 'not-allowed' : 'text',
+                            opacity: (item.division === '결제' || item.model_number === '디자인출력') ? 0.6 : 1
+                          }}
+                        />
+                      </div>
+
+                      {/* 출고 예정일 */}
+                      <div style={{ width: '130px' }}>
+                        <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>출고 예정일</label>
+                        <input
+                          type="date"
+                          value={item.release_date || ''}
+                          disabled={item.division === '결제' || item.model_number === '디자인출력'}
+                          onChange={(e) => updateOrderItem(index, { release_date: e.target.value })}
+                          onKeyDown={(e) => handleKeyDown(e, index, 'release_date')}
+                          className="input-field"
+                          style={{ 
+                            width: '100%', 
+                            height: '32px', 
+                            padding: '4px 8px', 
+                            fontSize: '15px',
+                            cursor: (item.division === '결제' || item.model_number === '디자인출력') ? 'not-allowed' : 'default',
+                            opacity: (item.division === '결제' || item.model_number === '디자인출력') ? 0.6 : 1
+                          }}
+                        />
+                      </div>
+
+                      {/* 주문 기타설명 */}
+                      <div style={{ flex: 1, minWidth: '150px' }}>
+                        <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>주문 기타설명</label>
+                        <input
+                          type="text"
+                          value={item.note || ''}
+                          onChange={(e) => updateOrderItem(index, { note: e.target.value })}
+                          onKeyDown={(e) => handleKeyDown(e, index, 'note')}
+                          placeholder="기타 특이사항 입력"
+                          className="input-field"
+                          style={{ width: '100%', height: '32px', padding: '4px 8px', fontSize: '15px' }}
+                        />
+                      </div>
+
+                      {/* 추가 공임 */}
+                      <div style={{ width: '130px' }}>
+                        <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>추가 공임</label>
+                        <input
+                          type="text"
+                          value={toCommaString(item.labor_extra === 0 ? '' : item.labor_extra)}
+                          disabled={item.division === '결제'}
+                          onChange={(e) => updateOrderItem(index, { labor_extra: fromCommaStringInt(e.target.value) })}
+                          onKeyDown={(e) => handleKeyDown(e, index, 'labor_extra')}
+                          className="input-field"
+                          style={{ 
+                            width: '100%', 
+                            height: '32px', 
+                            padding: '4px 8px', 
+                            fontSize: '15px', 
+                            textAlign: 'right',
+                            cursor: (item.division === '결제') ? 'not-allowed' : 'text',
+                            opacity: (item.division === '결제') ? 0.6 : 1
+                          }}
+                        />
+                      </div>
+
+                      {/* 실시간 계산금액 */}
+                      <div style={{ width: '140px', textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <span style={{ fontSize: '14px', color: 'var(--text-muted)', display: 'block', whiteSpace: 'nowrap' }}>실시간 계산금액</span>
+                        <div style={{ 
+                          fontSize: '16px', 
+                          fontWeight: '800', 
+                          color: 'var(--primary)',
+                          background: 'rgba(212, 175, 55, 0.08)',
+                          border: '1px solid rgba(212, 175, 55, 0.2)',
+                          padding: '0 8px',
+                          borderRadius: '6px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'flex-end',
+                          height: '32px',
+                          width: '100%',
+                          boxSizing: 'border-box',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          {(item.calculated_price || 0).toLocaleString()} 원
+                        </div>
+                      </div>
+
+                      {/* 상세설정 열기/접기 */}
+                      <div style={{ width: '110px' }}>
+                        <button
+                          type="button"
+                          onClick={() => setExpandedItems(prev => ({ ...prev, [item.item_id || 0]: !prev[item.item_id || 0] }))}
+                          className="btn-secondary"
+                          style={{ 
+                            width: '100%', 
+                            height: '32px', 
+                            fontSize: '14px', 
+                            padding: '0 8px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '4px'
+                          }}
+                        >
+                          {expandedItems[item.item_id || 0] ? '상세설정 접기' : '상세설정 열기'}
+                        </button>
+                      </div>
                     </div>
                   </div>
 
-                  {/* 2단계: 스톤 및 공임 정보 (자재 정보 1줄, 공임단가 정보 1줄로 분할하여 찌그러짐 원천 차단) */}
-                  <div style={{ borderTop: '1px dashed rgba(255,255,255,0.08)', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    <div style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--primary)', letterSpacing: '0.5px' }}>
-                      [2단계] 자재 및 세공 공임 정보
-                    </div>
-                    
-                    {/* 2-1단계: 자재 정보 (스톤종류, 알수, 알중) */}
-                    <div className="order-form-step-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(24, minmax(0, 1fr))', gap: '12px', alignItems: 'end' }}>
+                  {/* 상세설정 아코디언 내부 (가로 1줄 콤팩트 배치) */}
+                  {expandedItems[item.item_id || 0] && (
+                    <div style={{ 
+                      borderTop: '1px dashed rgba(255,255,255,0.08)', 
+                      paddingTop: '12px',
+                      display: 'flex',
+                      flexDirection: 'row',
+                      flexWrap: 'nowrap',
+                      gap: '8px',
+                      alignItems: 'end',
+                      overflowX: 'auto',
+                      paddingBottom: '4px'
+                    }}>
                       {/* 스톤종류 중심 */}
-                      <div style={{ gridColumn: 'span 10' }}>
+                      <div style={{ width: '150px', flexShrink: 0 }}>
                         <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>스톤종류 (중심)</label>
                         <div style={{ 
                           display: 'flex', 
@@ -505,7 +816,7 @@ export const OrderGrid: React.FC = () => {
                             disabled
                             placeholder={(item.division === '결제' || item.model_number === '디자인출력') ? '선택 안 함' : '중심 스톤 선택'}
                             style={{ 
-                              flex: 1, 
+                              width: '100%',
                               border: 'none', 
                               background: 'transparent', 
                               color: 'var(--text-main)', 
@@ -534,8 +845,30 @@ export const OrderGrid: React.FC = () => {
                         </div>
                       </div>
 
+                      {/* 알수 (메인) */}
+                      <div style={{ width: '60px', flexShrink: 0 }}>
+                        <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>알수(메)</label>
+                        <input
+                          type="number"
+                          value={item.qty_main === 0 ? '' : item.qty_main}
+                          disabled={item.division === '결제' || item.model_number === '디자인출력'}
+                          onChange={(e) => updateOrderItem(index, { qty_main: parseInt(e.target.value) || 0 })}
+                          onKeyDown={(e) => handleKeyDown(e, index, 'qty_main')}
+                          className="input-field"
+                          style={{ 
+                            width: '100%', 
+                            height: '32px', 
+                            padding: '4px 8px', 
+                            fontSize: '15px', 
+                            textAlign: 'center',
+                            cursor: (item.division === '결제' || item.model_number === '디자인출력') ? 'not-allowed' : 'text',
+                            opacity: (item.division === '결제' || item.model_number === '디자인출력') ? 0.6 : 1
+                          }}
+                        />
+                      </div>
+
                       {/* 스톤종류 보조 */}
-                      <div style={{ gridColumn: 'span 6' }}>
+                      <div style={{ width: '150px', flexShrink: 0 }}>
                         <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>스톤종류 (보조)</label>
                         <div style={{ 
                           display: 'flex', 
@@ -555,7 +888,7 @@ export const OrderGrid: React.FC = () => {
                             disabled
                             placeholder={(item.division === '결제' || item.model_number === '디자인출력') ? '선택 안 함' : '보조 스톤 선택'}
                             style={{ 
-                              flex: 1, 
+                              width: '100%',
                               border: 'none', 
                               background: 'transparent', 
                               color: 'var(--text-main)', 
@@ -584,9 +917,9 @@ export const OrderGrid: React.FC = () => {
                         </div>
                       </div>
 
-                      {/* 알수 보 */}
-                      <div style={{ gridColumn: 'span 2' }}>
-                        <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>알수 (보조)</label>
+                      {/* 알수 (보조) */}
+                      <div style={{ width: '60px', flexShrink: 0 }}>
+                        <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>알수(보)</label>
                         <input
                           type="number"
                           value={item.qty_sub === 0 ? '' : item.qty_sub}
@@ -606,30 +939,8 @@ export const OrderGrid: React.FC = () => {
                         />
                       </div>
 
-                      {/* 알수 메 */}
-                      <div style={{ gridColumn: 'span 3' }}>
-                        <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>알수 (메인)</label>
-                        <input
-                          type="number"
-                          value={item.qty_main === 0 ? '' : item.qty_main}
-                          disabled={item.division === '결제' || item.model_number === '디자인출력'}
-                          onChange={(e) => updateOrderItem(index, { qty_main: parseInt(e.target.value) || 0 })}
-                          onKeyDown={(e) => handleKeyDown(e, index, 'qty_main')}
-                          className="input-field"
-                          style={{ 
-                            width: '100%', 
-                            height: '32px', 
-                            padding: '4px 8px', 
-                            fontSize: '15px', 
-                            textAlign: 'center',
-                            cursor: (item.division === '결제' || item.model_number === '디자인출력') ? 'not-allowed' : 'text',
-                            opacity: (item.division === '결제' || item.model_number === '디자인출력') ? 0.6 : 1
-                          }}
-                        />
-                      </div>
-
-                      {/* 알중/EA */}
-                      <div style={{ gridColumn: 'span 3' }}>
+                      {/* 알당 중량 */}
+                      <div style={{ width: '90px', flexShrink: 0 }}>
                         <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>알중 / EA</label>
                         <input
                           type="number"
@@ -638,6 +949,7 @@ export const OrderGrid: React.FC = () => {
                           disabled={item.division === '결제' || item.model_number === '디자인출력'}
                           onChange={(e) => updateOrderItem(index, { stone_weight_ea: parseFloat(e.target.value) || 0 })}
                           onKeyDown={(e) => handleKeyDown(e, index, 'stone_weight_ea')}
+                          placeholder="0.000"
                           className="input-field"
                           style={{ 
                             width: '100%', 
@@ -650,78 +962,35 @@ export const OrderGrid: React.FC = () => {
                           }}
                         />
                       </div>
-                    </div>
 
-                    {/* 2-2단계: 공임 정보 (기본, 추가, 중심, 보조, 급) */}
-                    <div className="order-form-step-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(24, minmax(0, 1fr))', gap: '12px', alignItems: 'end' }}>
-                      {/* 공임단가 기본 */}
-                      <div style={{ gridColumn: 'span 5' }}>
+                      {/* 기본 공임 */}
+                      <div style={{ width: '100px', flexShrink: 0 }}>
                         <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>
-                          {item.model_number === '디자인출력' ? '디자인 비용' : item.division === '결제' ? '공임비(결제금액)' : '기본 공임'}
+                          {item.model_number === '디자인출력' ? '디자인 비용' : item.division === '결제' ? '공임비(결제)' : '기본 공임'}
                         </label>
                         <input
-                          type="number"
-                          value={item.labor_base === 0 ? '' : item.labor_base}
-                          onChange={(e) => updateOrderItem(index, { labor_base: parseInt(e.target.value) || 0 })}
+                          type="text"
+                          value={toCommaString(item.labor_base === 0 ? '' : item.labor_base)}
+                          onChange={(e) => updateOrderItem(index, { labor_base: fromCommaStringInt(e.target.value) })}
                           onKeyDown={(e) => handleKeyDown(e, index, 'labor_base')}
                           className="input-field"
                           style={{ width: '100%', height: '32px', padding: '4px 8px', fontSize: '15px', textAlign: 'right' }}
                         />
                       </div>
 
-                      {/* 공임단가 추가 */}
-                      <div style={{ gridColumn: 'span 5' }}>
-                        <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>추가 공임</label>
+                      {/* 스톤 공임 합계 금액 */}
+                      <div style={{ width: '100px', flexShrink: 0 }}>
+                        <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>스톤합계 금액</label>
                         <input
-                          type="number"
-                          value={item.labor_extra === 0 ? '' : item.labor_extra}
-                          disabled={item.division === '결제' || item.model_number === '디자인출력'}
-                          onChange={(e) => updateOrderItem(index, { labor_extra: parseInt(e.target.value) || 0 })}
-                          onKeyDown={(e) => handleKeyDown(e, index, 'labor_extra')}
-                          className="input-field"
-                          style={{ 
-                            width: '100%', 
-                            height: '32px', 
-                            padding: '4px 8px', 
-                            fontSize: '15px', 
-                            textAlign: 'right',
-                            cursor: (item.division === '결제' || item.model_number === '디자인출력') ? 'not-allowed' : 'text',
-                            opacity: (item.division === '결제' || item.model_number === '디자인출력') ? 0.6 : 1
-                          }}
-                        />
-                      </div>
-
-                      {/* 공임단가 중심 */}
-                      <div style={{ gridColumn: 'span 6' }}>
-                        <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>공임 (중심)</label>
-                        <input
-                          type="number"
-                          value={item.labor_main === 0 ? '' : item.labor_main}
-                          disabled={item.division === '결제' || item.model_number === '디자인출력'}
-                          onChange={(e) => updateOrderItem(index, { labor_main: parseInt(e.target.value) || 0 })}
-                          onKeyDown={(e) => handleKeyDown(e, index, 'labor_main')}
-                          className="input-field"
-                          style={{ 
-                            width: '100%', 
-                            height: '32px', 
-                            padding: '4px 8px', 
-                            fontSize: '15px', 
-                            textAlign: 'right',
-                            cursor: (item.division === '결제' || item.model_number === '디자인출력') ? 'not-allowed' : 'text',
-                            opacity: (item.division === '결제' || item.model_number === '디자인출력') ? 0.6 : 1
-                          }}
-                        />
-                      </div>
-
-                      {/* 공임단가 보조 */}
-                      <div style={{ gridColumn: 'span 5' }}>
-                        <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>공임 (보조)</label>
-                        <input
-                          type="number"
-                          value={item.labor_sub === 0 ? '' : item.labor_sub}
+                          type="text"
+                          value={toCommaString(item.labor_stone_total === 0 || item.labor_stone_total === undefined ? '' : item.labor_stone_total)}
                           disabled={item.division === '결제'}
-                          onChange={(e) => updateOrderItem(index, { labor_sub: parseInt(e.target.value) || 0 })}
-                          onKeyDown={(e) => handleKeyDown(e, index, 'labor_sub')}
+                          onChange={(e) => updateOrderItem(index, { labor_stone_total: fromCommaStringInt(e.target.value) })}
+                          onKeyDown={(e) => handleKeyDown(e, index, 'labor_stone_total')}
+                          placeholder={(() => {
+                            const calculated = (item.labor_main || 0) * (item.qty_main || 0) + (item.labor_sub || 0) * (item.qty_sub || 0);
+                            return toCommaString(calculated === 0 ? '0' : calculated);
+                          })()}
                           className="input-field"
                           style={{ 
                             width: '100%', 
@@ -736,7 +1005,7 @@ export const OrderGrid: React.FC = () => {
                       </div>
 
                       {/* 공임단가 급 */}
-                      <div style={{ gridColumn: 'span 3' }}>
+                      <div style={{ width: '80px', flexShrink: 0 }}>
                         <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>공임 급</label>
                         <select
                           value={item.grade || 3}
@@ -760,95 +1029,7 @@ export const OrderGrid: React.FC = () => {
                         </select>
                       </div>
                     </div>
-                  </div>
-
-                  {/* 3단계: 규격 및 메모 (사이즈, 주문 기타설명, 출고일, 계산금액) */}
-                  <div style={{ borderTop: '1px dashed rgba(255,255,255,0.08)', paddingTop: '12px' }}>
-                    <div style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--primary)', marginBottom: '8px', letterSpacing: '0.5px' }}>
-                      [3단계] 규격 및 상세 특이사항
-                    </div>
-                    <div className="order-form-step-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(24, minmax(0, 1fr))', gap: '12px', alignItems: 'end' }}>
-                      {/* 사이즈 */}
-                      <div style={{ gridColumn: 'span 4' }}>
-                        <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>사이즈</label>
-                        <input
-                          type="text"
-                          placeholder={(item.division === '결제' || item.model_number === '디자인출력') ? '입력 안 함' : '예: 12호'}
-                          value={item.size || ''}
-                          disabled={item.division === '결제' || item.model_number === '디자인출력'}
-                          onChange={(e) => updateOrderItem(index, { size: e.target.value })}
-                          onKeyDown={(e) => handleKeyDown(e, index, 'size')}
-                          className="input-field"
-                          style={{ 
-                            width: '100%', 
-                            height: '32px', 
-                            padding: '4px 8px', 
-                            fontSize: '15px',
-                            cursor: (item.division === '결제' || item.model_number === '디자인출력') ? 'not-allowed' : 'text',
-                            opacity: (item.division === '결제' || item.model_number === '디자인출력') ? 0.6 : 1
-                          }}
-                        />
-                      </div>
-
-                      {/* 주문 기타설명 */}
-                      <div style={{ gridColumn: 'span 12' }}>
-                        <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>주문 기타설명 (상세 비고)</label>
-                        <input
-                          type="text"
-                          placeholder="특이사항이나 전달 문구를 입력하세요."
-                          value={item.note || ''}
-                          onChange={(e) => updateOrderItem(index, { note: e.target.value })}
-                          onKeyDown={(e) => handleKeyDown(e, index, 'note')}
-                          className="input-field"
-                          style={{ width: '100%', height: '32px', padding: '4px 8px', fontSize: '15px' }}
-                        />
-                      </div>
-
-                      {/* 출고일 */}
-                      <div style={{ gridColumn: 'span 5' }}>
-                        <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px', whiteSpace: 'nowrap' }}>출고 예정일</label>
-                        <input
-                          type="date"
-                          value={item.release_date || ''}
-                          disabled={item.division === '결제' || item.model_number === '디자인출력'}
-                          onChange={(e) => updateOrderItem(index, { release_date: e.target.value })}
-                          onKeyDown={(e) => handleKeyDown(e, index, 'release_date')}
-                          className="input-field"
-                          style={{ 
-                            width: '100%', 
-                            height: '32px', 
-                            padding: '4px 8px', 
-                            fontSize: '15px',
-                            cursor: (item.division === '결제' || item.model_number === '디자인출력') ? 'not-allowed' : 'default',
-                            opacity: (item.division === '결제' || item.model_number === '디자인출력') ? 0.6 : 1
-                          }}
-                        />
-                      </div>
-
-                      {/* 계산금액 */}
-                      <div style={{ gridColumn: 'span 3', textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <span style={{ fontSize: '14px', color: 'var(--text-muted)', display: 'block', whiteSpace: 'nowrap' }}>실시간 계산금액</span>
-                        <div style={{ 
-                          fontSize: '16px', 
-                          fontWeight: '800', 
-                          color: 'var(--primary)',
-                          background: 'rgba(212, 175, 55, 0.08)',
-                          border: '1px solid rgba(212, 175, 55, 0.2)',
-                          padding: '0 8px',
-                          borderRadius: '6px',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'flex-end',
-                          height: '32px',
-                          width: '100%',
-                          boxSizing: 'border-box',
-                          whiteSpace: 'nowrap'
-                        }}>
-                          {(item.calculated_price || 0).toLocaleString()} 원
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  )}
                 </div>
               );
             })}

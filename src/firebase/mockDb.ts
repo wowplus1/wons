@@ -27,6 +27,7 @@ export interface Stone {
   shape: string;
   size: string;
   weight_carat: number;
+  deduction_weight?: number; // 차감 중량
   grade_prices: {
     [grade: string]: number; // grade_1, grade_2, grade_3, grade_4
   };
@@ -79,6 +80,7 @@ export interface CatalogItem {
   default_stones: {
     stone_id: string;
     quantity: number;
+    description?: string;
   }[];
   images: string[];
   created_at: string;
@@ -126,12 +128,14 @@ export interface OrderItem {
   labor_extra: number;      // 추가 공임
   labor_main: number;       // 중심 스톤 공임단가
   labor_sub: number;        // 보조 스톤 공임단가
+  labor_stone_total?: number; // 스톤공임 합계 금액
   grade: number;            // 급 (등급)
   
   // 알수 및 중량
   qty_main: number;         // 중심 알수 (메)
   qty_sub: number;          // 보조 알수 (보)
   stone_weight_ea: number;  // 알당 중량 (알중 / EA)
+  gold_weight?: number;     // 금 중량
   
   size: string;             // 사이즈
   note: string;             // 주문 기타설명
@@ -590,9 +594,8 @@ export const mockDb = {
         
         const baseLabor = item.labor_base || 0;
         const extraLabor = item.labor_extra || 0;
-        const mainStoneLabor = (item.labor_main || 0) * (item.qty_main || 0);
-        const subStoneLabor = (item.labor_sub || 0) * (item.qty_sub || 0);
-        const totalLaborCost = baseLabor + extraLabor + mainStoneLabor + subStoneLabor;
+        const stoneLabor = item.labor_stone_total !== undefined ? item.labor_stone_total : ((item.labor_main || 0) * (item.qty_main || 0) + (item.labor_sub || 0) * (item.qty_sub || 0));
+        const totalLaborCost = baseLabor + extraLabor + stoneLabor;
         
         item.calculated_price = Math.round((goldCost + totalLaborCost) * item.quantity);
       }

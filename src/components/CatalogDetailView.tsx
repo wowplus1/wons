@@ -5,9 +5,33 @@ import type { CatalogItem } from '../firebase/mockDb';
 import { X, ExternalLink, Image as ImageIcon } from 'lucide-react';
 
 export const CatalogDetailView: React.FC = () => {
-  const { catalog, stones, fetchDb } = useErpStore();
+  const { catalog, stones, currentRates, goldRates, fetchDb, deleteCatalogItem } = useErpStore();
   const [item, setItem] = useState<CatalogItem | null>(null);
   const [isMobile, setIsMobile] = useState(false);
+
+  const handleDelete = async () => {
+    if (!item) return;
+    if (window.confirm(`${item.model_number} 상품을 카탈로그에서 완전히 삭제하시겠습니까?`)) {
+      try {
+        await deleteCatalogItem(item.model_number);
+        alert("삭제가 완료되었습니다.");
+        if (window.opener) {
+          try {
+            if (typeof window.opener.syncErpDb === 'function') {
+              window.opener.syncErpDb();
+            } else {
+              window.opener.location.reload();
+            }
+          } catch (e) {
+            console.error("Failed to sync opener window", e);
+          }
+        }
+        window.close();
+      } catch (e) {
+        alert("삭제 중 오류가 발생했습니다.");
+      }
+    }
+  };
 
   useEffect(() => {
     const checkMobile = () => {
@@ -72,6 +96,18 @@ export const CatalogDetailView: React.FC = () => {
   // 순수 금중량 (기본중량 - 총 차감중량)
   const pureGoldWeight = Math.max(0, (item.base_weight || 0) - totalDeductionWeight);
 
+  // 금 시세 및 금값 계산
+  const activeRate = currentRates || (goldRates && goldRates.length > 0 ? goldRates[goldRates.length - 1] : null);
+  const goldPricePerG = (() => {
+    if (!activeRate) return 0;
+    const mat = mainMaterial || '14K';
+    if (mat === '14K') return activeRate.sell_rates.gold_14k_per_g;
+    if (mat === '18K') return activeRate.sell_rates.gold_18k_per_g;
+    if (mat === '24K') return activeRate.sell_rates.gold_24k_per_g;
+    return activeRate.sell_rates.silver_per_g || 0;
+  })();
+  const goldCost = Math.round(pureGoldWeight * goldPricePerG);
+
   // 1~4등급의 공임 단가 맵
   const materialLaborMap = (() => {
     if (item.labor_fees_v2 && item.labor_fees_v2[mainMaterial]) {
@@ -81,24 +117,35 @@ export const CatalogDetailView: React.FC = () => {
           grade_1: Number(baseFee.grade_1) || 0,
           grade_2: Number(baseFee.grade_2) || 0,
           grade_3: Number(baseFee.grade_3) || 0,
-          grade_4: Number(baseFee.grade_4) || 0
+          grade_4: Number(baseFee.grade_4) || 0,
+          color: baseFee.color || '전체'
         };
       }
     }
-    return item.base_labor_fees[mainMaterial] || {
-      grade_1: 60000,
-      grade_2: 60000,
-      grade_3: 60000,
-      grade_4: 60000
+    return {
+      ...(item.base_labor_fees[mainMaterial] || {
+        grade_1: 60000,
+        grade_2: 60000,
+        grade_3: 60000,
+        grade_4: 60000
+      }),
+      color: 'G'
     };
   })();
 
   // 스톤 세팅 추가공임 계산
   const stoneQty = item.default_stones.reduce((sum, s) => sum + s.quantity, 0);
-  const stoneLaborTotal = stoneQty * item.extra_labor_fee;
 
-  // 관련 제품 목록 (나를 제외한 나머지 카탈로그 아이템들)
-  const relatedItems = catalog.filter(c => c.model_number !== item.model_number);
+  // 관련 제품 목록 (세트 모델 번호가 설정된 경우 해당되는 카탈로그 아이템들만 노출)
+  const relatedItems = catalog.filter(c => {
+    if (c.model_number === item.model_number) return false;
+    if (item.set_model_numbers && item.set_model_numbers.length > 0) {
+      return item.set_model_numbers.some(
+        num => num.trim().toUpperCase() === c.model_number.trim().toUpperCase()
+      );
+    }
+    return false;
+  });
 
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh', padding: isMobile ? '8px' : '16px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -130,6 +177,25 @@ export const CatalogDetailView: React.FC = () => {
               title="수정"
             >
               <ExternalLink size={12} /> <span>수정</span>
+            </button>
+            <button 
+              onClick={handleDelete}
+              style={{ 
+                background: 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)', 
+                border: 'none', 
+                color: 'var(--text-inverse)', 
+                cursor: 'pointer', 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '4px',
+                padding: '6px 12px',
+                borderRadius: '4px',
+                fontSize: '15px',
+                fontWeight: '600'
+              }} 
+              title="삭제"
+            >
+              <X size={12} /> <span>삭제</span>
             </button>
             <button 
               onClick={() => window.close()} 
@@ -178,7 +244,7 @@ export const CatalogDetailView: React.FC = () => {
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed var(--border-color)', paddingBottom: '6px' }}>
               <span style={{ color: 'var(--text-muted)' }}>스톤 중량:</span>
-              <strong style={{ color: 'var(--danger)' }}>{totalStonesWeight.toFixed(3)} g</strong>
+              <strong style={{ color: 'var(--danger)' }}>{totalDeductionWeight.toFixed(3)} g</strong>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed var(--border-color)', paddingBottom: '6px' }}>
               <span style={{ color: 'var(--text-muted)' }}>합계 중량:</span>
@@ -235,7 +301,7 @@ export const CatalogDetailView: React.FC = () => {
               <div style={{ borderRight: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '8px', textAlign: 'center', gap: '4px' }}>
                 <span style={{ fontWeight: '600' }}>{item.materials.join(', ')}[{pureGoldWeight.toFixed(2)}]</span>
                 <span style={{ color: 'var(--danger)', fontSize: '15px', fontWeight: '700' }} title="스톤 중량">
-                  스톤: {totalStonesWeight.toFixed(3)} g
+                  스톤: {totalDeductionWeight.toFixed(3)} g
                 </span>
                 <span style={{ color: 'var(--primary)', fontSize: '15px', fontWeight: '700' }} title="합계 중량">
                   합계: {item.base_weight ? item.base_weight.toFixed(3) : '0.000'} g
@@ -246,7 +312,7 @@ export const CatalogDetailView: React.FC = () => {
                 <table style={{ width: '100%', height: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'right' }}>
                   <thead>
                     <tr style={{ background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
-                      <th style={{ padding: '4px', textAlign: 'center', borderRight: '1px solid var(--border-color)' }}>G</th>
+                      <th style={{ padding: '4px', textAlign: 'center', borderRight: '1px solid var(--border-color)' }}>{materialLaborMap.color}</th>
                       <th style={{ padding: '4px', borderRight: '1px solid var(--border-color)' }}>기본</th>
                       <th style={{ padding: '4px', borderRight: '1px solid var(--border-color)' }}>알</th>
                       <th style={{ padding: '4px', borderRight: '1px solid var(--border-color)', color: 'var(--primary)' }}>합계</th>
@@ -256,14 +322,21 @@ export const CatalogDetailView: React.FC = () => {
                   <tbody>
                     {[1, 2, 3, 4].map(g => {
                       const baseCost = (materialLaborMap as any)[`grade_${g}`] ?? 60000;
-                      const totalCost = baseCost + stoneLaborTotal;
+                      const gradeStoneLaborSum = item.default_stones.reduce((sum, ds) => {
+                        const matchedStone = stones.find(s => s.stone_id === ds.stone_id);
+                        if (!matchedStone) return sum;
+                        const gradePrice = Number(matchedStone.grade_prices[`grade_${g}`]) || 0;
+                        return sum + (gradePrice * ds.quantity);
+                      }, 0);
+                      const gradeStoneLaborTotal = gradeStoneLaborSum + (stoneQty * item.extra_labor_fee);
+                      const totalCost = baseCost + gradeStoneLaborTotal;
                       return (
                         <tr key={g} style={{ borderBottom: g < 4 ? '1px solid var(--border-color)' : 'none' }}>
                           <td style={{ padding: '3px', textAlign: 'center', borderRight: '1px solid var(--border-color)', fontWeight: '700' }}>{g}등</td>
                           <td style={{ padding: '3px', borderRight: '1px solid var(--border-color)' }}>{baseCost.toLocaleString()}</td>
-                          <td style={{ padding: '3px', borderRight: '1px solid var(--border-color)' }}>{stoneLaborTotal.toLocaleString()}</td>
+                          <td style={{ padding: '3px', borderRight: '1px solid var(--border-color)' }}>{gradeStoneLaborTotal.toLocaleString()}</td>
                           <td style={{ padding: '3px', borderRight: '1px solid var(--border-color)', fontWeight: '700', color: 'var(--primary)' }}>{totalCost.toLocaleString()}</td>
-                          <td style={{ padding: '3px', fontWeight: '700', color: 'var(--primary)' }}>{totalCost.toLocaleString()}</td>
+                          <td style={{ padding: '3px', fontWeight: '700', color: 'var(--primary)' }}>{(totalCost + goldCost).toLocaleString()}</td>
                         </tr>
                       );
                     })}
@@ -316,7 +389,7 @@ export const CatalogDetailView: React.FC = () => {
             </thead>
             <tbody>
               {item.default_stones.length > 0 ? (
-                item.default_stones.map((ds, index) => {
+                item.default_stones.map((ds) => {
                   const matchedStone = stones.find(s => s.stone_id === ds.stone_id);
                   return (
                     <React.Fragment key={ds.stone_id}>
@@ -328,18 +401,9 @@ export const CatalogDetailView: React.FC = () => {
                           {ds.quantity}
                         </td>
                         <td style={{ padding: '8px 10px', color: 'var(--text-muted)' }}>
-                          보조: 메인/RD/알물림비 ({item.extra_labor_fee.toLocaleString()}원)
+                          {ds.description || ''}
                         </td>
                       </tr>
-                      {index === item.default_stones.length - 1 && (
-                        <tr style={{ background: 'rgba(255,255,255,0.005)' }}>
-                          <td style={{ padding: '6px 10px', color: 'var(--text-muted)', borderRight: '1px solid var(--border-color)' }}>
-                            기타:
-                          </td>
-                          <td style={{ padding: '6px 10px', borderRight: '1px solid var(--border-color)' }}></td>
-                          <td style={{ padding: '6px 10px', color: 'var(--text-muted)' }}></td>
-                        </tr>
-                      )}
                     </React.Fragment>
                   );
                 })
@@ -355,44 +419,51 @@ export const CatalogDetailView: React.FC = () => {
         </div>
 
         {/* 4. 관련제품 썸네일 그리드 */}
-        <div>
-          <span style={{ fontSize: '14px', color: 'var(--primary)', fontWeight: '700', display: 'block', marginBottom: '8px', background: 'rgba(212,175,55,0.05)', padding: '6px 10px', borderRadius: '4px', border: '1px solid var(--border-color)' }}>
-            관련제품 목록
-          </span>
-          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(4, 1fr)' : 'repeat(7, 1fr)', gap: '6px', padding: '4px' }}>
-            {/* 14개 가상 슬롯 생성하여 썸네일 표시 */}
-            {Array.from({ length: 14 }).map((_, idx) => {
-              // catalog의 다른 제품들을 순서대로 매핑하고, 모자라면 기본 이미지 배치
-              const relItem = relatedItems[idx % relatedItems.length];
-              const imgUrl = relItem?.images[0] || 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=150';
-              const modelNo = relItem?.model_number || `G-MOCK-${idx + 1}`;
-              
-              return (
-                <div 
-                  key={idx}
-                  onClick={() => {
-                    if (relItem) {
-                      window.location.search = `?popup=catalog_detail&model=${relItem.model_number}`;
-                    }
-                  }}
-                  style={{ 
-                    border: '1px solid var(--border-color)', 
-                    borderRadius: '4px', 
-                    overflow: 'hidden', 
-                    aspectRatio: '1', 
-                    cursor: 'pointer',
-                    background: '#0a0a0f',
-                    transition: 'border-color 0.2s ease, transform 0.2s ease'
-                  }}
-                  className="catalog-card"
-                  title={`${modelNo} 상세보기로 이동`}
-                >
-                  <img src={imgUrl} alt={modelNo} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                </div>
-              );
-            })}
+        {relatedItems.length > 0 && (
+          <div>
+            <span style={{ fontSize: '14px', color: 'var(--primary)', fontWeight: '700', display: 'block', marginBottom: '8px', background: 'rgba(212,175,55,0.05)', padding: '6px 10px', borderRadius: '4px', border: '1px solid var(--border-color)' }}>
+              관련제품 목록
+            </span>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(4, 1fr)' : 'repeat(7, 1fr)', gap: '6px', padding: '4px' }}>
+              {relatedItems.map((relItem) => {
+                const imgUrl = relItem.images[0] || 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=150';
+                return (
+                  <div 
+                    key={relItem.model_number}
+                    onClick={() => {
+                      window.location.search = `?popup=catalog_detail&model=${encodeURIComponent(relItem.model_number)}`;
+                    }}
+                    style={{ 
+                      border: '1px solid var(--border-color)', 
+                      borderRadius: '4px', 
+                      overflow: 'hidden', 
+                      aspectRatio: '1', 
+                      cursor: 'pointer',
+                      background: '#0a0a0f',
+                      transition: 'border-color 0.2s ease, transform 0.2s ease'
+                    }}
+                    className="catalog-card"
+                    title={`${relItem.model_number} 상세보기로 이동`}
+                  >
+                    <img src={imgUrl} alt={relItem.model_number} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* 4.5 기타 설명 및 사양 정보 */}
+        {item.note && item.note.trim() !== '' && (
+          <div style={{ marginBottom: '16px', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '12px', background: 'rgba(255,255,255,0.01)' }}>
+            <span style={{ fontSize: '15px', color: 'var(--primary)', fontWeight: '600', display: 'block', borderBottom: '1px dashed var(--border-color)', paddingBottom: '4px', marginBottom: '8px' }}>
+              기타 설명 및 사양 정보
+            </span>
+            <div style={{ fontSize: '14px', color: 'var(--text-muted)', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>
+              {item.note}
+            </div>
+          </div>
+        )}
 
         {/* 5. 닫기 버튼 */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px', borderTop: '1px solid var(--border-color)', paddingTop: '12px' }}>

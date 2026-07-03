@@ -231,7 +231,7 @@ export const JewelryWorkListPrint: React.FC = () => {
               
               // 개당 공임비 (기본+추가+스톤공임)
               const baseExtra = (item.labor_base || 0) + (item.labor_extra || 0);
-              const stoneLabor = ((item.labor_main || 0) * (item.qty_main || 0)) + ((item.labor_sub || 0) * (item.qty_sub || 0));
+              const stoneLabor = item.labor_stone_total !== undefined ? item.labor_stone_total : ((item.labor_main || 0) * (item.qty_main || 0)) + ((item.labor_sub || 0) * (item.qty_sub || 0));
               const singleLabor = baseExtra + stoneLabor;
 
               return (

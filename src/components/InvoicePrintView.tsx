@@ -77,9 +77,8 @@ export const InvoicePrintView: React.FC = () => {
     // Labor calculation
     const baseLabor = item.labor_base || 0;
     const extraLabor = item.labor_extra || 0;
-    const mainStoneLabor = (item.labor_main || 0) * (item.qty_main || 0);
-    const subStoneLabor = (item.labor_sub || 0) * (item.qty_sub || 0);
-    const laborPerEa = baseLabor + extraLabor + mainStoneLabor + subStoneLabor;
+    const stoneLabor = item.labor_stone_total !== undefined ? item.labor_stone_total : ((item.labor_main || 0) * (item.qty_main || 0)) + ((item.labor_sub || 0) * (item.qty_sub || 0));
+    const laborPerEa = baseLabor + extraLabor + stoneLabor;
     const laborTotalRow = laborPerEa * qty;
 
     // Subtotal row logic (weight vs price customer)

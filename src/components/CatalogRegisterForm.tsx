@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useErpStore } from '../store/useErpStore';
 import type { CatalogItem } from '../firebase/mockDb';
 import { PackagePlus } from 'lucide-react';
+import { toCommaString, fromCommaStringInt } from '../utils/numberFormat';
 
 export const CatalogRegisterForm: React.FC = () => {
   const { stones, catalog, saveCatalogItem } = useErpStore();
@@ -21,7 +22,7 @@ export const CatalogRegisterForm: React.FC = () => {
 
   const manufacturer = '자체제작';
   const [manufacturerCode, setManufacturerCode] = useState('M-101');
-  const [vendor, setVendor] = useState('JP');
+  const [vendor, setVendor] = useState('');
   const [modelNo, setModelNo] = useState('');
   const [relatedSetNo, setRelatedSetNo] = useState('');
   const [baseWeight, setBaseWeight] = useState('3.75');
@@ -34,8 +35,23 @@ export const CatalogRegisterForm: React.FC = () => {
     { type: '기본', color: 'G', cost: '0', grade1: '0', grade2: '0', grade3: '0', grade4: '0' }
   ]);
 
-  const [stoneRows, setStoneRows] = useState(
-    Array.from({ length: 7 }, (_, i) => ({
+  const [stoneRows, setStoneRows] = useState<
+    Array<{
+      row_id: number;
+      is_main: string;
+      stone_id: string;
+      quantity: number;
+      weight_deduction: string;
+      labor_apply: string;
+      weight: number;
+      buy_price: number;
+      grade_prices: { grade_1: number; grade_2: number; grade_3: number; grade_4: number };
+      description: string;
+      search_term?: string;
+      is_dropdown_open?: boolean;
+    }>
+  >(
+    Array.from({ length: 4 }, (_, i) => ({
       row_id: i + 1,
       is_main: 'N',
       stone_id: '',
@@ -45,10 +61,13 @@ export const CatalogRegisterForm: React.FC = () => {
       weight: 0,
       buy_price: 0,
       grade_prices: { grade_1: 0, grade_2: 0, grade_3: 0, grade_4: 0 },
-      description: ''
+      description: '',
+      search_term: '',
+      is_dropdown_open: false
     }))
   );
 
+  const [extraLaborFee, setExtraLaborFee] = useState('0');
   const [manualDeductionWeight, setManualDeductionWeight] = useState('0.000');
   const [note, setNote] = useState('');
   const [images, setImages] = useState<string[]>([]);
@@ -95,7 +114,7 @@ export const CatalogRegisterForm: React.FC = () => {
         }
         setLaborFees(updatedLaborFees);
 
-        const updatedStoneRows = Array.from({ length: 7 }, (_, i) => {
+        const updatedStoneRows = Array.from({ length: 4 }, (_, i) => {
           const ds = matched.default_stones[i];
           if (ds) {
             const selectedStone = stones.find(s => s.stone_id === ds.stone_id);
@@ -106,15 +125,17 @@ export const CatalogRegisterForm: React.FC = () => {
               quantity: ds.quantity,
               weight_deduction: 'Y',
               labor_apply: 'Y',
-              weight: selectedStone?.weight_carat || 0,
-              buy_price: 500,
+              weight: (selectedStone?.weight_carat || 0) + (selectedStone?.deduction_weight || 0),
+              buy_price: selectedStone?.purchase_price !== undefined ? selectedStone.purchase_price : 500,
               grade_prices: selectedStone ? {
                 grade_1: selectedStone.grade_prices.grade_1,
                 grade_2: selectedStone.grade_prices.grade_2,
                 grade_3: selectedStone.grade_prices.grade_3,
                 grade_4: selectedStone.grade_prices.grade_4
               } : { grade_1: 0, grade_2: 0, grade_3: 0, grade_4: 0 },
-              description: ''
+              description: ds.description || '',
+              search_term: selectedStone?.name || '',
+              is_dropdown_open: false
             };
           } else {
             return {
@@ -127,12 +148,17 @@ export const CatalogRegisterForm: React.FC = () => {
               weight: 0,
               buy_price: 0,
               grade_prices: { grade_1: 0, grade_2: 0, grade_3: 0, grade_4: 0 },
-              description: ''
+              description: '',
+              search_term: '',
+              is_dropdown_open: false
             };
           }
         });
         setStoneRows(updatedStoneRows);
 
+        if (matched.extra_labor_fee !== undefined) {
+          setExtraLaborFee(String(matched.extra_labor_fee || 0));
+        }
         if (matched.manual_deduction_weight !== undefined) {
           setManualDeductionWeight(Number(matched.manual_deduction_weight).toFixed(3));
         }
@@ -222,14 +248,16 @@ export const CatalogRegisterForm: React.FC = () => {
         updated[index] = {
           ...updated[index],
           stone_id: val,
-          weight: selectedStone.weight_carat || 0,
-          buy_price: 500,
+          weight: (selectedStone.weight_carat || 0) + (selectedStone.deduction_weight || 0),
+          buy_price: selectedStone.purchase_price || 500,
           grade_prices: {
             grade_1: selectedStone.grade_prices.grade_1,
             grade_2: selectedStone.grade_prices.grade_2,
             grade_3: selectedStone.grade_prices.grade_3,
             grade_4: selectedStone.grade_prices.grade_4
-          }
+          },
+          search_term: selectedStone.name,
+          is_dropdown_open: false
         };
       } else {
         updated[index] = {
@@ -237,7 +265,9 @@ export const CatalogRegisterForm: React.FC = () => {
           stone_id: '',
           weight: 0,
           buy_price: 0,
-          grade_prices: { grade_1: 0, grade_2: 0, grade_3: 0, grade_4: 0 }
+          grade_prices: { grade_1: 0, grade_2: 0, grade_3: 0, grade_4: 0 },
+          search_term: '',
+          is_dropdown_open: false
         };
       }
     } else {
@@ -261,11 +291,23 @@ export const CatalogRegisterForm: React.FC = () => {
     };
 
     const defaultStonesMap = stoneRows
-      .filter(row => row.stone_id && row.quantity > 0)
-      .map(row => ({
-        stone_id: row.stone_id,
-        quantity: row.quantity
-      }));
+      .map(row => {
+        let finalStoneId = row.stone_id;
+        if (!finalStoneId && row.search_term) {
+          const matched = stones.find(
+            s => s.name.toLowerCase().trim() === row.search_term!.toLowerCase().trim()
+          );
+          if (matched) {
+            finalStoneId = matched.stone_id;
+          }
+        }
+        return {
+          stone_id: finalStoneId,
+          quantity: row.quantity,
+          description: row.description
+        };
+      })
+      .filter(row => row.stone_id && row.quantity > 0);
 
     const store = useErpStore.getState();
     const existingItem = store.catalog.find(c => c.model_number.toUpperCase() === modelNo.toUpperCase());
@@ -284,7 +326,7 @@ export const CatalogRegisterForm: React.FC = () => {
         return [currentMat];
       })(),
       base_labor_fees: baseLaborFeesMap,
-      extra_labor_fee: 0,
+      extra_labor_fee: parseFloat(extraLaborFee) || 0,
       labor_fees_v2: {
         ...(existingItem?.labor_fees_v2 || {}),
         [baseMaterial]: laborFees.map(lf => ({
@@ -335,7 +377,12 @@ export const CatalogRegisterForm: React.FC = () => {
   };
 
   const totalStonesQty = stoneRows.reduce((sum, r) => sum + (r.quantity || 0), 0);
-  const totalStonesWeight = stoneRows.reduce((sum, r) => sum + (r.weight * (r.quantity || 0)), 0);
+  const totalStonesWeight = stoneRows.reduce((sum, r) => sum + (Number(r.weight || 0) * (r.quantity || 0)), 0);
+  const totalBuyPriceSum = stoneRows.reduce((sum, r) => sum + (r.buy_price * (r.quantity || 0)), 0);
+  const totalGrade1Sum = stoneRows.reduce((sum, r) => sum + ((r.grade_prices?.grade_1 || 0) * (r.quantity || 0)), 0);
+  const totalGrade2Sum = stoneRows.reduce((sum, r) => sum + ((r.grade_prices?.grade_2 || 0) * (r.quantity || 0)), 0);
+  const totalGrade3Sum = stoneRows.reduce((sum, r) => sum + ((r.grade_prices?.grade_3 || 0) * (r.quantity || 0)), 0);
+  const totalGrade4Sum = stoneRows.reduce((sum, r) => sum + ((r.grade_prices?.grade_4 || 0) * (r.quantity || 0)), 0);
   const totalDeductionWeight = totalStonesWeight + (parseFloat(manualDeductionWeight) || 0);
   const finalTotalWeight = Math.max(0, (parseFloat(baseWeight) || 0) - totalDeductionWeight);
 
@@ -380,51 +427,49 @@ export const CatalogRegisterForm: React.FC = () => {
               </div>
               <div className="catalog-form-section" style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '10px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '15px', color: '#a3a8b8', marginBottom: '2px', fontWeight: '500' }}>제조코드(제조번호)</label>
-                  <input type="text" value={manufacturerCode} onChange={e => setManufacturerCode(e.target.value)} className="input-field" style={{ width: '100%', padding: '5px 10px', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }} />
+                  <label style={{ display: 'block', fontSize: '15px', color: 'var(--text-muted)', marginBottom: '2px', fontWeight: '500' }}>제조코드(제조번호)</label>
+                  <input type="text" value={manufacturerCode} onChange={e => setManufacturerCode(e.target.value)} className="input-field" style={{ width: '100%', padding: '5px 10px', fontSize: '15px', border: '1px solid var(--border-color)', background: 'var(--bg-surface)' }} />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '15px', color: '#a3a8b8', marginBottom: '2px', fontWeight: '500' }}>*모델번호</label>
-                  <input type="text" value={modelNo} onChange={e => setModelNo(e.target.value)} className="input-field" style={{ width: '100%', padding: '5px 10px', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: isEditMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.2)', textTransform: 'uppercase' }} required disabled={isEditMode} />
+                  <label style={{ display: 'block', fontSize: '15px', color: 'var(--text-muted)', marginBottom: '2px', fontWeight: '500' }}>*모델번호</label>
+                  <input type="text" value={modelNo} onChange={e => setModelNo(e.target.value)} className="input-field" style={{ width: '100%', padding: '5px 10px', fontSize: '15px', border: '1px solid var(--border-color)', background: isEditMode ? 'rgba(0,0,0,0.05)' : 'var(--bg-surface)', textTransform: 'uppercase' }} required disabled={isEditMode} />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '15px', color: '#a3a8b8', marginBottom: '2px', fontWeight: '500' }}>매입처</label>
-                  <input type="text" value={vendor} onChange={e => setVendor(e.target.value)} className="input-field" style={{ width: '100%', padding: '5px 10px', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }} />
+                  <label style={{ display: 'block', fontSize: '15px', color: 'var(--text-muted)', marginBottom: '2px', fontWeight: '500' }}>매입처</label>
+                  <input type="text" value={vendor} onChange={e => setVendor(e.target.value)} className="input-field" style={{ width: '100%', padding: '5px 10px', fontSize: '15px', border: '1px solid var(--border-color)', background: 'var(--bg-surface)' }} />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '15px', color: '#a3a8b8', marginBottom: '2px', fontWeight: '500' }}>관련제품(세트)번호</label>
-                  <input type="text" value={relatedSetNo} onChange={e => setRelatedSetNo(e.target.value)} className="input-field" style={{ width: '100%', padding: '5px 10px', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }} />
+                  <label style={{ display: 'block', fontSize: '15px', color: 'var(--text-muted)', marginBottom: '2px', fontWeight: '500' }}>관련제품(세트)번호</label>
+                  <input type="text" value={relatedSetNo} onChange={e => setRelatedSetNo(e.target.value)} className="input-field" style={{ width: '100%', padding: '5px 10px', fontSize: '15px', border: '1px solid var(--border-color)', background: 'var(--bg-surface)' }} />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '15px', color: '#a3a8b8', marginBottom: '2px', fontWeight: '500' }}>기본 중량(g)</label>
-                  <input type="number" step="0.01" value={baseWeight} onChange={e => setBaseWeight(e.target.value)} className="input-field" style={{ width: '100%', padding: '5px 10px', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)', textAlign: 'right' }} />
+                  <label style={{ display: 'block', fontSize: '15px', color: 'var(--text-muted)', marginBottom: '2px', fontWeight: '500' }}>기본 중량(g)</label>
+                  <input type="number" step="0.01" value={baseWeight} onChange={e => setBaseWeight(e.target.value)} className="input-field" style={{ width: '100%', padding: '5px 10px', fontSize: '15px', border: '1px solid var(--border-color)', background: 'var(--bg-surface)', textAlign: 'right' }} />
                 </div>
                 <div style={{ gridColumn: isMobile ? 'auto' : 'span 2' }}>
-                  <label style={{ display: 'block', fontSize: '15px', color: '#a3a8b8', marginBottom: '2px', fontWeight: '500' }}>*모델분류</label>
-                  <select value={category} onChange={e => { setCategory(e.target.value); setIsSet(e.target.value === 'Set'); }} className="input-field" style={{ width: '100%', padding: '5px', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }}>
+                  <label style={{ display: 'block', fontSize: '15px', color: 'var(--text-muted)', marginBottom: '2px', fontWeight: '500' }}>*모델분류</label>
+                  <select value={category} onChange={e => { setCategory(e.target.value); setIsSet(e.target.value === 'Set'); }} className="input-field" style={{ width: '100%', padding: '5px', fontSize: '15px', border: '1px solid var(--border-color)', background: 'var(--bg-surface)' }}>
                     <option value="Ring">반지 (Ring)</option>
                     <option value="Necklace">목걸이 (Necklace)</option>
                     <option value="Earring">귀걸이 (Earring)</option>
                     <option value="Set">세트상품 (Set)</option>
                   </select>
                 </div>
-              </div>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '10px', marginTop: '6px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '15px', color: '#a3a8b8', marginBottom: '2px', fontWeight: '500' }}>기본재질</label>
-                <select value={baseMaterial} onChange={e => setBaseMaterial(e.target.value)} className="input-field" style={{ width: '100%', padding: '5px', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }}>
-                  <option value="14K">14K</option>
-                  <option value="18K">18K</option>
-                  <option value="24K">순금</option>
-                </select>
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '15px', color: '#a3a8b8', marginBottom: '2px', fontWeight: '500' }}>단종여부</label>
-                <select value={discontinuedYn} onChange={e => setDiscontinuedYn(e.target.value)} className="input-field" style={{ width: '100%', padding: '5px', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }}>
-                  <option value="N">N: 정상</option>
-                  <option value="Y">Y: 단종</option>
-                </select>
+                <div>
+                  <label style={{ display: 'block', fontSize: '15px', color: 'var(--text-muted)', marginBottom: '2px', fontWeight: '500' }}>기본재질</label>
+                  <select value={baseMaterial} onChange={e => setBaseMaterial(e.target.value)} className="input-field" style={{ width: '100%', padding: '5px', fontSize: '15px', border: '1px solid var(--border-color)', background: 'var(--bg-surface)' }}>
+                    <option value="14K">14K</option>
+                    <option value="18K">18K</option>
+                    <option value="24K">순금</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '15px', color: 'var(--text-muted)', marginBottom: '2px', fontWeight: '500' }}>단종여부</label>
+                  <select value={discontinuedYn} onChange={e => setDiscontinuedYn(e.target.value)} className="input-field" style={{ width: '100%', padding: '5px', fontSize: '15px', border: '1px solid var(--border-color)', background: 'var(--bg-surface)' }}>
+                    <option value="N">N: 정상</option>
+                    <option value="Y">Y: 단종</option>
+                  </select>
+                </div>
               </div>
             </div>
           </div>
@@ -452,7 +497,7 @@ export const CatalogRegisterForm: React.FC = () => {
                     <tr key={lf.type} style={{ borderBottom: '1px solid var(--border-color)', background: idx % 2 === 0 ? 'rgba(255,255,255,0.005)' : 'rgba(255,255,255,0.02)' }}>
                       <td style={{ padding: '6px 8px', fontWeight: '700', color: 'var(--primary)' }}>{lf.type}</td>
                       <td style={{ padding: '4px 6px' }}>
-                        <select value={lf.color} onChange={e => handleLaborFeeChange(idx, 'color', e.target.value)} className="input-field" style={{ width: '100%', padding: '3px 6px', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }}>
+                        <select value={lf.color} onChange={e => handleLaborFeeChange(idx, 'color', e.target.value)} className="input-field" style={{ width: '100%', padding: '3px 6px', fontSize: '15px', border: '1px solid var(--border-color)', background: 'var(--bg-surface)' }}>
                           <option value="">전체색상</option>
                           <option value="G">G</option>
                           <option value="G/B">G/B</option>
@@ -474,19 +519,74 @@ export const CatalogRegisterForm: React.FC = () => {
                         </select>
                       </td>
                       <td style={{ padding: '4px 6px' }}>
-                        <input type="number" value={lf.cost} onChange={e => handleLaborFeeChange(idx, 'cost', e.target.value)} className="input-field" style={{ width: '100%', padding: '3px 6px', textAlign: 'right', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }} />
+                        <input 
+                          type="text" 
+                          value={toCommaString(lf.cost === '0' || !lf.cost ? '' : lf.cost)} 
+                          onChange={e => handleLaborFeeChange(idx, 'cost', String(fromCommaStringInt(e.target.value)))} 
+                          onBlur={e => {
+                            if (e.target.value.trim() === '') {
+                              handleLaborFeeChange(idx, 'cost', '0');
+                            }
+                          }}
+                          className="input-field" 
+                          style={{ width: '100%', padding: '3px 6px', textAlign: 'right', fontSize: '15px', border: '1px solid var(--border-color)', background: 'var(--bg-surface)' }} 
+                        />
                       </td>
                       <td style={{ padding: '4px 6px' }}>
-                        <input type="number" value={lf.grade1} onChange={e => handleLaborFeeChange(idx, 'grade1', e.target.value)} className="input-field" style={{ width: '100%', padding: '3px 6px', textAlign: 'right', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }} />
+                        <input 
+                          type="text" 
+                          value={toCommaString(lf.grade1 === '0' || !lf.grade1 ? '' : lf.grade1)} 
+                          onChange={e => handleLaborFeeChange(idx, 'grade1', String(fromCommaStringInt(e.target.value)))} 
+                          onBlur={e => {
+                            if (e.target.value.trim() === '') {
+                              handleLaborFeeChange(idx, 'grade1', '0');
+                            }
+                          }}
+                          className="input-field" 
+                          style={{ width: '100%', padding: '3px 6px', textAlign: 'right', fontSize: '15px', border: '1px solid var(--border-color)', background: 'var(--bg-surface)' }} 
+                        />
                       </td>
                       <td style={{ padding: '4px 6px' }}>
-                        <input type="number" value={lf.grade2} onChange={e => handleLaborFeeChange(idx, 'grade2', e.target.value)} className="input-field" style={{ width: '100%', padding: '3px 6px', textAlign: 'right', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }} />
+                        <input 
+                          type="text" 
+                          value={toCommaString(lf.grade2 === '0' || !lf.grade2 ? '' : lf.grade2)} 
+                          onChange={e => handleLaborFeeChange(idx, 'grade2', String(fromCommaStringInt(e.target.value)))} 
+                          onBlur={e => {
+                            if (e.target.value.trim() === '') {
+                              handleLaborFeeChange(idx, 'grade2', '0');
+                            }
+                          }}
+                          className="input-field" 
+                          style={{ width: '100%', padding: '3px 6px', textAlign: 'right', fontSize: '15px', border: '1px solid var(--border-color)', background: 'var(--bg-surface)' }} 
+                        />
                       </td>
                       <td style={{ padding: '4px 6px' }}>
-                        <input type="number" value={lf.grade3} onChange={e => handleLaborFeeChange(idx, 'grade3', e.target.value)} className="input-field" style={{ width: '100%', padding: '3px 6px', textAlign: 'right', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }} />
+                        <input 
+                          type="text" 
+                          value={toCommaString(lf.grade3 === '0' || !lf.grade3 ? '' : lf.grade3)} 
+                          onChange={e => handleLaborFeeChange(idx, 'grade3', String(fromCommaStringInt(e.target.value)))} 
+                          onBlur={e => {
+                            if (e.target.value.trim() === '') {
+                              handleLaborFeeChange(idx, 'grade3', '0');
+                            }
+                          }}
+                          className="input-field" 
+                          style={{ width: '100%', padding: '3px 6px', textAlign: 'right', fontSize: '15px', border: '1px solid var(--border-color)', background: 'var(--bg-surface)' }} 
+                        />
                       </td>
                       <td style={{ padding: '4px 6px' }}>
-                        <input type="number" value={lf.grade4} onChange={e => handleLaborFeeChange(idx, 'grade4', e.target.value)} className="input-field" style={{ width: '100%', padding: '3px 6px', textAlign: 'right', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }} />
+                        <input 
+                          type="text" 
+                          value={toCommaString(lf.grade4 === '0' || !lf.grade4 ? '' : lf.grade4)} 
+                          onChange={e => handleLaborFeeChange(idx, 'grade4', String(fromCommaStringInt(e.target.value)))} 
+                          onBlur={e => {
+                            if (e.target.value.trim() === '') {
+                              handleLaborFeeChange(idx, 'grade4', '0');
+                            }
+                          }}
+                          className="input-field" 
+                          style={{ width: '100%', padding: '3px 6px', textAlign: 'right', fontSize: '15px', border: '1px solid var(--border-color)', background: 'var(--bg-surface)' }} 
+                        />
                       </td>
                     </tr>
                   ))}
@@ -498,66 +598,213 @@ export const CatalogRegisterForm: React.FC = () => {
           {/* Section 3: Stones Specification */}
           <div style={{ border: '1px solid var(--border-color)', borderRadius: '8px', padding: '12px' }}>
             <span style={{ fontSize: '15px', color: 'var(--primary)', fontWeight: '600', display: 'block', borderBottom: '1px dashed var(--border-color)', paddingBottom: '4px', marginBottom: '8px' }}>
-              기본 세팅 스톤 정보 (스톤 1~7행 설정)
+              기본 세팅 스톤 정보 (스톤 1~4행 설정)
             </span>
             <div className="catalog-stone-table-wrapper">
               <table className="catalog-stone-table stones-spec-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '15px', textAlign: 'left' }}>
                 <thead>
                   <tr style={{ borderBottom: '2px solid var(--border-color)', color: 'var(--text-main)', background: 'rgba(255, 255, 255, 0.04)', height: '28px' }}>
-                    <th style={{ padding: '6px 4px', width: '50px', textAlign: 'center' }}>구분</th>
-                    <th style={{ padding: '6px 4px', width: '40px', textAlign: 'center' }}>메인</th>
-                    <th style={{ padding: '6px 4px', width: '140px' }}>스톤명 검색</th>
+                    <th style={{ padding: '6px 4px', width: '65px', textAlign: 'center' }}>메인</th>
+                    <th style={{ padding: '6px 4px', width: '150px' }}>스톤 종류</th>
+                    <th style={{ padding: '6px 4px', width: '100px' }}>스톤 설명</th>
                     <th style={{ padding: '6px 4px', width: '40px', textAlign: 'right' }}>알수</th>
-                    <th style={{ padding: '6px 4px', width: '55px', textAlign: 'center' }}>중량차감</th>
-                    <th style={{ padding: '6px 4px', width: '55px', textAlign: 'center' }}>공임적용</th>
-                    <th style={{ padding: '6px 4px', textAlign: 'right', width: '70px' }}>개당중량</th>
+                    <th style={{ padding: '6px 4px', width: '65px', textAlign: 'center' }}>차감</th>
+                    <th style={{ padding: '6px 4px', textAlign: 'right', width: '55px' }}>중량</th>
+                    <th style={{ padding: '6px 4px', width: '65px', textAlign: 'center' }}>공임</th>
                     <th style={{ padding: '6px 4px', textAlign: 'right', width: '65px' }}>구매단가</th>
                     <th style={{ padding: '6px 4px', textAlign: 'right', color: 'var(--primary)', width: '60px' }}>1등급</th>
                     <th style={{ padding: '6px 4px', textAlign: 'right', color: 'var(--primary)', width: '60px' }}>2등급</th>
                     <th style={{ padding: '6px 4px', textAlign: 'right', color: 'var(--primary)', width: '60px' }}>3등급</th>
                     <th style={{ padding: '6px 4px', textAlign: 'right', color: 'var(--primary)', width: '60px' }}>4등급</th>
-                    <th style={{ padding: '6px 4px', width: '120px' }}>스톤 설명</th>
                   </tr>
                 </thead>
                 <tbody>
                   {stoneRows.map((row, idx) => (
                     <tr key={row.row_id} style={{ borderBottom: '1px solid var(--border-color)', background: idx % 2 === 0 ? 'rgba(255,255,255,0.005)' : 'rgba(255,255,255,0.02)' }}>
-                      <td style={{ padding: '4px', textAlign: 'center', color: 'var(--text-muted)' }}>스톤{row.row_id}</td>
+                      {/* 메인 */}
                       <td style={{ padding: '2px' }}>
-                        <select value={row.is_main} onChange={e => handleStoneRowChange(idx, 'is_main', e.target.value)} className="input-field" style={{ width: '100%', padding: '3px', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }}>
+                        <select value={row.is_main} onChange={e => handleStoneRowChange(idx, 'is_main', e.target.value)} className="input-field" style={{ width: '100%', padding: '3px 14px 3px 6px', fontSize: '15px', border: '1px solid var(--border-color)', background: 'var(--bg-surface)' }}>
                           <option value="N">N</option>
                           <option value="Y">Y</option>
                         </select>
                       </td>
-                      <td style={{ padding: '2px' }}>
-                        <select value={row.stone_id} onChange={e => handleStoneRowChange(idx, 'stone_id', e.target.value)} className="input-field" style={{ width: '100%', padding: '3px', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }}>
-                          <option value="">-- 선택 --</option>
-                          {stones.map(s => <option key={s.stone_id} value={s.stone_id}>{s.name}</option>)}
-                        </select>
+                      {/* 스톤 종류 */}
+                      <td style={{ padding: '2px', position: 'relative' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
+                          <input 
+                            type="text" 
+                            value={row.search_term || ''} 
+                            placeholder="스톤 검색..."
+                            onChange={e => {
+                              const nextSearch = e.target.value;
+                              const nextRows = [...stoneRows];
+                              nextRows[idx] = { 
+                                ...nextRows[idx], 
+                                search_term: nextSearch,
+                                is_dropdown_open: true 
+                              };
+                              if (nextSearch.trim() === '') {
+                                nextRows[idx].stone_id = '';
+                                nextRows[idx].weight = 0;
+                                nextRows[idx].buy_price = 0;
+                                nextRows[idx].grade_prices = { grade_1: 0, grade_2: 0, grade_3: 0, grade_4: 0 };
+                              }
+                              setStoneRows(nextRows);
+                            }}
+                            onFocus={() => {
+                              const nextRows = [...stoneRows];
+                              nextRows[idx] = { ...nextRows[idx], is_dropdown_open: true };
+                              setStoneRows(nextRows);
+                            }}
+                            className="input-field" 
+                            style={{ 
+                              width: '100%', 
+                              padding: '3px 20px 3px 6px',
+                              fontSize: '15px', 
+                              border: '1px solid var(--border-color)', 
+                              background: 'var(--bg-surface)',
+                              color: 'var(--text-main)'
+                            }} 
+                          />
+                          <button 
+                            type="button" 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const nextRows = [...stoneRows];
+                              nextRows[idx] = { ...nextRows[idx], is_dropdown_open: !nextRows[idx].is_dropdown_open };
+                              setStoneRows(nextRows);
+                            }}
+                            style={{
+                              position: 'absolute',
+                              right: '4px',
+                              background: 'transparent',
+                              border: 'none',
+                              color: 'var(--text-muted)',
+                              cursor: 'pointer',
+                              padding: '0 4px',
+                              fontSize: '12px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              height: '100%'
+                            }}
+                          >
+                            ▼
+                          </button>
+                        </div>
+
+                        {row.is_dropdown_open && (
+                          <>
+                            <div 
+                              onClick={() => {
+                                const nextRows = [...stoneRows];
+                                nextRows[idx] = { ...nextRows[idx], is_dropdown_open: false };
+                                const matched = stones.find(s => s.name.toLowerCase() === (row.search_term || '').toLowerCase());
+                                if (matched) {
+                                  handleStoneRowChange(idx, 'stone_id', matched.stone_id);
+                                } else if (!row.stone_id) {
+                                  nextRows[idx].search_term = '';
+                                  setStoneRows(nextRows);
+                                }
+                                setStoneRows(nextRows);
+                              }}
+                              style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9998, background: 'transparent' }} 
+                            />
+                            <div 
+                              style={{ 
+                                position: 'absolute', 
+                                top: '100%', 
+                                left: '2px', 
+                                right: '2px', 
+                                maxHeight: '200px', 
+                                overflowY: 'auto', 
+                                background: 'var(--bg-surface-solid)', 
+                                border: '1px solid var(--primary)', 
+                                borderRadius: '4px', 
+                                zIndex: 9999, 
+                                boxShadow: 'var(--glass-shadow)',
+                                padding: '4px 0'
+                              }}
+                            >
+                              {(() => {
+                                const filterQuery = (row.search_term || '').toLowerCase().trim();
+                                const filtered = stones.filter(s => s.name.toLowerCase().includes(filterQuery));
+                                if (filtered.length === 0) {
+                                  return (
+                                    <div style={{ padding: '8px 12px', color: 'var(--text-muted)', fontSize: '14px' }}>
+                                      검색된 스톤 없음
+                                    </div>
+                                  );
+                                }
+                                return filtered.map(s => (
+                                  <div 
+                                    key={s.stone_id}
+                                    onClick={() => {
+                                      handleStoneRowChange(idx, 'stone_id', s.stone_id);
+                                    }}
+                                    style={{ 
+                                      padding: '6px 12px', 
+                                      cursor: 'pointer', 
+                                      fontSize: '14px',
+                                      color: row.stone_id === s.stone_id ? 'var(--primary)' : 'var(--text-main)',
+                                      background: row.stone_id === s.stone_id ? 'rgba(170, 133, 19, 0.1)' : 'transparent',
+                                      transition: 'background 0.2s'
+                                    }}
+                                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(170, 133, 19, 0.18)'; }}
+                                    onMouseLeave={e => { e.currentTarget.style.background = row.stone_id === s.stone_id ? 'rgba(170, 133, 19, 0.1)' : 'transparent'; }}
+                                  >
+                                    {s.name} ({(s.weight_carat || 0).toFixed(3)}ct)
+                                  </div>
+                                ));
+                              })()}
+                            </div>
+                          </>
+                        )}
                       </td>
-                      <td style={{ padding: '2px' }}>
-                        <input type="number" min="0" value={row.quantity} onChange={e => handleStoneRowChange(idx, 'quantity', parseInt(e.target.value) || 0)} className="input-field" style={{ width: '100%', padding: '3px', textAlign: 'right', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }} />
+                      {/* 스톤 설명 */}
+                      <td style={{ padding: '2px', width: '100px' }}>
+                        <input type="text" value={row.description} onChange={e => handleStoneRowChange(idx, 'description', e.target.value)} className="input-field" style={{ width: '100%', padding: '3px 6px', fontSize: '15px', border: '1px solid var(--border-color)', background: 'var(--bg-surface)' }} placeholder="메모" />
                       </td>
+                      {/* 알수 */}
                       <td style={{ padding: '2px' }}>
-                        <select value={row.weight_deduction} onChange={e => handleStoneRowChange(idx, 'weight_deduction', e.target.value)} className="input-field" style={{ width: '100%', padding: '3px', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }}>
+                        <input 
+                          type="number" 
+                          min="0" 
+                          value={row.quantity === 0 ? '' : row.quantity} 
+                          onChange={e => handleStoneRowChange(idx, 'quantity', parseInt(e.target.value) || 0)} 
+                          onBlur={e => {
+                            if (e.target.value === '') {
+                              handleStoneRowChange(idx, 'quantity', 0);
+                            }
+                          }}
+                          className="input-field" 
+                          style={{ width: '100%', padding: '3px', textAlign: 'right', fontSize: '15px', border: '1px solid var(--border-color)', background: 'var(--bg-surface)' }} 
+                        />
+                      </td>
+                      {/* 차감 */}
+                      <td style={{ padding: '2px' }}>
+                        <select value={row.weight_deduction} onChange={e => handleStoneRowChange(idx, 'weight_deduction', e.target.value)} className="input-field" style={{ width: '100%', padding: '3px 14px 3px 6px', fontSize: '15px', border: '1px solid var(--border-color)', background: 'var(--bg-surface)' }}>
                           <option value="Y">Y</option>
                           <option value="N">N</option>
                         </select>
                       </td>
-                      <td style={{ padding: '2px' }}>
-                        <select value={row.labor_apply} onChange={e => handleStoneRowChange(idx, 'labor_apply', e.target.value)} className="input-field" style={{ width: '100%', padding: '3px', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }}>
-                          <option value="Y">Y</option>
-                          <option value="N">N</option>
-                        </select>
-                      </td>
-                      <td style={{ padding: '2px 4px', textAlign: 'right', color: '#e5e7eb', fontFamily: 'var(--font-title)', fontSize: '15px', fontWeight: '500' }}>
+                      {/* 중량 */}
+                      <td style={{ padding: '2px 4px', textAlign: 'right', color: 'var(--text-main)', fontFamily: 'var(--font-title)', fontSize: '15px', fontWeight: '500' }}>
                         {row.weight ? row.weight.toFixed(3) : '0.000'}
                       </td>
-                      <td style={{ padding: '2px 4px', textAlign: 'right', color: '#e5e7eb', fontFamily: 'var(--font-title)', fontSize: '15px', fontWeight: '500' }}>
+                      {/* 공임 */}
+                      <td style={{ padding: '2px' }}>
+                        <select value={row.labor_apply} onChange={e => handleStoneRowChange(idx, 'labor_apply', e.target.value)} className="input-field" style={{ width: '100%', padding: '3px 14px 3px 6px', fontSize: '15px', border: '1px solid var(--border-color)', background: 'var(--bg-surface)' }}>
+                          <option value="Y">Y</option>
+                          <option value="N">N</option>
+                        </select>
+                      </td>
+                      {/* 구매단가 */}
+                      <td style={{ padding: '2px 4px', textAlign: 'right', color: 'var(--text-main)', fontFamily: 'var(--font-title)', fontSize: '15px', fontWeight: '500' }}>
                         {row.buy_price.toLocaleString()}
                       </td>
                       
-                      {/* Render 1, 2, 3, 4 grade prices individually */}
+                      {/* 등급 단가 */}
                       <td style={{ padding: '2px 4px', textAlign: 'right', fontFamily: 'var(--font-title)', fontSize: '15px', fontWeight: '600', color: 'var(--primary)' }}>
                         {row.stone_id ? row.grade_prices.grade_1.toLocaleString() : '-'}
                       </td>
@@ -570,27 +817,65 @@ export const CatalogRegisterForm: React.FC = () => {
                       <td style={{ padding: '2px 4px', textAlign: 'right', fontFamily: 'var(--font-title)', fontSize: '15px', fontWeight: '600', color: 'var(--primary)' }}>
                         {row.stone_id ? row.grade_prices.grade_4.toLocaleString() : '-'}
                       </td>
-                      
-                      <td style={{ padding: '2px', width: '120px' }}>
-                        <input type="text" value={row.description} onChange={e => handleStoneRowChange(idx, 'description', e.target.value)} className="input-field" style={{ width: '100%', padding: '3px 6px', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)' }} placeholder="메모" />
-                      </td>
                     </tr>
                   ))}
                 </tbody>
+                <tfoot style={{ background: '#b2ebf2', color: '#1e293b', fontWeight: '700', borderTop: '2px solid var(--border-color)' }}>
+                  <tr style={{ height: '30px' }}>
+                    <td style={{ padding: '4px' }}></td>
+                    <td style={{ padding: '4px' }}></td>
+                    <td style={{ padding: '4px 8px', textAlign: 'right', fontSize: '14px', fontWeight: '700' }}>스톤합계:</td>
+                    <td style={{ padding: '4px 6px', textAlign: 'right', fontSize: '15px', fontFamily: 'var(--font-title)' }}>{totalStonesQty}</td>
+                    <td style={{ padding: '4px' }}></td>
+                    <td style={{ padding: '4px 4px', textAlign: 'right', fontSize: '15px', fontFamily: 'var(--font-title)' }}>
+                      {totalStonesWeight.toFixed(3)}
+                    </td>
+                    <td style={{ padding: '4px' }}></td>
+                    <td style={{ padding: '4px 6px', textAlign: 'right', fontSize: '15px', fontFamily: 'var(--font-title)' }}>{totalBuyPriceSum > 0 ? totalBuyPriceSum.toLocaleString() : '0'}</td>
+                    <td style={{ padding: '4px 6px', textAlign: 'right', fontSize: '15px', fontFamily: 'var(--font-title)', color: 'var(--primary)' }}>{totalGrade1Sum > 0 ? totalGrade1Sum.toLocaleString() : '0'}</td>
+                    <td style={{ padding: '4px 6px', textAlign: 'right', fontSize: '15px', fontFamily: 'var(--font-title)', color: 'var(--primary)' }}>{totalGrade2Sum > 0 ? totalGrade2Sum.toLocaleString() : '0'}</td>
+                    <td style={{ padding: '4px 6px', textAlign: 'right', fontSize: '15px', fontFamily: 'var(--font-title)', color: 'var(--primary)' }}>{totalGrade3Sum > 0 ? totalGrade3Sum.toLocaleString() : '0'}</td>
+                    <td style={{ padding: '4px 6px', textAlign: 'right', fontSize: '15px', fontFamily: 'var(--font-title)', color: 'var(--primary)' }}>{totalGrade4Sum > 0 ? totalGrade4Sum.toLocaleString() : '0'}</td>
+                  </tr>
+                </tfoot>
               </table>
             </div>
-            <div className="catalog-summary-bar" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px', marginTop: '10px', background: 'rgba(255,255,255,0.02)', padding: '8px', borderRadius: '4px', fontSize: '15px', alignItems: 'center', border: '1px solid rgba(255,255,255,0.05)' }}>
-              <div>알수 소계: <strong>{totalStonesQty} 개</strong></div>
-              <div>중량 소계: <strong>{totalStonesWeight.toFixed(3)} g</strong></div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                수동 차감중량: 
-                <input type="number" step="0.001" value={manualDeductionWeight} onChange={e => setManualDeductionWeight(e.target.value)} className="input-field" style={{ width: '70px', padding: '3px', fontSize: '15px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.2)', textAlign: 'right' }} />
+            <div className="catalog-summary-bar" style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '10px', background: 'rgba(0,0,0,0.03)', padding: '12px 16px', borderRadius: '4px', fontSize: '15px', border: '1px solid var(--border-color)', color: 'var(--text-main)' }}>
+              <div>알수소계: <strong>{totalStonesQty}개</strong></div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                중량소개: <strong>{totalStonesWeight.toFixed(3)}g</strong>
+                <span style={{ color: 'var(--text-muted)', margin: '0 4px' }}>+</span>
+                수동차감중량(입력): 
+                <input 
+                  type="number" 
+                  step="0.001" 
+                  value={manualDeductionWeight} 
+                  onChange={e => setManualDeductionWeight(e.target.value)} 
+                  onFocus={e => {
+                    const valNum = parseFloat(manualDeductionWeight) || 0;
+                    if (valNum === 0) {
+                      setManualDeductionWeight('');
+                    } else {
+                      e.target.select();
+                    }
+                  }}
+                  onBlur={e => {
+                    if (e.target.value.trim() === '') {
+                      setManualDeductionWeight('0.000');
+                    } else {
+                      const parsed = parseFloat(e.target.value) || 0;
+                      setManualDeductionWeight(parsed.toFixed(3));
+                    }
+                  }}
+                  className="input-field" 
+                  style={{ width: '80px', padding: '3px 6px', fontSize: '14px', border: '1px solid var(--border-color)', background: 'var(--bg-surface)', color: 'var(--text-main)', textAlign: 'right', borderRadius: '3px' }} 
+                />g
               </div>
               <div style={{ color: 'var(--warning)', fontWeight: '600' }}>
-                총 차감중량: <strong>{totalDeductionWeight.toFixed(3)} g</strong>
+                = 총 차감중량: <strong>{totalDeductionWeight.toFixed(3)}g</strong>
               </div>
-              <div style={{ color: 'var(--primary)', fontWeight: '600' }}>
-                최종 금중량(종합합계): <strong>{finalTotalWeight.toFixed(3)} g</strong>
+              <div style={{ color: 'var(--primary)', fontWeight: '700', fontSize: '16px', borderTop: '1px dashed var(--border-color)', paddingTop: '8px', marginTop: '4px' }}>
+                최종 금 중량(종합합계) = <strong>{finalTotalWeight.toFixed(3)}g</strong>
               </div>
             </div>
           </div>
@@ -601,7 +886,7 @@ export const CatalogRegisterForm: React.FC = () => {
           </div>
 
           <div className="catalog-form-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid var(--border-color)', paddingTop: '12px' }}>
-            <button type="button" onClick={() => window.close()} className="btn-primary" style={{ padding: '6px 12px', background: 'rgba(255,255,255,0.03)', color: 'var(--text-muted)', border: '1px solid var(--border-color)', boxShadow: 'none' }}>
+            <button type="button" onClick={() => window.close()} className="btn-primary" style={{ padding: '6px 12px', background: 'var(--bg-surface)', color: 'var(--text-muted)', border: '1px solid var(--border-color)', boxShadow: 'none' }}>
               닫기
             </button>
             <button type="submit" className="btn-primary" style={{ padding: '6px 20px' }}>

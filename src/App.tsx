@@ -73,7 +73,7 @@ function App() {
         fetchDb(); // Reload data in parent window
       } else if (event.data && event.data.type === 'select_catalog') {
         const { modelNumber, rowIndex } = event.data;
-        useErpStore.getState().updateOrderItem(rowIndex, { model_number: modelNumber });
+        useErpStore.getState().updateOrderItem(rowIndex, { model_number: modelNumber }, true);
       }
     };
 
@@ -253,7 +253,7 @@ function App() {
           
           {/* 그룹 1: 모니터링 */}
           <div className="nav-group" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span className="nav-group-label" style={{ fontSize: '14px', color: 'rgba(212, 175, 55, 0.7)', fontWeight: '700', marginRight: '2px', borderRight: '1px solid rgba(255,255,255,0.15)', paddingRight: '8px', width: '64px', textAlign: 'right', display: 'inline-block' }}>모니터링</span>
+            <span className="nav-group-label" style={{ fontSize: '14px', color: 'rgba(212, 175, 55, 0.7)', fontWeight: '700', marginRight: '2px', borderRight: '1px solid rgba(255,255,255,0.15)', paddingRight: '8px', width: '80px', textAlign: 'right', display: 'inline-block' }}>모니터링</span>
             <div className="nav-buttons-container">
               <button
                 onClick={() => { setActiveTab('dashboard'); setIsMenuOpen(false); }}
@@ -277,7 +277,7 @@ function App() {
 
           {/* 그룹 2: 마스터 정보 */}
           <div className="nav-group" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span className="nav-group-label" style={{ fontSize: '14px', color: 'rgba(212, 175, 55, 0.7)', fontWeight: '700', marginRight: '2px', borderRight: '1px solid rgba(255,255,255,0.15)', paddingRight: '8px', width: '64px', textAlign: 'right', display: 'inline-block' }}>마스터 정보</span>
+            <span className="nav-group-label" style={{ fontSize: '14px', color: 'rgba(212, 175, 55, 0.7)', fontWeight: '700', marginRight: '2px', borderRight: '1px solid rgba(255,255,255,0.15)', paddingRight: '8px', width: '80px', textAlign: 'right', display: 'inline-block' }}>마스터 정보</span>
             <div className="nav-buttons-container">
               <button
                 onClick={() => { setActiveTab('customers'); setIsMenuOpen(false); }}
@@ -355,7 +355,7 @@ function App() {
 
           {/* 그룹 3: 주요 공정 */}
           <div className="nav-group" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span className="nav-group-label" style={{ fontSize: '14px', color: 'rgba(212, 175, 55, 0.7)', fontWeight: '700', marginRight: '2px', borderRight: '1px solid rgba(255,255,255,0.15)', paddingRight: '8px', width: '64px', textAlign: 'right', display: 'inline-block' }}>주요 공정</span>
+            <span className="nav-group-label" style={{ fontSize: '14px', color: 'rgba(212, 175, 55, 0.7)', fontWeight: '700', marginRight: '2px', borderRight: '1px solid rgba(255,255,255,0.15)', paddingRight: '8px', width: '80px', textAlign: 'right', display: 'inline-block' }}>주요 공정</span>
             <div className="nav-buttons-container">
               <button
                 onClick={() => { setActiveTab('order'); setIsMenuOpen(false); }}

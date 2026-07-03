@@ -154,11 +154,8 @@ export const CompletedLedger: React.FC = () => {
 
         const baseLabor = item.labor_base || 0;
         const extraLabor = item.labor_extra || 0;
-        const mainStoneLabor = (item.labor_main || 0) * (item.qty_main || 0);
-        const subStoneLabor = (item.labor_sub || 0) * (item.qty_sub || 0);
-
         const laborBaseExtra = baseLabor + extraLabor;
-        const laborStone = mainStoneLabor + subStoneLabor;
+        const laborStone = item.labor_stone_total !== undefined ? item.labor_stone_total : ((item.labor_main || 0) * (item.qty_main || 0)) + ((item.labor_sub || 0) * (item.qty_sub || 0));
         const totalAmount = (laborBaseExtra + laborStone) * qty;
 
         const serialNo = order.order_id.replace(/[^0-9]/g, '').slice(-8) || order.order_id.slice(-8);

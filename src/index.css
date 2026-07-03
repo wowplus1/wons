@@ -19,7 +19,7 @@
   --text-muted: #736e67; /* Soft Medium Brown */
   --text-inverse: #ffffff;
 
-  --border-color: rgba(43, 41, 39, 0.08); /* Soft dark borders */
+  --border-color: rgba(43, 41, 39, 0.18); /* Soft dark borders - 18% 투명도로 더 잘 보이게 조정 */
   --border-focus: rgba(170, 133, 19, 0.6);
   
   --success: #059669;
@@ -246,7 +246,7 @@ input[type="number"] {
 /* 엑셀형 주문 테이블 커스텀 스타일 */
 .excel-table th, 
 .excel-table td {
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(43, 41, 39, 0.18) !important;
   font-size: 15px;
   vertical-align: middle;
   transition: background-color 0.15s ease;
@@ -401,6 +401,39 @@ select.excel-input {
   flex-direction: row;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+/* 네비게이션 버튼 텍스트 줄바꿈 방지 및 가독성 확보 */
+.nav-buttons-container button {
+  white-space: nowrap !important;
+  font-size: 14px !important;
+  padding: 6px 12px !important;
+}
+
+/* 카탈로그 카드 테두리 선명화 및 호버 효과 */
+.catalog-card {
+  border: 1px solid rgba(170, 133, 19, 0.25) !important;
+  box-shadow: 0 4px 12px rgba(133, 126, 110, 0.08) !important;
+  background-color: var(--bg-surface-solid) !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.catalog-card:hover {
+  border-color: var(--primary) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 24px rgba(170, 133, 19, 0.18) !important;
+}
+
+/* 카탈로그 스톤 및 공임 설정 테이블 선 강화 */
+.catalog-stone-table th,
+.catalog-stone-table td {
+  border: 1px solid rgba(43, 41, 39, 0.18) !important;
+  padding: 8px 10px !important;
+}
+.catalog-stone-table th {
+  background-color: rgba(170, 133, 19, 0.06) !important;
+  font-weight: 600 !important;
+  color: var(--text-main) !important;
 }
 
 /* --- 모바일 반응형 공통 스타일 추가 --- */

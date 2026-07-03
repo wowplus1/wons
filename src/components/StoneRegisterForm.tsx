@@ -13,6 +13,7 @@ export const StoneRegisterForm: React.FC = () => {
   const [stoneName, setStoneName] = useState('CZ/RD/');
   const [description, setDescription] = useState('');
   const [weight, setWeight] = useState('');
+  const [deductionWeight, setDeductionWeight] = useState('');
   const [purchasePrice, setPurchasePrice] = useState('');
   
   const [grade1Price, setGrade1Price] = useState('');
@@ -36,6 +37,7 @@ export const StoneRegisterForm: React.FC = () => {
       shape,
       size,
       weight_carat: parseFloat(weight) || 0,
+      deduction_weight: parseFloat(deductionWeight) || 0,
       grade_prices: {
         grade_1: parseFloat(grade1Price) || 0,
         grade_2: parseFloat(grade2Price) || 0,
@@ -115,10 +117,14 @@ export const StoneRegisterForm: React.FC = () => {
             <input type="text" maxLength={40} value={description} onChange={(e) => setDescription(e.target.value)} className="input-field" style={{ width: '100%', padding: '6px' }} placeholder="특이사항 메모" />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
             <div>
               <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px' }}>중량(g)</label>
               <input type="number" step="0.00001" value={weight} onChange={(e) => setWeight(e.target.value)} className="input-field" style={{ width: '100%', padding: '6px', textAlign: 'right' }} />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px' }}>차감중량(g)</label>
+              <input type="number" step="0.00001" value={deductionWeight} onChange={(e) => setDeductionWeight(e.target.value)} className="input-field" style={{ width: '100%', padding: '6px', textAlign: 'right' }} />
             </div>
             <div>
               <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px' }}>구매단가</label>
