@@ -358,7 +358,12 @@ export const ReleaseList: React.FC = () => {
                   <td style={{ padding: '6px 4px', verticalAlign: 'middle', fontWeight: '700', color: '#38bdf8' }}>{row.model}</td>
                   <td style={{ padding: '6px 4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle' }}>{row.material}</td>
                   <td style={{ padding: '6px 4px', textAlign: 'center', verticalAlign: 'middle' }}>{row.color}</td>
-                  <td style={{ padding: '6px 4px', verticalAlign: 'middle', color: '#fbbf24', fontWeight: 'bold' }}>{row.note || '-'}</td>
+                  <td 
+                    style={{ padding: '6px 4px', textAlign: 'center', color: '#fbbf24', fontWeight: 'bold', cursor: row.note ? 'pointer' : 'default', textDecoration: row.note ? 'underline' : 'none', verticalAlign: 'middle' }}
+                    onClick={() => row.note && alert(`[거래 비고]\n${row.note}`)}
+                  >
+                    {row.note ? '※' : ''}
+                  </td>
                   <td style={{ padding: '6px 4px', textAlign: 'right', verticalAlign: 'middle', fontWeight: 'bold' }}>{row.goldWeightG > 0 ? `${row.goldWeightG.toFixed(2)}g` : '-'}</td>
                   <td style={{ padding: '6px 4px', textAlign: 'right', verticalAlign: 'middle', color: 'var(--text-muted)' }}>{row.stonesWeightTotal > 0 ? `${row.stonesWeightTotal.toFixed(3)}g` : '-'}</td>
                   <td style={{ padding: '6px 4px', textAlign: 'right', verticalAlign: 'middle', fontWeight: 'bold', color: '#10b981' }}>{row.buyPrice.toLocaleString()}원</td>
