@@ -459,6 +459,15 @@ export const useErpStore = create<ErpState>((set, get) => {
             
             item.labor_stone_total = (item.labor_main || 0) * (item.qty_main || 0) + (item.labor_sub || 0) * (item.qty_sub || 0);
 
+            // 순수 금중량(기본중량 - 총 차감중량) 계산하여 자동으로 기입
+            const totalStonesWeight = catalogItem.default_stones.reduce((sum, ds) => {
+              const matchedStone = get().stones.find(s => s.stone_id === ds.stone_id);
+              return sum + ((matchedStone?.weight_carat || 0) * ds.quantity);
+            }, 0);
+            const manualDeductionWeight = catalogItem.manual_deduction_weight || 0;
+            const pureGoldWeight = Math.max(0, (catalogItem.base_weight || 0) - (totalStonesWeight + manualDeductionWeight));
+            item.gold_weight = Number(pureGoldWeight.toFixed(3));
+
             const date = new Date();
             date.setDate(date.getDate() + 7);
             item.release_date = date.toISOString().split('T')[0];
