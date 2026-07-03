@@ -537,13 +537,7 @@ export const useErpStore = create<ErpState>((set, get) => {
         const manualDeductionWeight = catalogItem?.manual_deduction_weight || 0;
         const pureGoldWeight = Math.max(0, baseWeight - (stonesWeightTotal + manualDeductionWeight));
         
-        const mat = item.material || '14K';
-        const sellRatePerG = mat === '14K' ? currentRates.sell_rates.gold_14k_per_g 
-                            : mat === '18K' ? currentRates.sell_rates.gold_18k_per_g
-                            : mat === '24K' ? currentRates.sell_rates.gold_24k_per_g
-                            : currentRates.sell_rates.silver_per_g;
-        
-        const goldCost = pureGoldWeight * sellRatePerG;
+        const goldCost = 0; // 자동 금값 계산 비활성화 (추가공임 별도 직접 입력)
         
         const baseLabor = item.labor_base || 0;
         const extraLabor = item.labor_extra || 0;
@@ -1135,13 +1129,7 @@ export const useErpStore = create<ErpState>((set, get) => {
       const item = order.items.find(i => i.item_id === itemId);
       if (item) {
         item.actual_weight_g = actualWeightG;
-        const mat = item.material || '14K';
-        const sellRate = mat === '14K' ? order.gold_rate_snapshot.sell_14k_per_g 
-                        : mat === '18K' ? order.gold_rate_snapshot.sell_18k_per_g
-                        : mat === '24K' ? order.gold_rate_snapshot.sell_24k_per_g
-                        : 0;
-        
-        const goldCost = actualWeightG * sellRate;
+        const goldCost = 0; // 자동 금값 계산 비활성화 (추가공임 별도 직접 입력)
         const baseLabor = item.labor_base || 0;
         const extraLabor = item.labor_extra || 0;
         const stoneLabor = item.labor_stone_total !== undefined ? item.labor_stone_total : ((item.labor_main || 0) * (item.qty_main || 0) + (item.labor_sub || 0) * (item.qty_sub || 0));
@@ -1268,13 +1256,7 @@ export const useErpStore = create<ErpState>((set, get) => {
         item.step_weights = stepWeights;
         if (actualWeightG !== undefined && actualWeightG > 0) {
           item.actual_weight_g = actualWeightG;
-          const mat = item.material || '14K';
-          const sellRate = mat === '14K' ? order.gold_rate_snapshot.sell_14k_per_g 
-                          : mat === '18K' ? order.gold_rate_snapshot.sell_18k_per_g
-                          : mat === '24K' ? order.gold_rate_snapshot.sell_24k_per_g
-                          : 0;
-          
-          const goldCost = actualWeightG * sellRate;
+          const goldCost = 0; // 자동 금값 계산 비활성화 (추가공임 별도 직접 입력)
           const baseLabor = item.labor_base || 0;
           const extraLabor = item.labor_extra || 0;
           const stoneLabor = item.labor_stone_total !== undefined ? item.labor_stone_total : ((item.labor_main || 0) * (item.qty_main || 0) + (item.labor_sub || 0) * (item.qty_sub || 0));

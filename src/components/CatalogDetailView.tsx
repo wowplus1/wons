@@ -5,7 +5,7 @@ import type { CatalogItem } from '../firebase/mockDb';
 import { X, ExternalLink, Image as ImageIcon } from 'lucide-react';
 
 export const CatalogDetailView: React.FC = () => {
-  const { catalog, stones, currentRates, goldRates, fetchDb, deleteCatalogItem } = useErpStore();
+  const { catalog, stones, fetchDb, deleteCatalogItem } = useErpStore();
   const [item, setItem] = useState<CatalogItem | null>(null);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -97,16 +97,8 @@ export const CatalogDetailView: React.FC = () => {
   const pureGoldWeight = Math.max(0, (item.base_weight || 0) - totalDeductionWeight);
 
   // 금 시세 및 금값 계산
-  const activeRate = currentRates || (goldRates && goldRates.length > 0 ? goldRates[goldRates.length - 1] : null);
-  const goldPricePerG = (() => {
-    if (!activeRate) return 0;
-    const mat = mainMaterial || '14K';
-    if (mat === '14K') return activeRate.sell_rates.gold_14k_per_g;
-    if (mat === '18K') return activeRate.sell_rates.gold_18k_per_g;
-    if (mat === '24K') return activeRate.sell_rates.gold_24k_per_g;
-    return activeRate.sell_rates.silver_per_g || 0;
-  })();
-  const goldCost = Math.round(pureGoldWeight * goldPricePerG);
+  const goldCost = 0; // 금값은 연산하지 않고 추가공임에 별도 입력하므로 0 고정
+
 
   // 1~4등급의 공임 단가 맵
   const materialLaborMap = (() => {
