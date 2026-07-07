@@ -6,6 +6,8 @@ export default defineConfig({
   plugins: [react()],
   base: '/wons/',
   build: {
+    outDir: 'docs',
+    emptyOutDir: true,
     rollupOptions: {
       output: {
         manualChunks(id) {
