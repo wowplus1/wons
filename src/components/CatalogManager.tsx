@@ -9,14 +9,45 @@ export const CatalogManager: React.FC = () => {
   const [searchTerm, setSearchTerm] = React.useState('');
   const pageSize = 30;
 
-  // 검색 필터 적용
+  // 검색 필터 적용 (모델번호, 카테고리, 제조사, 총판, 비고, 재질, 매칭되는 스톤 명 등을 다각도 검색)
   const filteredCatalog = React.useMemo(() => {
     if (!searchTerm.trim()) return catalog;
     const term = searchTerm.trim().toLowerCase();
-    return catalog.filter(item => 
-      item.model_number.toLowerCase().includes(term)
-    );
-  }, [catalog, searchTerm]);
+    
+    return catalog.filter(item => {
+      // 1. 모델번호
+      if (item.model_number.toLowerCase().includes(term)) return true;
+      
+      // 2. 카테고리
+      if (item.category && item.category.toLowerCase().includes(term)) return true;
+      
+      // 3. 제조사 / 제조사 코드
+      if (item.manufacturer && item.manufacturer.toLowerCase().includes(term)) return true;
+      if (item.manufacturer_code && item.manufacturer_code.toLowerCase().includes(term)) return true;
+      
+      // 4. 총판(도매처)
+      if (item.vendor && item.vendor.toLowerCase().includes(term)) return true;
+      
+      // 5. 비고(메모)
+      if (item.note && item.note.toLowerCase().includes(term)) return true;
+      
+      // 6. 재질 목록
+      if (item.materials && item.materials.some(m => m.toLowerCase().includes(term))) return true;
+      
+      // 7. 기본 매핑 스톤 정보 (스톤 품명 또는 메모/스펙)
+      if (item.default_stones && item.default_stones.length > 0) {
+        const hasMatchingStone = item.default_stones.some(ds => {
+          const stoneDetail = stones.find(s => s.stone_id === ds.stone_id);
+          const stoneName = stoneDetail ? stoneDetail.name.toLowerCase() : ds.stone_id.toLowerCase();
+          const stoneDesc = ds.description ? ds.description.toLowerCase() : '';
+          return stoneName.includes(term) || stoneDesc.includes(term);
+        });
+        if (hasMatchingStone) return true;
+      }
+      
+      return false;
+    });
+  }, [catalog, searchTerm, stones]);
 
   // 검색어 변경 시 첫 페이지로 이동
   React.useEffect(() => {
@@ -86,7 +117,7 @@ export const CatalogManager: React.FC = () => {
       <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
         <input
           type="text"
-          placeholder="모델번호를 입력하여 검색..."
+          placeholder="모델번호, 카테고리, 제조사, 총판, 재질, 스톤명, 비고 등으로 검색..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           style={{
