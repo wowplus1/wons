@@ -37,6 +37,7 @@ export const CustomerManager: React.FC = () => {
   const [businessNumber, setBusinessNumber] = useState('');
   const [goldBalance, setGoldBalance] = useState<number>(0);
   const [receivableAmount, setReceivableAmount] = useState<number>(0);
+  const [isReceivableEditable, setIsReceivableEditable] = useState(false);
 
 
   // Load customer data to form for editing
@@ -55,6 +56,7 @@ export const CustomerManager: React.FC = () => {
     setBusinessNumber(cust.business_number || '');
     setGoldBalance(cust.gold_balance_24k_g || 0);
     setReceivableAmount(cust.receivable_amount || 0);
+    setIsReceivableEditable(false); // 수정 모드 진입 시 처음에는 잔액 수정 비활성화
     setIsFormOpen(true); // 상세 수정 클릭 시 자동으로 폼을 켬
   };
 
@@ -74,6 +76,7 @@ export const CustomerManager: React.FC = () => {
     setBusinessNumber('');
     setGoldBalance(0);
     setReceivableAmount(0);
+    setIsReceivableEditable(false);
     setIsFormOpen(false); // 리셋 시 폼 닫기 (신규 등록 전환)
   };
 
@@ -579,9 +582,34 @@ export const CustomerManager: React.FC = () => {
           </div>
 
           <div style={{ borderTop: '1px dashed var(--border-color)', margin: '6px 0', paddingTop: '10px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--primary)', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }}>
-              <AlertTriangle size={12} />
-              <span>미수 잔액 설정 (시스템 이관용 초기값)</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--primary)', fontSize: '14px', fontWeight: '600' }}>
+                <AlertTriangle size={12} />
+                <span>미수 잔액 설정 (시스템 이관용 초기값)</span>
+              </div>
+              {isEditMode && !isReceivableEditable && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const confirmEdit = window.confirm("주의: 초기 미수 잔액을 직접 수정하면 기존 거래 장부 누계 금액과 달라질 수 있습니다.\n정말로 수정을 활성화하시겠습니까?");
+                    if (confirmEdit) {
+                      setIsReceivableEditable(true);
+                    }
+                  }}
+                  className="btn-primary"
+                  style={{
+                    padding: '2px 8px',
+                    fontSize: '12px',
+                    background: '#e2e8f0',
+                    color: '#475569',
+                    border: '1.5px solid #94a3b8',
+                    boxShadow: 'none',
+                    cursor: 'pointer'
+                  }}
+                >
+                  수정
+                </button>
+              )}
             </div>
             
             {/* Cash Receivable Amount */}
@@ -590,9 +618,17 @@ export const CustomerManager: React.FC = () => {
               <input 
                 type="number" 
                 value={receivableAmount} 
+                disabled={isEditMode && !isReceivableEditable}
                 onChange={e => setReceivableAmount(Math.max(0, parseInt(e.target.value) || 0))} 
                 className="input-field" 
-                style={{ width: '100%', textAlign: 'right', fontSize: '15px' }} 
+                style={{ 
+                  width: '100%', 
+                  textAlign: 'right', 
+                  fontSize: '15px',
+                  background: (isEditMode && !isReceivableEditable) ? 'rgba(0,0,0,0.05)' : undefined,
+                  cursor: (isEditMode && !isReceivableEditable) ? 'not-allowed' : undefined,
+                  color: (isEditMode && !isReceivableEditable) ? 'var(--text-muted)' : undefined
+                }} 
               />
             </div>
 
@@ -603,9 +639,17 @@ export const CustomerManager: React.FC = () => {
                 type="number" 
                 step="0.001"
                 value={goldBalance} 
+                disabled={isEditMode && !isReceivableEditable}
                 onChange={e => setGoldBalance(Math.max(0, parseFloat(e.target.value) || 0))} 
                 className="input-field" 
-                style={{ width: '100%', textAlign: 'right', fontSize: '15px' }} 
+                style={{ 
+                  width: '100%', 
+                  textAlign: 'right', 
+                  fontSize: '15px',
+                  background: (isEditMode && !isReceivableEditable) ? 'rgba(0,0,0,0.05)' : undefined,
+                  cursor: (isEditMode && !isReceivableEditable) ? 'not-allowed' : undefined,
+                  color: (isEditMode && !isReceivableEditable) ? 'var(--text-muted)' : undefined
+                }} 
               />
             </div>
           </div>
