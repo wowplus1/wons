@@ -366,11 +366,12 @@ export const CompletedLedger: React.FC = () => {
             style={{
               display: 'flex', alignItems: 'center', gap: '5px',
               padding: '6px 14px', borderRadius: '5px', fontSize: '13px', fontWeight: '700',
-              border: viewMode === 'list' ? '2px solid var(--primary)' : '2px solid #888',
-              background: viewMode === 'list' ? 'rgba(212,175,55,0.18)' : 'rgba(128,128,128,0.12)',
-              color: viewMode === 'list' ? 'var(--primary)' : '#555',
+              border: viewMode === 'list' ? '2px solid #c9a227' : '2px solid #666',
+              background: viewMode === 'list' ? '#fdf3d0' : '#e8e8e8',
+              color: viewMode === 'list' ? '#a07c10' : '#333',
               cursor: 'pointer',
-              transition: 'all 0.15s'
+              transition: 'all 0.15s',
+              outline: 'none'
             }}
           >
             <ListFilter size={13} /> 전체 목록
@@ -380,11 +381,12 @@ export const CompletedLedger: React.FC = () => {
             style={{
               display: 'flex', alignItems: 'center', gap: '5px',
               padding: '6px 14px', borderRadius: '5px', fontSize: '13px', fontWeight: '700',
-              border: viewMode === 'by-customer' ? '2px solid var(--primary)' : '2px solid #888',
-              background: viewMode === 'by-customer' ? 'rgba(212,175,55,0.18)' : 'rgba(128,128,128,0.12)',
-              color: viewMode === 'by-customer' ? 'var(--primary)' : '#555',
+              border: viewMode === 'by-customer' ? '2px solid #c9a227' : '2px solid #666',
+              background: viewMode === 'by-customer' ? '#fdf3d0' : '#e8e8e8',
+              color: viewMode === 'by-customer' ? '#a07c10' : '#333',
               cursor: 'pointer',
-              transition: 'all 0.15s'
+              transition: 'all 0.15s',
+              outline: 'none'
             }}
           >
             <Users size={13} /> 거래처별 보기
