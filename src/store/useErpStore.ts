@@ -1,6 +1,6 @@
 // src/store/useErpStore.ts
 import { create } from 'zustand';
-import { db } from '../firebase/config';
+import { db, auth } from '../firebase/config';
 import { 
   collection, 
   getDocs, 
@@ -8,9 +8,35 @@ import {
   doc, 
   writeBatch, 
   deleteDoc, 
-  updateDoc 
+  updateDoc,
+  query,
+  where
 } from 'firebase/firestore';
-import type { GoldRates, Stone, Customer, CatalogItem, Order, OrderItem, GoldTransaction } from '../firebase/mockDb';
+import { signInWithEmailAndPassword, signOut as firebaseSignOut } from 'firebase/auth';
+import type { User as FirebaseUser } from 'firebase/auth';
+import type { GoldRates, Stone, Customer, CatalogItem, Order, OrderItem, GoldTransaction, AuditLog } from '../firebase/mockDb';
+import { mockDb } from '../firebase/mockDb';
+
+// 증분 데이터를 기존 배열과 합치는 헬퍼 함수
+const mergeArrays = <T>(existing: T[], incoming: any[], idKey: keyof T): T[] => {
+  if (!incoming || incoming.length === 0) return existing || [];
+  const baseList = existing || [];
+  
+  const map = new Map<any, T>();
+  baseList.forEach(item => {
+    if (item && item[idKey] !== undefined) {
+      map.set(item[idKey], item);
+    }
+  });
+  
+  incoming.forEach(item => {
+    if (item && item[idKey] !== undefined) {
+      map.set(item[idKey], item as T);
+    }
+  });
+  
+  return Array.from(map.values());
+};
 
 // 특정 재질, 색상, 등급에 대응하는 공임비(판매가)와 구매원가(cost)를 조회하는 헬퍼 함수
 export const getCatalogLaborFees = (
@@ -94,6 +120,7 @@ interface ErpState {
   catalog: CatalogItem[];
   orders: Order[];
   transactions: GoldTransaction[];
+  auditLogs: AuditLog[];
   
   // Dashboard Metrics
   currentRates: GoldRates | null;
@@ -102,14 +129,21 @@ interface ErpState {
   
   // App UI States
   loading: boolean;
+  lastFetchTimeMap: { [key: string]: number };
   selectedCustomerForOrder: Customer | null;
   currentOrderItems: Partial<OrderItem>[];
-  activeTab: 'customers' | 'dashboard' | 'order' | 'ledger' | 'catalog' | 'rates' | 'stones' | 'orders' | 'work_list' | 'release_list' | 'unpaid_ledger' | 'paid_ledger' | 'hold_ledger';
+  activeTab: 'customers' | 'dashboard' | 'order' | 'ledger' | 'catalog' | 'rates' | 'stones' | 'orders' | 'work_list' | 'release_list' | 'unpaid_ledger' | 'paid_ledger' | 'hold_ledger' | 'statistics' | 'audit_logs';
   editingOrderId: string | null;
+  currentUser: FirebaseUser | null;
+  setCurrentUser: (user: FirebaseUser | null) => void;
+  login: (email: string, pass: string) => Promise<void>;
+  logout: () => Promise<void>;
   
   // Actions
-  fetchDb: (targetCollections?: ('gold_rates' | 'stones' | 'customers' | 'catalog' | 'orders' | 'gold_transactions')[]) => Promise<void>;
-  setActiveTab: (tab: 'customers' | 'dashboard' | 'order' | 'ledger' | 'catalog' | 'rates' | 'stones' | 'orders' | 'work_list' | 'release_list' | 'unpaid_ledger' | 'paid_ledger' | 'hold_ledger') => void;
+  fetchDb: (targetCollections?: ('gold_rates' | 'stones' | 'customers' | 'catalog' | 'orders' | 'gold_transactions' | 'audit_logs')[], forceFull?: boolean, bypassThrottle?: boolean) => Promise<void>;
+  setActiveTab: (tab: 'customers' | 'dashboard' | 'order' | 'ledger' | 'catalog' | 'rates' | 'stones' | 'orders' | 'work_list' | 'release_list' | 'unpaid_ledger' | 'paid_ledger' | 'hold_ledger' | 'statistics' | 'audit_logs') => void;
+  addAuditLog: (log: Omit<AuditLog, 'log_id' | 'timestamp' | 'operator'> & { operator?: string }) => Promise<void>;
+  restoreFromAuditLog: (logId: string) => Promise<boolean>;
   startEditOrder: (orderId: string) => void;
   cancelEditOrder: () => void;
   updateGoldRate: (rates: GoldRates) => Promise<void>;
@@ -184,78 +218,249 @@ export const useErpStore = create<ErpState>((set, get) => {
     catalog: cachedData.catalog || [],
     orders: cachedData.orders || [],
     transactions: cachedData.transactions || [],
+    auditLogs: [],
     
     currentRates: sortedRates[0] || null,
     totalReceivable: cachedData.customers ? cachedData.customers.reduce((sum: number, c: any) => sum + c.receivable_amount, 0) : 0,
     totalGoldBalance24k: cachedData.customers ? cachedData.customers.reduce((sum: number, c: any) => sum + c.gold_balance_24k_g, 0) : 0,
     
+    lastFetchTimeMap: {},
     loading: false,
     selectedCustomerForOrder: null,
     currentOrderItems: [],
-    activeTab: 'dashboard',
+    activeTab: 'statistics',
     editingOrderId: null,
+    currentUser: null,
+
+    setCurrentUser: (user) => set({ currentUser: user }),
+
+    login: async (email, pass) => {
+      set({ loading: true });
+      try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, pass);
+        set({ currentUser: userCredential.user });
+      } catch (error: any) {
+        console.error("Login failed: ", error);
+        throw error;
+      } finally {
+        set({ loading: false });
+      }
+    },
+
+    logout: async () => {
+      set({ loading: true });
+      try {
+        await firebaseSignOut(auth);
+        set({ currentUser: null });
+      } catch (error) {
+        console.error("Logout failed: ", error);
+      } finally {
+        set({ loading: false });
+      }
+    },
 
     setActiveTab: (tab) => set({ activeTab: tab }),
 
-    fetchDb: async (targetCollections) => {
-    set({ loading: true });
-    try {
+    addAuditLog: async (log) => {
+      const user = get().currentUser;
+      const operatorName = user ? (user.email || '인증사용자') : '비회원';
+      const logWithUser = {
+        ...log,
+        operator: operatorName
+      };
+      
+      const newLog = mockDb.addAuditLog(logWithUser);
+      try {
+        await setDoc(doc(db, 'audit_logs', newLog.log_id), newLog);
+      } catch (err) {
+        console.error("Firestore audit_logs save failed: ", err);
+      }
+      await get().fetchDb(['audit_logs'], false, true);
+    },
+
+    restoreFromAuditLog: async (logId) => {
+      const state = get();
+      const log = state.auditLogs.find(l => l.log_id === logId);
+      if (!log) {
+        console.error("Audit log not found");
+        return false;
+      }
+      if (!log.before_value) {
+        console.warn("Before value is empty, cannot restore.");
+        return false;
+      }
+
+      set({ loading: true });
+      try {
+        const targetType = log.target_type;
+        const targetId = log.target_id;
+        const beforeData = JSON.parse(log.before_value);
+
+        if (targetType === 'customer') {
+          await setDoc(doc(db, 'customers', targetId), beforeData);
+          
+          await get().addAuditLog({
+            action_type: 'modify',
+            target_type: 'customer',
+            target_id: targetId,
+            description: `[복구 완료] 로그 ID: ${logId}를 기준으로 거래처(${beforeData.name || targetId}) 정보를 되돌렸습니다.`,
+            before_value: JSON.stringify(state.customers.find(c => c.customer_id === targetId) || null),
+            after_value: JSON.stringify(beforeData)
+          });
+        } 
+        else if (targetType === 'order') {
+          await setDoc(doc(db, 'orders', targetId), beforeData);
+
+          await get().addAuditLog({
+            action_type: 'modify',
+            target_type: 'order',
+            target_id: targetId,
+            description: `[복구 완료] 로그 ID: ${logId}를 기준으로 주문서(${targetId})를 되돌렸습니다.`,
+            before_value: JSON.stringify(state.orders.find(o => o.order_id === targetId) || null),
+            after_value: JSON.stringify(beforeData)
+          });
+        } 
+        else if (targetType === 'rates') {
+          await setDoc(doc(db, 'gold_rates', targetId), beforeData);
+
+          await get().addAuditLog({
+            action_type: 'modify',
+            target_type: 'rates',
+            target_id: targetId,
+            description: `[복구 완료] 로그 ID: ${logId}를 기준으로 금 시세 데이터를 되돌렸습니다.`,
+            before_value: JSON.stringify(state.goldRates.find(r => r.date === targetId) || null),
+            after_value: JSON.stringify(beforeData)
+          });
+        }
+        
+        await get().fetchDb([targetType === 'rates' ? 'gold_rates' : (targetType === 'customer' ? 'customers' : 'orders')], true);
+        return true;
+      } catch (err) {
+        console.error("Restore from audit log failed: ", err);
+        return false;
+      } finally {
+        set({ loading: false });
+      }
+    },
+
+    fetchDb: async (targetCollections, forceFull = false, bypassThrottle = false) => {
+      const now = Date.now();
+      const state = get();
       const collectionsToFetch = targetCollections || [
         'gold_rates',
         'stones',
         'customers',
         'catalog',
         'orders',
-        'gold_transactions'
+        'gold_transactions',
+        'audit_logs'
       ];
 
-      const promises = collectionsToFetch.map(col => getDocs(collection(db, col)));
-      const results = await Promise.all(promises);
+      // forceFull 이거나 bypassThrottle 이면 쓰로틀을 우회하고, 그렇지 않으면 최근 20초 이내에 호출된 것은 제외합니다.
+      const filteredCollections = (forceFull || bypassThrottle)
+        ? collectionsToFetch
+        : collectionsToFetch.filter(col => {
+            const lastFetch = state.lastFetchTimeMap[col] || 0;
+            return now - lastFetch > 20000; // 20초 쓰로틀링
+          });
 
-      const updates: any = {};
+      if (filteredCollections.length === 0) {
+        return;
+      }
 
-      collectionsToFetch.forEach((col, index) => {
-        const snap = results[index];
-        const data = snap.docs.map(d => d.data());
+      set({ loading: true });
+      try {
+        const promises = filteredCollections.map(col => {
+          let cachedItems: any[] = [];
+          if (col === 'stones') cachedItems = state.stones;
+          else if (col === 'customers') cachedItems = state.customers;
+          else if (col === 'catalog') cachedItems = state.catalog;
+          else if (col === 'orders') cachedItems = state.orders;
+          else if (col === 'gold_transactions') cachedItems = state.transactions;
+          else if (col === 'audit_logs') cachedItems = state.auditLogs;
 
-        if (col === 'gold_rates') {
-          updates.goldRates = data as GoldRates[];
-          const sortedRates = [...(data as GoldRates[])].sort((a, b) => b.date.localeCompare(a.date));
-          updates.currentRates = sortedRates[0] || null;
-        } else if (col === 'stones') {
-          updates.stones = data as Stone[];
-        } else if (col === 'customers') {
-          updates.customers = data as Customer[];
-          updates.totalReceivable = (data as Customer[]).reduce((sum, c) => sum + c.receivable_amount, 0);
-          updates.totalGoldBalance24k = (data as Customer[]).reduce((sum, c) => sum + c.gold_balance_24k_g, 0);
-        } else if (col === 'catalog') {
-          updates.catalog = data as CatalogItem[];
-        } else if (col === 'orders') {
-          updates.orders = data as Order[];
-        } else if (col === 'gold_transactions') {
-          updates.transactions = data as GoldTransaction[];
-        }
-      });
+          const lastFetched = localStorage.getItem(`last_fetched_${col}`);
+          
+          if (lastFetched && cachedItems.length > 0 && !forceFull && col !== 'gold_rates') {
+            return getDocs(query(collection(db, col), where('updated_at', '>', lastFetched)));
+          } else {
+            return getDocs(collection(db, col));
+          }
+        });
 
-      set(updates);
+        const results = await Promise.all(promises);
+        const updates: any = {};
+        const nowStr = new Date().toISOString();
+        const nextFetchMap = { ...state.lastFetchTimeMap };
 
-      // 로컬스토리지 캐시 동기화
-      const storeState = get();
-      saveCacheToLocalStorage({
-        goldRates: storeState.goldRates,
-        stones: storeState.stones,
-        customers: storeState.customers,
-        catalog: storeState.catalog,
-        orders: storeState.orders,
-        transactions: storeState.transactions
-      });
+        filteredCollections.forEach((col, index) => {
+          const snap = results[index];
+          const data = snap.docs.map(d => d.data());
+          nextFetchMap[col] = now;
 
-    } catch (error) {
-      console.error("fetchDb error: ", error);
-    } finally {
-      set({ loading: false });
-    }
-  },
+          if (col === 'gold_rates') {
+            updates.goldRates = data as GoldRates[];
+            const sortedRates = [...(data as GoldRates[])].sort((a, b) => b.date.localeCompare(a.date));
+            updates.currentRates = sortedRates[0] || null;
+            localStorage.setItem(`last_fetched_${col}`, nowStr);
+          } 
+          else if (col === 'stones') {
+            const merged = mergeArrays(state.stones, data, 'stone_id');
+            updates.stones = merged;
+            localStorage.setItem(`last_fetched_${col}`, nowStr);
+          } 
+          else if (col === 'customers') {
+            const merged = mergeArrays(state.customers, data, 'customer_id');
+            updates.customers = merged;
+            updates.totalReceivable = merged.reduce((sum, c) => sum + c.receivable_amount, 0);
+            updates.totalGoldBalance24k = merged.reduce((sum, c) => sum + c.gold_balance_24k_g, 0);
+            localStorage.setItem(`last_fetched_${col}`, nowStr);
+          } 
+          else if (col === 'catalog') {
+            const merged = mergeArrays(state.catalog, data, 'model_number');
+            updates.catalog = merged;
+            localStorage.setItem(`last_fetched_${col}`, nowStr);
+          } 
+          else if (col === 'orders') {
+            const merged = mergeArrays(state.orders, data, 'order_id');
+            updates.orders = merged;
+            localStorage.setItem(`last_fetched_${col}`, nowStr);
+          } 
+          else if (col === 'gold_transactions') {
+            const merged = mergeArrays(state.transactions, data, 'transaction_id');
+            updates.transactions = merged;
+            localStorage.setItem(`last_fetched_${col}`, nowStr);
+          } 
+          else if (col === 'audit_logs') {
+            const logData = (data as AuditLog[]) || [];
+            const merged = mergeArrays(state.auditLogs, logData, 'log_id');
+            const sorted = [...merged].sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+            updates.auditLogs = sorted;
+            localStorage.setItem('audit_logs', JSON.stringify(sorted));
+            localStorage.setItem(`last_fetched_${col}`, nowStr);
+          }
+        });
+
+        updates.lastFetchTimeMap = nextFetchMap;
+        set(updates);
+
+        // 로컬스토리지 캐시 동기화
+        const storeState = get();
+        saveCacheToLocalStorage({
+          goldRates: storeState.goldRates,
+          stones: storeState.stones,
+          customers: storeState.customers,
+          catalog: storeState.catalog,
+          orders: storeState.orders,
+          transactions: storeState.transactions
+        });
+
+      } catch (error) {
+        console.error("fetchDb error: ", error);
+      } finally {
+        set({ loading: false });
+      }
+    },
 
   prefetchDb: async (targetCollections) => {
     try {
@@ -290,7 +495,15 @@ export const useErpStore = create<ErpState>((set, get) => {
   updateGoldRate: async (rates: GoldRates) => {
     try {
       await setDoc(doc(db, 'gold_rates', rates.date), rates);
-      await get().fetchDb();
+      await get().addAuditLog({
+        operator: '관리자',
+        target_type: 'rates',
+        target_id: rates.date,
+        action_type: 'modify',
+        description: `당일 금 시세 등록/수정 완료 (기준일자: ${rates.date})`,
+        after_value: JSON.stringify(rates)
+      });
+      await get().fetchDb(undefined, false, true);
     } catch (error) {
       console.error("updateGoldRate error: ", error);
     }
@@ -782,7 +995,18 @@ export const useErpStore = create<ErpState>((set, get) => {
       batch.set(doc(db, 'orders', orderId), newOrder);
 
       await batch.commit();
-      await get().fetchDb();
+
+      // 감사 로그 연동
+      await get().addAuditLog({
+        operator: '관리자',
+        target_type: 'order',
+        target_id: orderId,
+        action_type: editingOrderId ? 'modify' : 'create',
+        description: editingOrderId ? `주문서 [${orderId}] 수정 완료 (총금액: ${totalAmount.toLocaleString()}원)` : `신규 주문서 [${orderId}] 등록 완료 (총금액: ${totalAmount.toLocaleString()}원)`,
+        after_value: JSON.stringify({ total_amount: totalAmount, total_gold_weight: totalGoldWeight24k_g })
+      });
+
+      await get().fetchDb(undefined, false, true);
       get().clearOrderForm();
       set({ activeTab: 'orders' });
       return orderId;
@@ -816,7 +1040,7 @@ export const useErpStore = create<ErpState>((set, get) => {
   updateOrderStatus: async (orderId: string, status: Order['status']) => {
     try {
       await updateDoc(doc(db, 'orders', orderId), { status });
-      await get().fetchDb();
+      await get().fetchDb(undefined, false, true);
     } catch (error) {
       console.error("updateOrderStatus error: ", error);
     }
@@ -928,8 +1152,8 @@ export const useErpStore = create<ErpState>((set, get) => {
         if (diff.amount !== 0 || diff.gold !== 0) {
           const customerDetail = get().customers.find(c => c.customer_id === customerId);
           if (customerDetail) {
-            const nextAmount = Math.max(0, customerDetail.receivable_amount + diff.amount);
-            const nextGold = parseFloat(Math.max(0, customerDetail.gold_balance_24k_g + diff.gold).toFixed(3));
+            const nextAmount = customerDetail.receivable_amount + diff.amount;
+            const nextGold = parseFloat((customerDetail.gold_balance_24k_g + diff.gold).toFixed(3));
             batch.update(doc(db, 'customers', customerId), {
               receivable_amount: nextAmount,
               gold_balance_24k_g: nextGold,
@@ -939,7 +1163,18 @@ export const useErpStore = create<ErpState>((set, get) => {
         }
       }
       await batch.commit();
-      await get().fetchDb();
+
+      // 감사 로그 연동
+      const affectedOrders = Object.keys(grouped).join(', ');
+      await get().addAuditLog({
+        operator: '관리자',
+        target_type: 'order',
+        target_id: affectedOrders,
+        action_type: 'modify',
+        description: `주문 품목 ${updates.length}건의 공정 단계를 [${status}](으)로 일괄 변경 완료 (대상 주문: ${affectedOrders})`
+      });
+
+      await get().fetchDb(undefined, false, true);
     } catch (error) {
       console.error("updateMultipleItemsStatus error: ", error);
     }
@@ -948,7 +1183,7 @@ export const useErpStore = create<ErpState>((set, get) => {
   addStone: async (stone: Stone) => {
     try {
       await setDoc(doc(db, 'stones', stone.stone_id), stone);
-      await get().fetchDb();
+      await get().fetchDb(undefined, false, true);
     } catch (error) {
       console.error("addStone error: ", error);
       throw error;
@@ -958,7 +1193,7 @@ export const useErpStore = create<ErpState>((set, get) => {
   saveCatalogItem: async (item: CatalogItem) => {
     try {
       await setDoc(doc(db, 'catalog', item.model_number), item);
-      await get().fetchDb();
+      await get().fetchDb(undefined, false, true);
     } catch (error) {
       console.error("saveCatalogItem error: ", error);
       throw error;
@@ -968,7 +1203,7 @@ export const useErpStore = create<ErpState>((set, get) => {
   deleteCatalogItem: async (modelNumber: string) => {
     try {
       await deleteDoc(doc(db, 'catalog', modelNumber));
-      await get().fetchDb();
+      await get().fetchDb(undefined, false, true);
     } catch (error) {
       console.error("deleteCatalogItem error: ", error);
       throw error;
@@ -977,8 +1212,16 @@ export const useErpStore = create<ErpState>((set, get) => {
 
   saveCustomer: async (customer: Customer) => {
     try {
+      const exist = get().customers.some(c => c.customer_id === customer.customer_id);
       await setDoc(doc(db, 'customers', customer.customer_id), customer);
-      await get().fetchDb();
+      await get().addAuditLog({
+        operator: '관리자',
+        target_type: 'customer',
+        target_id: customer.customer_id,
+        action_type: exist ? 'modify' : 'create',
+        description: exist ? `거래처 [${customer.name}] 정보 수정 완료` : `신규 거래처 [${customer.name}] 등록 완료`
+      });
+      await get().fetchDb(undefined, false, true);
     } catch (error) {
       console.error("saveCustomer error: ", error);
       throw error;
@@ -987,8 +1230,16 @@ export const useErpStore = create<ErpState>((set, get) => {
 
   deleteCustomer: async (customerId: string) => {
     try {
+      const target = get().customers.find(c => c.customer_id === customerId);
       await deleteDoc(doc(db, 'customers', customerId));
-      await get().fetchDb();
+      await get().addAuditLog({
+        operator: '관리자',
+        target_type: 'customer',
+        target_id: customerId,
+        action_type: 'delete',
+        description: `거래처 [${target?.name || customerId}] 정보를 완전히 삭제하였습니다.`
+      });
+      await get().fetchDb(undefined, false, true);
     } catch (error) {
       console.error("deleteCustomer error: ", error);
     }
@@ -1096,8 +1347,8 @@ export const useErpStore = create<ErpState>((set, get) => {
         if (diff.amount !== 0 || diff.gold !== 0) {
           const customerDetail = get().customers.find(c => c.customer_id === customerId);
           if (customerDetail) {
-            const nextAmount = Math.max(0, customerDetail.receivable_amount + diff.amount);
-            const nextGold = parseFloat(Math.max(0, customerDetail.gold_balance_24k_g + diff.gold).toFixed(3));
+            const nextAmount = customerDetail.receivable_amount + diff.amount;
+            const nextGold = parseFloat((customerDetail.gold_balance_24k_g + diff.gold).toFixed(3));
             batch.update(doc(db, 'customers', customerId), {
               receivable_amount: nextAmount,
               gold_balance_24k_g: nextGold,
@@ -1107,7 +1358,18 @@ export const useErpStore = create<ErpState>((set, get) => {
         }
       }
       await batch.commit();
-      await get().fetchDb();
+
+      // 감사 로그 연동
+      const affectedOrders = Object.keys(grouped).join(', ');
+      await get().addAuditLog({
+        operator: '관리자',
+        target_type: 'order',
+        target_id: affectedOrders,
+        action_type: 'modify',
+        description: `주문 품목 ${updates.length}건의 결제 상태를 [${status}](으)로 일괄 수정 완료 (대상 주문: ${affectedOrders})`
+      });
+
+      await get().fetchDb(undefined, false, true);
     } catch (error) {
       console.error("updateMultipleItemsPaymentStatus error: ", error);
     }
@@ -1244,7 +1506,7 @@ export const useErpStore = create<ErpState>((set, get) => {
       }
 
       await batch.commit();
-      await get().fetchDb();
+      await get().fetchDb(undefined, false, true);
     } catch (error) {
       console.error("updateItemActualWeight error: ", error);
     }
@@ -1379,7 +1641,7 @@ export const useErpStore = create<ErpState>((set, get) => {
       }
 
       await batch.commit();
-      await get().fetchDb();
+      await get().fetchDb(undefined, false, true);
     } catch (error) {
       console.error("updateItemStepWeightsAndActualWeight error: ", error);
     }
@@ -1426,10 +1688,10 @@ export const useErpStore = create<ErpState>((set, get) => {
 
           if (division === '판매') {
             if (isWeightTrade) {
-              revisedGold = Math.max(0, parseFloat((revisedGold - itemGoldWeight24k).toFixed(3)));
-              revisedAmount = Math.max(0, revisedAmount - totalLaborCost);
+              revisedGold = parseFloat((revisedGold - itemGoldWeight24k).toFixed(3));
+              revisedAmount = revisedAmount - totalLaborCost;
             } else {
-              revisedAmount = Math.max(0, revisedAmount - itemAmount);
+              revisedAmount = revisedAmount - itemAmount;
             }
           }
         });
@@ -1452,7 +1714,18 @@ export const useErpStore = create<ErpState>((set, get) => {
       batch.delete(doc(db, 'orders', orderId));
 
       await batch.commit();
-      await get().fetchDb();
+
+      // 감사 로그 연동
+      await get().addAuditLog({
+        operator: '관리자',
+        target_type: 'order',
+        target_id: orderId,
+        action_type: 'delete',
+        description: `주문서 [${orderId}] 전체 내역이 완전히 삭제(취소)되었습니다. (거래처: ${order.customer_snapshot.name})`,
+        before_value: JSON.stringify({ total_amount: order.total_amount, items_count: order.items.length })
+      });
+
+      await get().fetchDb(undefined, false, true);
     } catch (error) {
       console.error("deleteOrder error: ", error);
     }
@@ -1498,10 +1771,10 @@ export const useErpStore = create<ErpState>((set, get) => {
           const totalLaborCost = (baseLabor + extraLabor + mainStoneLabor + subStoneLabor) * targetItem.quantity;
 
           if (isWeightTrade) {
-            revisedGold = Math.max(0, parseFloat((revisedGold - itemGoldWeight24k).toFixed(3)));
-            revisedAmount = Math.max(0, revisedAmount - totalLaborCost);
+            revisedGold = parseFloat((revisedGold - itemGoldWeight24k).toFixed(3));
+            revisedAmount = revisedAmount - totalLaborCost;
           } else {
-            revisedAmount = Math.max(0, revisedAmount - itemAmount);
+            revisedAmount = revisedAmount - itemAmount;
           }
         }
 
@@ -1528,7 +1801,7 @@ export const useErpStore = create<ErpState>((set, get) => {
             const wt = targetItem.actual_weight_g !== undefined ? targetItem.actual_weight_g : (targetItem.estimated_weight_g || 0);
             const itemGoldWeight24k = wt * targetItem.quantity * purityMultiplier;
 
-            revisedGold = parseFloat(Math.max(0, revisedGold + itemGoldWeight24k).toFixed(3));
+            revisedGold = parseFloat((revisedGold + itemGoldWeight24k).toFixed(3));
           }
         }
 
@@ -1575,7 +1848,18 @@ export const useErpStore = create<ErpState>((set, get) => {
       }
 
       await batch.commit();
-      await get().fetchDb();
+
+      // 감사 로그 연동
+      await get().addAuditLog({
+        operator: '관리자',
+        target_type: 'order',
+        target_id: orderId,
+        action_type: 'modify',
+        description: `주문서 [${orderId}]의 품목 #${itemId} (${targetItem.model_number || '품목'})을 삭제하였습니다.`,
+        before_value: JSON.stringify({ item_id: itemId, model_number: targetItem.model_number, calculated_price: targetItem.calculated_price })
+      });
+
+      await get().fetchDb(undefined, false, true);
     } catch (error) {
       console.error("deleteOrderItem error: ", error);
     }
@@ -1605,7 +1889,7 @@ export const useErpStore = create<ErpState>((set, get) => {
       const customerDetail = customersSnap.docs.find(d => d.id === customerId)?.data() as Customer;
       
       if (customerDetail) {
-        const nextGold = Math.max(0, parseFloat((customerDetail.gold_balance_24k_g - weightG).toFixed(3)));
+        const nextGold = parseFloat((customerDetail.gold_balance_24k_g - weightG).toFixed(3));
         batch.update(doc(db, 'customers', customerId), {
           gold_balance_24k_g: nextGold,
           updated_at: new Date().toISOString()
@@ -1613,7 +1897,17 @@ export const useErpStore = create<ErpState>((set, get) => {
       }
 
       await batch.commit();
-      await get().fetchDb();
+
+      // 감사 로그 연동
+      await get().addAuditLog({
+        operator: '관리자',
+        target_type: 'customer',
+        target_id: customerId,
+        action_type: 'modify',
+        description: `거래처 [${customerDetail?.name || customerId}]의 실물 금 수금 등록 완료: ${weightG}g (${note})`
+      });
+
+      await get().fetchDb(undefined, false, true);
     } catch (error) {
       console.error("addGoldPayment error: ", error);
     }
@@ -1650,7 +1944,7 @@ export const useErpStore = create<ErpState>((set, get) => {
       }
 
       await batch.commit();
-      await get().fetchDb();
+      await get().fetchDb(undefined, false, true);
     } catch (error) {
       console.error("deleteTransaction error: ", error);
     }
