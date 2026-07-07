@@ -365,11 +365,12 @@ export const CompletedLedger: React.FC = () => {
             onClick={() => setViewMode('list')}
             style={{
               display: 'flex', alignItems: 'center', gap: '5px',
-              padding: '5px 12px', borderRadius: '5px', fontSize: '13px', fontWeight: '600',
-              border: viewMode === 'list' ? '1.5px solid var(--primary)' : '1.5px solid var(--border-color)',
-              background: viewMode === 'list' ? 'rgba(212,175,55,0.12)' : 'transparent',
-              color: viewMode === 'list' ? 'var(--primary)' : 'var(--text-muted)',
-              cursor: 'pointer'
+              padding: '6px 14px', borderRadius: '5px', fontSize: '13px', fontWeight: '700',
+              border: viewMode === 'list' ? '2px solid var(--primary)' : '2px solid #888',
+              background: viewMode === 'list' ? 'rgba(212,175,55,0.18)' : 'rgba(128,128,128,0.12)',
+              color: viewMode === 'list' ? 'var(--primary)' : '#555',
+              cursor: 'pointer',
+              transition: 'all 0.15s'
             }}
           >
             <ListFilter size={13} /> 전체 목록
@@ -378,11 +379,12 @@ export const CompletedLedger: React.FC = () => {
             onClick={() => { setViewMode('by-customer'); setFilterCustomer(''); }}
             style={{
               display: 'flex', alignItems: 'center', gap: '5px',
-              padding: '5px 12px', borderRadius: '5px', fontSize: '13px', fontWeight: '600',
-              border: viewMode === 'by-customer' ? '1.5px solid var(--primary)' : '1.5px solid var(--border-color)',
-              background: viewMode === 'by-customer' ? 'rgba(212,175,55,0.12)' : 'transparent',
-              color: viewMode === 'by-customer' ? 'var(--primary)' : 'var(--text-muted)',
-              cursor: 'pointer'
+              padding: '6px 14px', borderRadius: '5px', fontSize: '13px', fontWeight: '700',
+              border: viewMode === 'by-customer' ? '2px solid var(--primary)' : '2px solid #888',
+              background: viewMode === 'by-customer' ? 'rgba(212,175,55,0.18)' : 'rgba(128,128,128,0.12)',
+              color: viewMode === 'by-customer' ? 'var(--primary)' : '#555',
+              cursor: 'pointer',
+              transition: 'all 0.15s'
             }}
           >
             <Users size={13} /> 거래처별 보기
