@@ -13,7 +13,7 @@ export const CustomerManager: React.FC = () => {
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 50;
+  const pageSize = 30;
 
   // Reset pagination on filter or search change
   useEffect(() => {
@@ -193,34 +193,41 @@ export const CustomerManager: React.FC = () => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', flexWrap: 'wrap', gap: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <UserPlus size={18} style={{ color: 'var(--primary)' }} />
-            <h2 style={{ fontSize: '18px', fontWeight: '600', fontFamily: 'var(--font-title)' }}>거래처 마스터 관리</h2>
-            <button
-              className="btn-primary mobile-customer-add-btn"
-              onClick={() => {
-                handleResetForm();
-                setIsFormOpen(true);
-              }}
-              style={{ padding: '4px 10px', fontSize: '14px', boxShadow: 'none' }}
-            >
-              <UserPlus size={12} />
-              <span>신규 등록</span>
-            </button>
+            <h2 style={{ fontSize: '19px', fontWeight: '600', fontFamily: 'var(--font-title)', margin: 0 }}>거래처 마스터 관리</h2>
           </div>
           
-          {/* Search Bar & Filter */}
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <button
+            className="btn-primary mobile-customer-add-btn"
+            onClick={() => {
+              handleResetForm();
+              setIsFormOpen(true);
+            }}
+            style={{ padding: '6px 14px', fontSize: '15px', display: 'flex', alignItems: 'center', gap: '6px' }}
+          >
+            <UserPlus size={14} />
+            <span>신규 등록</span>
+          </button>
+        </div>
+
+        {/* Filter Toolbar */}
+        <div className="customer-filter-toolbar" style={{ display: 'flex', gap: '12px', alignItems: 'center', background: 'rgba(255,255,255,0.01)', padding: '10px 14px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <label style={{ fontWeight: '700', color: 'var(--text-muted)', fontSize: '14px' }}>거래처 검색:</label>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
               <Search size={14} style={{ position: 'absolute', left: '10px', color: 'var(--text-muted)' }} />
               <input
                 type="text"
-                placeholder="거래처명 / 코드 / 대표자 검색..."
+                placeholder="거래처명 / 코드 / 대표자..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
                 className="input-field"
                 style={{ paddingLeft: '30px', fontSize: '15px', width: '220px', height: '32px' }}
               />
             </div>
-            
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <label style={{ fontWeight: '700', color: 'var(--text-muted)', fontSize: '14px' }}>등급 필터:</label>
             <select
               value={filterGrade}
               onChange={e => setFilterGrade(e.target.value)}
@@ -234,13 +241,14 @@ export const CustomerManager: React.FC = () => {
               <option value="4">4등급</option>
             </select>
           </div>
+
+          <div style={{ marginLeft: 'auto', fontSize: '14px', color: 'var(--text-muted)' }}>
+            조회 결과: <strong style={{ color: 'var(--primary)' }}>{filteredCustomers.length}건</strong> / 전체 {customers.length}건
+          </div>
         </div>
 
         {/* Count indicators & Classification Descriptions */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '14px', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.02)', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-color)', margin: '4px 0 8px 0' }}>
-          <div>
-            조회 결과: <strong style={{ color: 'var(--primary)' }}>{filteredCustomers.length}건</strong> / 전체 {customers.length}건 등록됨
-          </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '14px', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.02)', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-color)', margin: '0' }}>
           <div style={{ display: 'flex', gap: '12px', fontSize: '13px' }}>
             <span><strong>등급구분:</strong> 1등(최우수) 2등(일반) 3등(신규) 4등(소매)</span>
             <span style={{ color: 'var(--border-color)', opacity: 0.3 }}>|</span>
@@ -312,11 +320,31 @@ export const CustomerManager: React.FC = () => {
                       <td style={{ padding: '10px', width: '90px', fontWeight: '600' }}>
                         {cust.loss_rate !== undefined ? `${cust.loss_rate}%` : '10%'}
                       </td>
-                      <td style={{ padding: '10px', width: '140px', fontWeight: '600', color: cust.receivable_amount > 0 ? 'var(--danger)' : 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {cust.receivable_amount.toLocaleString()}원
+                      <td style={{ 
+                        padding: '10px', 
+                        width: '140px', 
+                        fontWeight: '600', 
+                        color: cust.receivable_amount > 0 ? 'var(--danger)' : cust.receivable_amount < 0 ? '#10b981' : 'var(--text-muted)', 
+                        overflow: 'hidden', 
+                        textOverflow: 'ellipsis', 
+                        whiteSpace: 'nowrap' 
+                      }}>
+                        {cust.receivable_amount < 0 
+                          ? `선수금 ${Math.abs(cust.receivable_amount).toLocaleString()}원` 
+                          : `${cust.receivable_amount.toLocaleString()}원`}
                       </td>
-                      <td style={{ padding: '10px', width: '130px', fontWeight: '600', color: cust.gold_balance_24k_g > 0 ? 'var(--primary)' : 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {cust.gold_balance_24k_g.toFixed(3)}g
+                      <td style={{ 
+                        padding: '10px', 
+                        width: '130px', 
+                        fontWeight: '600', 
+                        color: cust.gold_balance_24k_g > 0 ? 'var(--primary)' : cust.gold_balance_24k_g < 0 ? '#10b981' : 'var(--text-muted)', 
+                        overflow: 'hidden', 
+                        textOverflow: 'ellipsis', 
+                        whiteSpace: 'nowrap' 
+                      }}>
+                        {cust.gold_balance_24k_g < 0 
+                          ? `선수금 ${Math.abs(cust.gold_balance_24k_g).toFixed(3)}g` 
+                          : `${cust.gold_balance_24k_g.toFixed(3)}g`}
                       </td>
                       <td style={{ padding: '10px', width: '90px', textAlign: 'center' }} onClick={e => e.stopPropagation()}>
                         <div style={{ display: 'flex', justifyContent: 'center', gap: '6px' }}>

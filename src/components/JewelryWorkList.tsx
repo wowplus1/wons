@@ -44,6 +44,13 @@ export const JewelryWorkList: React.FC = () => {
   const { orders, catalog, stones, updateMultipleItemsStatus, fetchDb, setActiveTab, updateItemStepWeights } = useErpStore();
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
   const showPrice = true;
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 30;
+
+  useEffect(() => {
+    setCurrentPage(1);
+    setCheckedItems(new Set());
+  }, [orders]);
 
   // 무게 입력 모달을 띄우기 위한 상태
   const [activeWeightModalItem, setActiveWeightModalItem] = useState<{
@@ -208,13 +215,16 @@ export const JewelryWorkList: React.FC = () => {
     return items;
   }, [orders, catalog, stones]);
 
+  const totalPages = Math.ceil(workItems.length / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const paginatedWorkItems = workItems.slice(startIndex, startIndex + pageSize);
+
   // 체크박스 제어 로직
-  const isAllChecked = workItems.length > 0 && workItems.every(r => checkedItems.has(r.id));
+  const isAllChecked = paginatedWorkItems.length > 0 && paginatedWorkItems.every(r => checkedItems.has(r.id));
   
   const handleToggleAll = () => {
     if (isAllChecked) {
       const next = new Set(checkedItems);
-      workItems.forEach(r => next.delete(r.id));
       setCheckedItems(next);
     } else {
       const next = new Set(checkedItems);
@@ -241,39 +251,7 @@ export const JewelryWorkList: React.FC = () => {
         return;
       }
 
-      // 3단계 해리 무게 입력 여부 검증
-      const incompleteItems: string[] = [];
-      checkedItems.forEach(rowId => {
-        const item = workItems.find(w => w.id === rowId);
-        if (item) {
-          // 구분이 결제이거나 디자인출력 모델일 경우 해리 무게 검증 생략
-          if (item.division === '결제' || item.model === '디자인출력') {
-            return;
-          }
-          const sw = item.stepWeights;
-          const s1Before = sw?.step1?.before || 0;
-          const s1After = sw?.step1?.after || 0;
-          const s2Before = sw?.step2?.before || 0;
-          const s2After = sw?.step2?.after || 0;
-          const s3Before = sw?.step3?.before || 0;
-          const s3After = sw?.step3?.after || 0;
 
-          const isComplete = (
-            s1Before > 0 && s1After > 0 &&
-            s2Before > 0 && s2After > 0 &&
-            s3Before > 0 && s3After > 0
-          );
-
-          if (!isComplete) {
-            incompleteItems.push(`${item.customerName} - ${item.model}`);
-          }
-        }
-      });
-
-      if (incompleteItems.length > 0) {
-        alert(`아래 품목의 단계별(1~3단계) 해리 무게가 모두 입력되지 않았습니다. 3단계까지 완료해야 출고 대기로 이동할 수 있습니다:\n\n${incompleteItems.join('\n')}`);
-        return;
-      }
 
       const updates: { orderId: string, itemId: number }[] = [];
       checkedItems.forEach(rowId => {
@@ -379,67 +357,28 @@ export const JewelryWorkList: React.FC = () => {
         </h2>
       </div>
 
-      {/* 실시간 ERP 세공 데이터 자가진단 패널 */}
-      <div className="workshop-diagnostic-panel" style={{
-        padding: '10px 14px',
-        background: 'rgba(212, 175, 55, 0.05)',
-        border: '1px solid rgba(212, 175, 55, 0.2)',
-        borderRadius: '6px',
-        display: 'flex',
-        gap: '24px',
-        alignItems: 'center',
-        fontSize: '14px',
-        color: 'var(--text-main)'
-      }}>
-        <strong style={{ color: 'var(--primary)' }}>⚡ [실시간 세공 동기화 자가진단]</strong>
-        <span>• 스토어 로드된 총 주문: <strong>{orders.length}</strong>건</span>
-        <span>• '공장발주'(세공대기) 주문: <strong style={{ color: '#fbbf24' }}>{orders.filter(o => (o.status || '').trim() === '공장발주').length}</strong>건</span>
-        <span>• 필터링 통과한 세공 대상 품목: <strong style={{ color: '#38bdf8' }}>{workItems.length}</strong>건</span>
-        <button 
-          type="button"
-          onClick={() => { fetchDb(); alert('가상 DB 동기화 완료!'); }}
-          style={{
-            marginLeft: 'auto',
-            padding: '2px 8px',
-            fontSize: '13px',
-            background: 'rgba(255,255,255,0.05)',
-            border: '1px solid var(--border-color)',
-            borderRadius: '4px',
-            color: 'var(--text-muted)',
-            cursor: 'pointer'
-          }}
-        >
-          데이터 강제 동기화(새로고침)
-        </button>
-      </div>
-
-      {/* Control Actions Toolbar */}
-      <div className="workshop-toolbar" style={{ display: 'flex', gap: '12px', alignItems: 'center', background: 'rgba(255,255,255,0.01)', padding: '10px 14px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
-        
 
 
-        {/* Action Buttons */}
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px', alignItems: 'center' }}>
-          {checkedItems.size > 0 && (
-            <span style={{ fontSize: '14px', color: 'var(--primary)', fontWeight: 'bold', marginRight: '8px' }}>
-              선택됨: {checkedItems.size}건
-            </span>
-          )}
-          
+      {/* Batch Action Buttons */}
+      <div className="ledger-action-toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           <button
             onClick={handleCompleteWork}
+            disabled={checkedItems.size === 0}
             className="btn-primary"
             style={{
-              padding: '6px 14px',
+              padding: '6px 16px',
               fontSize: '15px',
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', // 초록색 완료 테마
-              color: 'var(--text-inverse)',
-              border: 'none',
+              background: checkedItems.size > 0 ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : '#e2e8f0',
+              color: checkedItems.size > 0 ? 'var(--text-inverse)' : '#475569',
+              border: checkedItems.size > 0 ? 'none' : '1.5px solid #94a3b8',
+              fontWeight: 'bold',
               borderRadius: '4px',
-              cursor: 'pointer'
+              cursor: checkedItems.size > 0 ? 'pointer' : 'not-allowed',
+              boxShadow: 'none'
             }}
           >
             <CheckCheck size={14} /> 세공 완료 처리 (출고대기 이동)
@@ -447,22 +386,29 @@ export const JewelryWorkList: React.FC = () => {
 
           <button
             onClick={handlePrintWorkList}
+            disabled={checkedItems.size === 0}
             className="btn-primary"
             style={{
-              padding: '6px 14px',
+              padding: '6px 16px',
               fontSize: '15px',
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              background: 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)',
-              color: 'var(--text-inverse)',
-              border: 'none',
+              background: checkedItems.size > 0 ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : '#e2e8f0',
+              color: checkedItems.size > 0 ? 'var(--text-inverse)' : '#475569',
+              border: checkedItems.size > 0 ? 'none' : '1.5px solid #94a3b8',
+              fontWeight: 'bold',
               borderRadius: '4px',
-              cursor: 'pointer'
+              cursor: checkedItems.size > 0 ? 'pointer' : 'not-allowed',
+              boxShadow: 'none',
+              marginLeft: '8px'
             }}
           >
             <Printer size={14} /> 선택 품목 세공지시서 인쇄
           </button>
+        </div>
+        <div style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
+          선택된 항목 수: <strong style={{ color: 'var(--primary)' }}>{checkedItems.size}</strong>개
         </div>
       </div>
 
@@ -537,8 +483,8 @@ export const JewelryWorkList: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {workItems.length > 0 ? (
-              workItems.map((row, idx) => {
+            {paginatedWorkItems.length > 0 ? (
+              paginatedWorkItems.map((row, idx) => {
                 return (
                   <tr 
                     key={row.id} 
@@ -714,9 +660,6 @@ export const JewelryWorkList: React.FC = () => {
                         const loss3 = parseFloat(Math.max(0, before3 - after3).toFixed(2));
                         const totalLoss = parseFloat((loss1 + loss2 + loss3).toFixed(2));
 
-                        const pct1 = before1 > 0 ? ((loss1 / before1) * 100).toFixed(2) : '0.00';
-                        const pct2 = before2 > 0 ? ((loss2 / before2) * 100).toFixed(2) : '0.00';
-                        const pct3 = before3 > 0 ? ((loss3 / before3) * 100).toFixed(2) : '0.00';
 
                         let initialBefore = 0;
                         if (before1 > 0) initialBefore = before1;
@@ -725,43 +668,31 @@ export const JewelryWorkList: React.FC = () => {
                         const totalLossPct = initialBefore > 0 ? ((totalLoss / initialBefore) * 100).toFixed(2) : '0.00';
 
                         return (
-                          <div style={{ fontSize: '14px', display: 'flex', flexDirection: 'column', gap: '3px', lineHeight: '1.2' }}>
-                            {before1 > 0 || after1 > 0 ? (
-                              <div>1단계: {before1.toFixed(2)}g → {after1.toFixed(2)}g (해리 {loss1.toFixed(2)}g / {pct1}%)</div>
-                            ) : null}
-                            {before2 > 0 || after2 > 0 ? (
-                              <div>2단계: {before2.toFixed(2)}g → {after2.toFixed(2)}g (해리 {loss2.toFixed(2)}g / {pct2}%)</div>
-                            ) : null}
-                            {before3 > 0 || after3 > 0 ? (
-                              <div>3단계: {before3.toFixed(2)}g → {after3.toFixed(2)}g (해리 {loss3.toFixed(2)}g / {pct3}%)</div>
-                            ) : null}
-                            <div style={{ 
-                              fontWeight: 'bold', 
-                              color: 'var(--primary)', 
-                              borderTop: '1px solid rgba(255,255,255,0.08)', 
-                              paddingTop: '3px', 
-                              marginTop: '2px', 
-                              display: 'flex', 
-                              justifyContent: 'space-between', 
-                              alignItems: 'center' 
-                            }}>
-                              <span>총 해리: {totalLoss.toFixed(2)}g ({totalLossPct}%)</span>
-                              <button
-                                onClick={() => handleOpenWeightModal(row)}
-                                style={{
-                                  padding: '1px 6px',
-                                  fontSize: '13px',
-                                  background: 'rgba(255,255,255,0.05)',
-                                  border: '1px solid var(--border-color)',
-                                  borderRadius: '3px',
-                                  color: 'var(--text-muted)',
-                                  cursor: 'pointer',
-                                  marginLeft: '4px'
-                                }}
-                              >
-                                수정
-                              </button>
-                            </div>
+                          <div style={{ 
+                            fontSize: '14px', 
+                            fontWeight: 'bold', 
+                            color: 'var(--primary)', 
+                            display: 'flex', 
+                            justifyContent: 'space-between', 
+                            alignItems: 'center',
+                            padding: '4px 2px'
+                          }}>
+                            <span>총 해리: {totalLoss.toFixed(2)}g ({totalLossPct}%)</span>
+                            <button
+                              onClick={() => handleOpenWeightModal(row)}
+                              style={{
+                                padding: '2px 8px',
+                                fontSize: '13px',
+                                background: 'rgba(255,255,255,0.05)',
+                                border: '1px solid var(--border-color)',
+                                borderRadius: '4px',
+                                color: 'var(--text-muted)',
+                                cursor: 'pointer',
+                                marginLeft: '8px'
+                              }}
+                            >
+                              수정
+                            </button>
                           </div>
                         );
                       })()}
@@ -798,6 +729,85 @@ export const JewelryWorkList: React.FC = () => {
             )}
           </tbody>
         </table>
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginTop: '16px', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
+            <button
+              disabled={currentPage === 1}
+              onClick={() => {
+                setCurrentPage(prev => Math.max(1, prev - 1));
+              }}
+              className="btn-primary"
+              style={{
+                padding: '5px 12px',
+                fontSize: '13px',
+                background: currentPage === 1 ? 'rgba(0,0,0,0.02)' : 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)',
+                color: currentPage === 1 ? 'var(--text-muted)' : 'var(--text-inverse)',
+                border: currentPage === 1 ? '1px solid var(--border-color)' : 'none',
+                boxShadow: currentPage === 1 ? 'none' : '0 2px 6px rgba(170, 133, 19, 0.15)',
+                cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
+              }}
+            >
+              이전
+            </button>
+            
+            {(() => {
+              const pageNumbers = [];
+              let startPage = Math.max(1, currentPage - 2);
+              let endPage = Math.min(totalPages, startPage + 4);
+              if (endPage - startPage < 4) {
+                startPage = Math.max(1, endPage - 4);
+              }
+              for (let i = startPage; i <= endPage; i++) {
+                pageNumbers.push(i);
+              }
+              return pageNumbers.map(page => {
+                const isActive = page === currentPage;
+                return (
+                  <button
+                    key={page}
+                    onClick={() => {
+                      setCurrentPage(page);
+                    }}
+                    className="btn-primary"
+                    style={{
+                      padding: '5px 12px',
+                      fontSize: '13px',
+                      minWidth: '32px',
+                      background: isActive ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : 'transparent',
+                      color: isActive ? 'var(--text-inverse)' : 'var(--text-muted)',
+                      border: isActive ? 'none' : '1px solid var(--border-color)',
+                      boxShadow: isActive ? '0 2px 6px rgba(170, 133, 19, 0.15)' : 'none',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {page}
+                  </button>
+                );
+              });
+            })()}
+
+            <button
+              disabled={currentPage === totalPages}
+              onClick={() => {
+                setCurrentPage(prev => Math.min(totalPages, prev + 1));
+              }}
+              className="btn-primary"
+              style={{
+                padding: '5px 12px',
+                fontSize: '13px',
+                background: currentPage === totalPages ? 'rgba(0,0,0,0.02)' : 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)',
+                color: currentPage === totalPages ? 'var(--text-muted)' : 'var(--text-inverse)',
+                border: currentPage === totalPages ? '1px solid var(--border-color)' : 'none',
+                boxShadow: currentPage === totalPages ? 'none' : '0 2px 6px rgba(170, 133, 19, 0.15)',
+                cursor: currentPage === totalPages ? 'not-allowed' : 'pointer'
+              }}
+            >
+              다음
+            </button>
+          </div>
+        )}
       </div>
 
       {/* 무게 입력/수정 모달 */}

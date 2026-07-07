@@ -39,6 +39,12 @@ export const OrderList: React.FC = () => {
   const [filterCustomer, setFilterCustomer] = useState('');
   const [filterType, setFilterType] = useState<'전체' | '판매' | '결제' | '반품' | 'DC'>('전체');
   const [checkedRows, setCheckedRows] = useState<Set<string>>(new Set());
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 30;
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [filterCustomer, filterType]);
 
   const handleDeleteRow = (row: RowData) => {
     const isConfirm = window.confirm(`선택한 [${row.type}] 데이터를 완전히 삭제하시겠습니까?\n삭제된 정보는 즉시 거래처의 미수금 및 순금 미수량에서 복구(역산)처리 됩니다.`);
@@ -251,8 +257,12 @@ export const OrderList: React.FC = () => {
     }).sort((a, b) => b.date.localeCompare(a.date));
   }, [allRows, filterCustomer, filterType]);
 
+  const totalPages = Math.ceil(filteredRows.length / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const paginatedRows = filteredRows.slice(startIndex, startIndex + pageSize);
+
   // 체크박스 제어 로직
-  const selectableRows = filteredRows;
+  const selectableRows = paginatedRows;
   const isAllChecked = selectableRows.length > 0 && selectableRows.every(r => checkedRows.has(r.id));
 
   const handleToggleAll = () => {
@@ -354,7 +364,7 @@ export const OrderList: React.FC = () => {
         }
       }, 50);
     } catch (err: any) {
-      alert(`[주문 이동 전송 오류]\n이동 처리 중 에러가 발생했습니다. 아래 메시지를 에이전트에게 전달해주세요:\n${err.message || err}`);
+      alert(`[오류 발생]\n처리 중 문제가 생겼습니다. 잠시 후 다시 시도해주세요.\n문제가 계속되면 관리자에게 문의해주세요.\n(오류코드: ${err.message || err})`);
       console.error("handleSendToWorkList error:", err);
     }
   };
@@ -372,26 +382,26 @@ export const OrderList: React.FC = () => {
       </div>
 
       {/* Filter Options */}
-      <div className="order-list-filter-bar">
-        <div className="filter-group">
-          <label style={{ fontWeight: '700', color: 'var(--text-muted)' }}>거래처 검색:</label>
+      <div className="order-list-filter-bar" style={{ display: 'flex', gap: '12px', alignItems: 'center', background: 'rgba(255,255,255,0.01)', padding: '10px 14px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <label style={{ fontWeight: '700', color: 'var(--text-muted)', fontSize: '14px' }}>거래처 검색:</label>
           <input
             type="text"
             placeholder="거래처명 입력..."
             value={filterCustomer}
             onChange={(e) => setFilterCustomer(e.target.value)}
             className="input-field"
-            style={{ padding: '5px 10px', fontSize: '15px' }}
+            style={{ padding: '5px 10px', fontSize: '15px', width: '180px', height: '32px' }}
           />
         </div>
 
-        <div className="filter-group">
-          <label style={{ fontWeight: '700', color: 'var(--text-muted)' }}>구분 필터:</label>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <label style={{ fontWeight: '700', color: 'var(--text-muted)', fontSize: '14px' }}>구분 필터:</label>
           <select
             value={filterType}
             onChange={(e) => setFilterType(e.target.value as '전체' | '판매' | '결제' | '반품' | 'DC')}
             className="input-field"
-            style={{ padding: '5px 10px', fontSize: '15px' }}
+            style={{ padding: '0 8px', fontSize: '15px', width: '120px', height: '32px' }}
           >
             <option value="전체">전체 구분</option>
             <option value="판매">판매 (주문)</option>
@@ -401,31 +411,38 @@ export const OrderList: React.FC = () => {
           </select>
         </div>
 
-        {/* 세공리스트 출력 액션 버튼 */}
-        <div className="filter-action-group">
-          {checkedRows.size > 0 && (
-            <span style={{ fontSize: '14px', color: 'var(--primary)', fontWeight: 'bold' }}>
-              선택됨: {checkedRows.size}건
-            </span>
-          )}
+        <div style={{ marginLeft: 'auto', fontSize: '14px', color: 'var(--text-muted)' }}>
+          조회 결과: <strong style={{ color: 'var(--primary)' }}>{filteredRows.length}</strong>건
+        </div>
+      </div>
+
+      {/* Batch Action Buttons */}
+      <div className="ledger-action-toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+        <div style={{ display: 'flex', gap: '8px' }}>
           <button
             onClick={handleSendToWorkList}
+            disabled={checkedRows.size === 0}
             className="btn-primary"
             style={{
-              padding: '6px 14px',
+              padding: '6px 16px',
               fontSize: '15px',
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              background: 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)',
-              color: 'var(--text-inverse)',
-              border: 'none',
+              background: checkedRows.size > 0 ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : '#e2e8f0',
+              color: checkedRows.size > 0 ? 'var(--text-inverse)' : '#475569',
+              border: checkedRows.size > 0 ? 'none' : '1.5px solid #94a3b8',
+              fontWeight: 'bold',
               borderRadius: '4px',
-              cursor: 'pointer'
+              cursor: checkedRows.size > 0 ? 'pointer' : 'not-allowed',
+              boxShadow: 'none'
             }}
           >
-            세공리스트로 보내기
+            선택 품목 세공리스트로 보내기 (발주 처리)
           </button>
+        </div>
+        <div style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
+          선택된 항목 수: <strong style={{ color: 'var(--primary)' }}>{checkedRows.size}</strong>개
         </div>
       </div>
 
@@ -477,8 +494,8 @@ export const OrderList: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredRows.length > 0 ? (
-              filteredRows.map((row, idx) => {
+            {paginatedRows.length > 0 ? (
+              paginatedRows.map((row, idx) => {
                 // 구분(type)별 텍스트 색상
                 const getDivisionColor = (type: string) => {
                   switch (type) {
@@ -666,6 +683,85 @@ export const OrderList: React.FC = () => {
             )}
           </tbody>
         </table>
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginTop: '16px', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
+            <button
+              disabled={currentPage === 1}
+              onClick={() => {
+                setCurrentPage(prev => Math.max(1, prev - 1));
+              }}
+              className="btn-primary"
+              style={{
+                padding: '5px 12px',
+                fontSize: '13px',
+                background: currentPage === 1 ? 'rgba(0,0,0,0.02)' : 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)',
+                color: currentPage === 1 ? 'var(--text-muted)' : 'var(--text-inverse)',
+                border: currentPage === 1 ? '1px solid var(--border-color)' : 'none',
+                boxShadow: currentPage === 1 ? 'none' : '0 2px 6px rgba(170, 133, 19, 0.15)',
+                cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
+              }}
+            >
+              이전
+            </button>
+            
+            {(() => {
+              const pageNumbers = [];
+              let startPage = Math.max(1, currentPage - 2);
+              let endPage = Math.min(totalPages, startPage + 4);
+              if (endPage - startPage < 4) {
+                startPage = Math.max(1, endPage - 4);
+              }
+              for (let i = startPage; i <= endPage; i++) {
+                pageNumbers.push(i);
+              }
+              return pageNumbers.map(page => {
+                const isActive = page === currentPage;
+                return (
+                  <button
+                    key={page}
+                    onClick={() => {
+                      setCurrentPage(page);
+                    }}
+                    className="btn-primary"
+                    style={{
+                      padding: '5px 12px',
+                      fontSize: '13px',
+                      minWidth: '32px',
+                      background: isActive ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : 'transparent',
+                      color: isActive ? 'var(--text-inverse)' : 'var(--text-muted)',
+                      border: isActive ? 'none' : '1px solid var(--border-color)',
+                      boxShadow: isActive ? '0 2px 6px rgba(170, 133, 19, 0.15)' : 'none',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {page}
+                  </button>
+                );
+              });
+            })()}
+
+            <button
+              disabled={currentPage === totalPages}
+              onClick={() => {
+                setCurrentPage(prev => Math.min(totalPages, prev + 1));
+              }}
+              className="btn-primary"
+              style={{
+                padding: '5px 12px',
+                fontSize: '13px',
+                background: currentPage === totalPages ? 'rgba(0,0,0,0.02)' : 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)',
+                color: currentPage === totalPages ? 'var(--text-muted)' : 'var(--text-inverse)',
+                border: currentPage === totalPages ? '1px solid var(--border-color)' : 'none',
+                boxShadow: currentPage === totalPages ? 'none' : '0 2px 6px rgba(170, 133, 19, 0.15)',
+                cursor: currentPage === totalPages ? 'not-allowed' : 'pointer'
+              }}
+            >
+              다음
+            </button>
+          </div>
+        )}
       </div>
 
     </div>
