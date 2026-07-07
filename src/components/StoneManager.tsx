@@ -1,5 +1,6 @@
 // src/components/StoneManager.tsx
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useErpStore } from '../store/useErpStore';
 import type { Stone } from '../firebase/mockDb';
 import { Gem, RotateCcw, Plus } from 'lucide-react';
@@ -8,7 +9,7 @@ export const StoneManager: React.FC = () => {
   const { stones, catalog } = useErpStore();
   const [selectedStoneForUsedList, setSelectedStoneForUsedList] = useState<Stone | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 50;
+  const pageSize = 30;
 
   // 1. Filter & Search States (Matches screenshot header)
   const [filterName, setFilterName] = useState('');
@@ -318,7 +319,7 @@ export const StoneManager: React.FC = () => {
 
 
       {/* Used Catalog Items Modal */}
-      {selectedStoneForUsedList && (
+      {selectedStoneForUsedList && createPortal(
         <div 
           style={{ 
             position: 'fixed', 
@@ -476,7 +477,8 @@ export const StoneManager: React.FC = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
