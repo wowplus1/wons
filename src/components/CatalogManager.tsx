@@ -5,6 +5,27 @@ import { Eye, Plus, Image } from 'lucide-react';
 
 export const CatalogManager: React.FC = () => {
   const { catalog, stones } = useErpStore();
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const [searchTerm, setSearchTerm] = React.useState('');
+  const pageSize = 30;
+
+  // 검색 필터 적용
+  const filteredCatalog = React.useMemo(() => {
+    if (!searchTerm.trim()) return catalog;
+    const term = searchTerm.trim().toLowerCase();
+    return catalog.filter(item => 
+      item.model_number.toLowerCase().includes(term)
+    );
+  }, [catalog, searchTerm]);
+
+  // 검색어 변경 시 첫 페이지로 이동
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  const totalPages = Math.ceil(filteredCatalog.length / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const paginatedCatalog = filteredCatalog.slice(startIndex, startIndex + pageSize);
 
   // Open Pop-up window for Catalog Registration
   const handleOpenRegisterWindow = () => {
@@ -61,9 +82,46 @@ export const CatalogManager: React.FC = () => {
         </button>
       </div>
 
+      {/* Search Filter Bar */}
+      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <input
+          type="text"
+          placeholder="모델번호를 입력하여 검색..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          style={{
+            flex: 1,
+            padding: '8px 12px',
+            fontSize: '14px',
+            borderRadius: '4px',
+            border: '1px solid var(--border-color)',
+            background: 'rgba(255, 255, 255, 0.02)',
+            color: 'var(--text-main)',
+            outline: 'none'
+          }}
+        />
+        {searchTerm && (
+          <button
+            onClick={() => setSearchTerm('')}
+            className="btn-primary"
+            style={{
+              padding: '7px 14px',
+              fontSize: '14px',
+              background: '#e2e8f0',
+              color: '#475569',
+              border: '1.5px solid #94a3b8',
+              boxShadow: 'none',
+              cursor: 'pointer'
+            }}
+          >
+            초기화
+          </button>
+        )}
+      </div>
+
       {/* Grid Card List (Full-width optimized layout) */}
       <div className="catalog-grid">
-        {catalog.map(item => {
+        {paginatedCatalog.map(item => {
           const mainMaterial = item.materials[0] || '14K';
           const totalStonesWeight = item.default_stones.reduce((sum, ds) => {
             const matchedStone = stones.find(s => s.stone_id === ds.stone_id);
@@ -172,6 +230,88 @@ export const CatalogManager: React.FC = () => {
           );
         })}
       </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginTop: '16px', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
+          <button
+            disabled={currentPage === 1}
+            onClick={() => {
+              setCurrentPage(prev => Math.max(1, prev - 1));
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className="btn-primary"
+            style={{
+              padding: '5px 12px',
+              fontSize: '13px',
+              background: currentPage === 1 ? 'rgba(0,0,0,0.02)' : 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)',
+              color: currentPage === 1 ? 'var(--text-muted)' : 'var(--text-inverse)',
+              border: currentPage === 1 ? '1px solid var(--border-color)' : 'none',
+              boxShadow: currentPage === 1 ? 'none' : '0 2px 6px rgba(170, 133, 19, 0.15)',
+              cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
+            }}
+          >
+            이전
+          </button>
+          
+          {(() => {
+            const pageNumbers = [];
+            let startPage = Math.max(1, currentPage - 2);
+            let endPage = Math.min(totalPages, startPage + 4);
+            if (endPage - startPage < 4) {
+              startPage = Math.max(1, endPage - 4);
+            }
+            for (let i = startPage; i <= endPage; i++) {
+              pageNumbers.push(i);
+            }
+            return pageNumbers.map(page => {
+              const isActive = page === currentPage;
+              return (
+                <button
+                  key={page}
+                  onClick={() => {
+                    setCurrentPage(page);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className="btn-primary"
+                  style={{
+                    padding: '5px 12px',
+                    fontSize: '13px',
+                    minWidth: '32px',
+                    background: isActive ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : 'transparent',
+                    color: isActive ? 'var(--text-inverse)' : 'var(--text-muted)',
+                    border: isActive ? 'none' : '1px solid var(--border-color)',
+                    boxShadow: isActive ? '0 2px 6px rgba(170, 133, 19, 0.15)' : 'none',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {page}
+                </button>
+              );
+            });
+          })()}
+
+          <button
+            disabled={currentPage === totalPages}
+            onClick={() => {
+              setCurrentPage(prev => Math.min(totalPages, prev + 1));
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className="btn-primary"
+            style={{
+              padding: '5px 12px',
+              fontSize: '13px',
+              background: currentPage === totalPages ? 'rgba(0,0,0,0.02)' : 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)',
+              color: currentPage === totalPages ? 'var(--text-muted)' : 'var(--text-inverse)',
+              border: currentPage === totalPages ? '1px solid var(--border-color)' : 'none',
+              boxShadow: currentPage === totalPages ? 'none' : '0 2px 6px rgba(170, 133, 19, 0.15)',
+              cursor: currentPage === totalPages ? 'not-allowed' : 'pointer'
+            }}
+          >
+            다음
+          </button>
+        </div>
+      )}
 
     </div>
   );
