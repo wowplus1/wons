@@ -46,6 +46,15 @@ export const CompletedLedger: React.FC = () => {
     setSelectedRows([]);
   }, [filterCustomer, filterType, activeTab]);
 
+  // 탭이 전환되면 필터 및 뷰 모드 초기화
+  useEffect(() => {
+    setFilterCustomer('');
+    setFilterType('전체');
+    setViewMode('list');
+    setCurrentPage(1);
+    setSelectedRows([]);
+  }, [activeTab]);
+
   useEffect(() => {
     fetchDb();
   }, [fetchDb]);
