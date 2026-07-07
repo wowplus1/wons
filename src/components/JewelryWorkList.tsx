@@ -107,6 +107,19 @@ export const JewelryWorkList: React.FC = () => {
     fetchDb();
   };
 
+  const handleOpenDetailWindow = (modelNumber: string) => {
+    const w = 860;
+    const h = 900;
+    const left = window.screen.width / 2 - w / 2;
+    const top = window.screen.height / 2 - h / 2;
+    
+    window.open(
+      `./?popup=catalog_detail&model=${encodeURIComponent(modelNumber)}`, 
+      `catalog_detail_popup_${modelNumber.replace(/[^a-zA-Z0-9가-힣]/g, '_')}`, 
+      `width=${w},height=${h},top=${top},left=${left},resizable=yes,scrollbars=yes`
+    );
+  };
+
   // 컴포넌트 마운트 시 최신 가상 DB 데이터를 강제 리로드하여 동기화
   useEffect(() => {
     fetchDb();
@@ -548,7 +561,12 @@ export const JewelryWorkList: React.FC = () => {
                     {/* 모델 */}
                     <td style={{ padding: '6px 4px', fontWeight: '700', color: '#38bdf8', verticalAlign: 'middle' }}>
                       <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <span>{row.model}</span>
+                        <span 
+                          onClick={() => handleOpenDetailWindow(row.model)} 
+                          style={{ textDecoration: 'underline', cursor: 'pointer' }}
+                        >
+                          {row.model}
+                        </span>
                         <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 'normal' }}>({row.customerName})</span>
                       </div>
                     </td>

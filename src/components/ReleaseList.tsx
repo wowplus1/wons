@@ -363,6 +363,19 @@ export const ReleaseList: React.FC = () => {
     }
   };
 
+  const handleOpenDetailWindow = (modelNumber: string) => {
+    const w = 860;
+    const h = 900;
+    const left = window.screen.width / 2 - w / 2;
+    const top = window.screen.height / 2 - h / 2;
+    
+    window.open(
+      `./?popup=catalog_detail&model=${encodeURIComponent(modelNumber)}`, 
+      `catalog_detail_popup_${modelNumber.replace(/[^a-zA-Z0-9가-힣]/g, '_')}`, 
+      `width=${w},height=${h},top=${top},left=${left},resizable=yes,scrollbars=yes`
+    );
+  };
+
   // 개별 세공작업 되돌리기
   const handleRevertToWork = async (orderId: string, itemId: number) => {
     try {
@@ -503,7 +516,12 @@ export const ReleaseList: React.FC = () => {
                   >
                     {row.customerName}
                   </td>
-                  <td style={{ padding: '6px 4px', verticalAlign: 'middle', fontWeight: '700', color: '#38bdf8' }}>{row.model}</td>
+                  <td 
+                    style={{ padding: '6px 4px', verticalAlign: 'middle', fontWeight: '700', color: '#38bdf8', cursor: 'pointer', textDecoration: 'underline' }}
+                    onClick={() => handleOpenDetailWindow(row.model)}
+                  >
+                    {row.model}
+                  </td>
                   <td style={{ padding: '6px 4px', textAlign: 'center', fontWeight: 'bold', verticalAlign: 'middle' }}>{row.material}</td>
                   <td style={{ padding: '6px 4px', textAlign: 'center', verticalAlign: 'middle' }}>{row.color}</td>
                   <td 
