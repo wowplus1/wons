@@ -366,7 +366,7 @@ export const CompletedLedger: React.FC = () => {
             <ListFilter size={13} /> 전체 목록
           </button>
           <button
-            onClick={() => setViewMode('by-customer')}
+            onClick={() => { setViewMode('by-customer'); setFilterCustomer(''); }}
             style={{
               display: 'flex', alignItems: 'center', gap: '5px',
               padding: '5px 12px', borderRadius: '5px', fontSize: '13px', fontWeight: '600',
