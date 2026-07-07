@@ -445,23 +445,23 @@ export const ReleaseList: React.FC = () => {
       <div className="table-responsive" style={{ overflowX: 'auto' }}>
         <table className="excel-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '1350px', fontSize: '14px', tableLayout: 'fixed' }}>
           <colgroup>
-            <col style={{ width: '3%' }} /> {/* checkbox */}
-            <col style={{ width: '3%' }} /> {/* No */}
-            <col style={{ width: '5%' }} /> {/* 의뢰일 */}
-            <col style={{ width: '8%' }} /> {/* 거래처 */}
-            <col style={{ width: '8%' }} /> {/* 모델 */}
-            <col style={{ width: '4%' }} /> {/* 재질 */}
-            <col style={{ width: '3%' }} /> {/* 색상 */}
-            <col style={{ width: '10%' }} /> {/* 비고 */}
-            <col style={{ width: '6%' }} /> {/* 중량(금) */}
-            <col style={{ width: '6%' }} /> {/* 중량(스톤) */}
-            <col style={{ width: '8%' }} /> {/* 구매단가 */}
-            <col style={{ width: '8%' }} /> {/* 공임단가(기본+추가) */}
-            <col style={{ width: '8%' }} /> {/* 공임단가(중심+보조) */}
-            <col style={{ width: '5%' }} /> {/* 알수 */}
-            <col style={{ width: '4%' }} /> {/* 수량 */}
-            <col style={{ width: '6%' }} /> {/* 합계 */}
-            <col style={{ width: '5%' }} /> {/* 되돌리기 */}
+            <col style={{ width: '3%' }} />
+            <col style={{ width: '3%' }} />
+            <col style={{ width: '5%' }} />
+            <col style={{ width: '8%' }} />
+            <col style={{ width: '8%' }} />
+            <col style={{ width: '4%' }} />
+            <col style={{ width: '3%' }} />
+            <col style={{ width: '10%' }} />
+            <col style={{ width: '6%' }} />
+            <col style={{ width: '6%' }} />
+            <col style={{ width: '8%' }} />
+            <col style={{ width: '8%' }} />
+            <col style={{ width: '8%' }} />
+            <col style={{ width: '5%' }} />
+            <col style={{ width: '4%' }} />
+            <col style={{ width: '6%' }} />
+            <col style={{ width: '5%' }} />
           </colgroup>
           <thead>
             <tr style={{ background: 'rgba(255, 255, 255, 0.03)', borderBottom: '2px solid var(--border-color)', color: 'var(--text-muted)' }}>
