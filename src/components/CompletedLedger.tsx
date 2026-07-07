@@ -1,7 +1,7 @@
 // src/components/CompletedLedger.tsx
 import React, { useState, useEffect } from 'react';
 import { useErpStore } from '../store/useErpStore';
-import { FileCheck } from 'lucide-react';
+import { FileCheck, ListFilter, Users } from 'lucide-react';
 
 interface LedgerRowData {
   id: string; // `completed-item::${order_id}::${item_id}::${itemIdx}`
@@ -37,6 +37,14 @@ export const CompletedLedger: React.FC = () => {
   const [filterCustomer, setFilterCustomer] = useState('');
   const [filterType, setFilterType] = useState<'전체' | '판매' | '결제' | '반품' | 'DC'>('전체');
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [viewMode, setViewMode] = useState<'list' | 'by-customer'>('list');
+  const pageSize = 30;
+
+  useEffect(() => {
+    setCurrentPage(1);
+    setSelectedRows([]);
+  }, [filterCustomer, filterType, activeTab]);
 
   useEffect(() => {
     fetchDb();
@@ -214,10 +222,29 @@ export const CompletedLedger: React.FC = () => {
     }).sort((a, b) => b.date.localeCompare(a.date));
   }, [completedRows, filterCustomer, filterType, activeTab]);
 
+  // 거래처별 집계
+  const customerSummary = React.useMemo(() => {
+    const map: Record<string, { customerName: string; customerId: string; count: number; totalQty: number; totalPureGoldG: number; totalAmount: number }> = {};
+    filteredRows.forEach(row => {
+      if (!map[row.customerId]) {
+        map[row.customerId] = { customerName: row.customerName, customerId: row.customerId, count: 0, totalQty: 0, totalPureGoldG: 0, totalAmount: 0 };
+      }
+      map[row.customerId].count += 1;
+      map[row.customerId].totalQty += row.quantity;
+      map[row.customerId].totalPureGoldG += (row.weightPureGoldG || 0) * row.quantity;
+      map[row.customerId].totalAmount += row.totalAmount;
+    });
+    return Object.values(map).sort((a, b) => b.totalAmount - a.totalAmount);
+  }, [filteredRows]);
+
+  const totalPages = Math.ceil(filteredRows.length / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const paginatedRows = filteredRows.slice(startIndex, startIndex + pageSize);
+
   // Selection Checkbox Handlers
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
-      setSelectedRows(filteredRows.map(r => r.id));
+      setSelectedRows(paginatedRows.map(r => r.id));
     } else {
       setSelectedRows([]);
     }
@@ -294,7 +321,7 @@ export const CompletedLedger: React.FC = () => {
       </div>
 
       {/* Filter Options */}
-      <div className="ledger-filter-toolbar" style={{ display: 'flex', gap: '12px', alignItems: 'center', background: 'rgba(255,255,255,0.01)', padding: '10px 14px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+      <div className="ledger-filter-toolbar" style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap', background: 'rgba(255,255,255,0.01)', padding: '10px 14px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <label style={{ fontWeight: '700', color: 'var(--text-muted)' }}>거래처 검색:</label>
           <input
@@ -303,7 +330,7 @@ export const CompletedLedger: React.FC = () => {
             value={filterCustomer}
             onChange={(e) => setFilterCustomer(e.target.value)}
             className="input-field"
-            style={{ width: '180px', padding: '5px 10px', fontSize: '15px' }}
+            style={{ width: '160px', padding: '5px 10px', fontSize: '15px' }}
           />
         </div>
 
@@ -321,6 +348,36 @@ export const CompletedLedger: React.FC = () => {
             <option value="반품">반품</option>
             <option value="DC">DC</option>
           </select>
+        </div>
+
+        {/* 뷰 전환 버튼 */}
+        <div style={{ display: 'flex', gap: '6px' }}>
+          <button
+            onClick={() => setViewMode('list')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '5px',
+              padding: '5px 12px', borderRadius: '5px', fontSize: '13px', fontWeight: '600',
+              border: viewMode === 'list' ? '1.5px solid var(--primary)' : '1.5px solid var(--border-color)',
+              background: viewMode === 'list' ? 'rgba(212,175,55,0.12)' : 'transparent',
+              color: viewMode === 'list' ? 'var(--primary)' : 'var(--text-muted)',
+              cursor: 'pointer'
+            }}
+          >
+            <ListFilter size={13} /> 전체 목록
+          </button>
+          <button
+            onClick={() => setViewMode('by-customer')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '5px',
+              padding: '5px 12px', borderRadius: '5px', fontSize: '13px', fontWeight: '600',
+              border: viewMode === 'by-customer' ? '1.5px solid var(--primary)' : '1.5px solid var(--border-color)',
+              background: viewMode === 'by-customer' ? 'rgba(212,175,55,0.12)' : 'transparent',
+              color: viewMode === 'by-customer' ? 'var(--primary)' : 'var(--text-muted)',
+              cursor: 'pointer'
+            }}
+          >
+            <Users size={13} /> 거래처별 보기
+          </button>
         </div>
 
         <div style={{ marginLeft: 'auto', fontSize: '14px', color: 'var(--text-muted)' }}>
@@ -418,8 +475,75 @@ export const CompletedLedger: React.FC = () => {
         </div>
       </div>
 
-      {/* Table grid */}
-      <div className="table-responsive" style={{ overflowX: 'auto' }}>
+      {/* 거래처별 보기 뷰 */}
+      {viewMode === 'by-customer' && (
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '15px' }}>
+            <thead>
+              <tr style={{ background: 'rgba(212,175,55,0.07)', borderBottom: '2px solid var(--primary)', color: 'var(--text-muted)' }}>
+                <th style={{ padding: '10px 12px', textAlign: 'center', border: '1px solid var(--border-color)', width: '40px' }}>No</th>
+                <th style={{ padding: '10px 12px', border: '1px solid var(--border-color)' }}>거래처명</th>
+                <th style={{ padding: '10px 12px', textAlign: 'center', border: '1px solid var(--border-color)', width: '80px' }}>품목 수</th>
+                <th style={{ padding: '10px 12px', textAlign: 'center', border: '1px solid var(--border-color)', width: '80px' }}>총 수량</th>
+                <th style={{ padding: '10px 12px', textAlign: 'right', border: '1px solid var(--border-color)', width: '120px' }}>순금 중량 (g)</th>
+                <th style={{ padding: '10px 12px', textAlign: 'right', border: '1px solid var(--border-color)', width: '140px' }}>합계 금액 (원)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {customerSummary.length === 0 ? (
+                <tr><td colSpan={6} style={{ padding: '30px', textAlign: 'center', color: 'var(--text-muted)' }}>해당 내역이 없습니다.</td></tr>
+              ) : (
+                customerSummary.map((cs, idx) => (
+                  <tr
+                    key={cs.customerId}
+                    style={{
+                      borderBottom: '1px solid var(--border-color)',
+                      height: '40px',
+                      background: idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)',
+                      cursor: 'pointer',
+                      transition: 'background 0.15s'
+                    }}
+                    onClick={() => { setFilterCustomer(cs.customerName); setViewMode('list'); }}
+                    title={`클릭하면 ${cs.customerName} 필터로 전체 목록 보기`}
+                  >
+                    <td style={{ padding: '8px 12px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>{idx + 1}</td>
+                    <td style={{ padding: '8px 12px', fontWeight: '700', fontSize: '15px' }}>
+                      {cs.customerName}
+                      <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginLeft: '6px' }}>→ 클릭해서 상세보기</span>
+                    </td>
+                    <td style={{ padding: '8px 12px', textAlign: 'center', fontWeight: '600' }}>{cs.count}건</td>
+                    <td style={{ padding: '8px 12px', textAlign: 'center', fontWeight: '600' }}>{cs.totalQty}개</td>
+                    <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: '700', color: 'var(--primary)', fontFamily: 'var(--font-title)' }}>
+                      {cs.totalPureGoldG.toFixed(3)}g
+                    </td>
+                    <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: '700', color: '#ef4444', fontFamily: 'var(--font-title)' }}>
+                      {cs.totalAmount.toLocaleString()}원
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+            {customerSummary.length > 0 && (
+              <tfoot>
+                <tr style={{ background: 'rgba(212,175,55,0.1)', borderTop: '2px solid var(--primary)', fontWeight: '800' }}>
+                  <td colSpan={2} style={{ padding: '10px 12px', fontSize: '14px', color: 'var(--text-muted)' }}>합계 ({customerSummary.length}개 거래처)</td>
+                  <td style={{ padding: '10px 12px', textAlign: 'center', color: 'var(--primary)' }}>{customerSummary.reduce((s, c) => s + c.count, 0)}건</td>
+                  <td style={{ padding: '10px 12px', textAlign: 'center', color: 'var(--primary)' }}>{customerSummary.reduce((s, c) => s + c.totalQty, 0)}개</td>
+                  <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--primary)', fontFamily: 'var(--font-title)' }}>
+                    {customerSummary.reduce((s, c) => s + c.totalPureGoldG, 0).toFixed(3)}g
+                  </td>
+                  <td style={{ padding: '10px 12px', textAlign: 'right', color: '#ef4444', fontFamily: 'var(--font-title)' }}>
+                    {customerSummary.reduce((s, c) => s + c.totalAmount, 0).toLocaleString()}원
+                  </td>
+                </tr>
+              </tfoot>
+            )}
+          </table>
+        </div>
+      )}
+
+      {/* Table grid (전체 목록 뷰) */}
+      {viewMode === 'list' && <div className="table-responsive" style={{ overflowX: 'auto' }}>
         <table className="excel-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '1200px', fontSize: '14px', tableLayout: 'fixed' }}>
           <colgroup>
             <col style={{ width: '3%' }} />
@@ -477,8 +601,8 @@ export const CompletedLedger: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredRows.length > 0 ? (
-              filteredRows.map((row, idx) => {
+            {paginatedRows.length > 0 ? (
+              paginatedRows.map((row, idx) => {
                 const getDivisionColor = (type: string) => {
                   switch (type) {
                     case '판매': return '#38bdf8'; // 하늘색
@@ -659,7 +783,86 @@ export const CompletedLedger: React.FC = () => {
             )}
           </tbody>
         </table>
-      </div>
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginTop: '16px', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
+            <button
+              disabled={currentPage === 1}
+              onClick={() => {
+                setCurrentPage(prev => Math.max(1, prev - 1));
+              }}
+              className="btn-primary"
+              style={{
+                padding: '5px 12px',
+                fontSize: '13px',
+                background: currentPage === 1 ? 'rgba(0,0,0,0.02)' : 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)',
+                color: currentPage === 1 ? 'var(--text-muted)' : 'var(--text-inverse)',
+                border: currentPage === 1 ? '1px solid var(--border-color)' : 'none',
+                boxShadow: currentPage === 1 ? 'none' : '0 2px 6px rgba(170, 133, 19, 0.15)',
+                cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
+              }}
+            >
+              이전
+            </button>
+            
+            {(() => {
+              const pageNumbers = [];
+              let startPage = Math.max(1, currentPage - 2);
+              let endPage = Math.min(totalPages, startPage + 4);
+              if (endPage - startPage < 4) {
+                startPage = Math.max(1, endPage - 4);
+              }
+              for (let i = startPage; i <= endPage; i++) {
+                pageNumbers.push(i);
+              }
+              return pageNumbers.map(page => {
+                const isActive = page === currentPage;
+                return (
+                  <button
+                    key={page}
+                    onClick={() => {
+                      setCurrentPage(page);
+                    }}
+                    className="btn-primary"
+                    style={{
+                      padding: '5px 12px',
+                      fontSize: '13px',
+                      minWidth: '32px',
+                      background: isActive ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : 'transparent',
+                      color: isActive ? 'var(--text-inverse)' : 'var(--text-muted)',
+                      border: isActive ? 'none' : '1px solid var(--border-color)',
+                      boxShadow: isActive ? '0 2px 6px rgba(170, 133, 19, 0.15)' : 'none',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {page}
+                  </button>
+                );
+              });
+            })()}
+
+            <button
+              disabled={currentPage === totalPages}
+              onClick={() => {
+                setCurrentPage(prev => Math.min(totalPages, prev + 1));
+              }}
+              className="btn-primary"
+              style={{
+                padding: '5px 12px',
+                fontSize: '13px',
+                background: currentPage === totalPages ? 'rgba(0,0,0,0.02)' : 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)',
+                color: currentPage === totalPages ? 'var(--text-muted)' : 'var(--text-inverse)',
+                border: currentPage === totalPages ? '1px solid var(--border-color)' : 'none',
+                boxShadow: currentPage === totalPages ? 'none' : '0 2px 6px rgba(170, 133, 19, 0.15)',
+                cursor: currentPage === totalPages ? 'not-allowed' : 'pointer'
+              }}
+            >
+              다음
+            </button>
+          </div>
+        )}
+      </div>}
 
     </div>
   );
