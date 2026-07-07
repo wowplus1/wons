@@ -38,6 +38,8 @@ export const CustomerManager: React.FC = () => {
   const [goldBalance, setGoldBalance] = useState<number>(0);
   const [receivableAmount, setReceivableAmount] = useState<number>(0);
   const [isReceivableEditable, setIsReceivableEditable] = useState(false);
+  const [receivableAmountStr, setReceivableAmountStr] = useState('0');
+  const [goldBalanceStr, setGoldBalanceStr] = useState('0.000');
 
 
   // Load customer data to form for editing
@@ -54,8 +56,14 @@ export const CustomerManager: React.FC = () => {
     setLossRate(cust.loss_rate !== undefined ? cust.loss_rate : 10);
     setTradeType(cust.trade_type || 'weight');
     setBusinessNumber(cust.business_number || '');
-    setGoldBalance(cust.gold_balance_24k_g || 0);
-    setReceivableAmount(cust.receivable_amount || 0);
+    
+    const gb = cust.gold_balance_24k_g || 0;
+    const ra = cust.receivable_amount || 0;
+    setGoldBalance(gb);
+    setGoldBalanceStr(gb.toFixed(3));
+    setReceivableAmount(ra);
+    setReceivableAmountStr(ra.toLocaleString());
+    
     setIsReceivableEditable(false); // 수정 모드 진입 시 처음에는 잔액 수정 비활성화
     setIsFormOpen(true); // 상세 수정 클릭 시 자동으로 폼을 켬
   };
@@ -75,7 +83,9 @@ export const CustomerManager: React.FC = () => {
     setTradeType('weight');
     setBusinessNumber('');
     setGoldBalance(0);
+    setGoldBalanceStr('0.000');
     setReceivableAmount(0);
+    setReceivableAmountStr('0');
     setIsReceivableEditable(false);
     setIsFormOpen(false); // 리셋 시 폼 닫기 (신규 등록 전환)
   };
@@ -616,10 +626,23 @@ export const CustomerManager: React.FC = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '8px' }}>
               <label style={{ color: 'var(--text-muted)' }}>초기현금 미수(원)</label>
               <input 
-                type="number" 
-                value={receivableAmount} 
+                type="text" 
+                value={receivableAmountStr} 
                 disabled={isEditMode && !isReceivableEditable}
-                onChange={e => setReceivableAmount(Math.max(0, parseInt(e.target.value) || 0))} 
+                onFocus={() => {
+                  const clean = receivableAmountStr.replace(/[^0-9]/g, '');
+                  setReceivableAmountStr(clean);
+                }}
+                onChange={e => {
+                  const cleanVal = e.target.value.replace(/[^0-9]/g, '');
+                  setReceivableAmountStr(cleanVal);
+                  setReceivableAmount(cleanVal ? parseInt(cleanVal, 10) : 0);
+                }} 
+                onBlur={() => {
+                  const parsed = parseInt(receivableAmountStr.replace(/[^0-9]/g, ''), 10) || 0;
+                  setReceivableAmountStr(parsed.toLocaleString());
+                  setReceivableAmount(parsed);
+                }}
                 className="input-field" 
                 style={{ 
                   width: '100%', 
@@ -636,11 +659,24 @@ export const CustomerManager: React.FC = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               <label style={{ color: 'var(--text-muted)' }}>초기순금미수(g)</label>
               <input 
-                type="number" 
-                step="0.001"
-                value={goldBalance} 
+                type="text" 
+                value={goldBalanceStr} 
                 disabled={isEditMode && !isReceivableEditable}
-                onChange={e => setGoldBalance(Math.max(0, parseFloat(e.target.value) || 0))} 
+                onFocus={() => {
+                  setGoldBalanceStr(goldBalance === 0 ? '' : goldBalance.toString());
+                }}
+                onChange={e => {
+                  const val = e.target.value;
+                  if (/^[0-9]*\.?[0-9]*$/.test(val)) {
+                    setGoldBalanceStr(val);
+                    setGoldBalance(parseFloat(val) || 0);
+                  }
+                }}
+                onBlur={() => {
+                  const parsed = parseFloat(goldBalanceStr) || 0;
+                  setGoldBalanceStr(parsed.toFixed(3));
+                  setGoldBalance(parsed);
+                }}
                 className="input-field" 
                 style={{ 
                   width: '100%', 
