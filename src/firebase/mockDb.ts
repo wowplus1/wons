@@ -36,6 +36,18 @@ export interface Stone {
   updated_at: string;
 }
 
+export interface AuditLog {
+  log_id: string;
+  timestamp: string;
+  operator: string;
+  target_type: 'order' | 'customer' | 'rates';
+  target_id: string;
+  action_type: 'create' | 'modify' | 'delete';
+  description: string;
+  before_value?: string;
+  after_value?: string;
+}
+
 export interface Customer {
   customer_id: string;
   name: string;
@@ -361,14 +373,14 @@ export const mockDb = {
         } else if (division === '결제' || division === '반품') {
           if (isWeightTrade) {
             // 중량 거래: 금 중량 차감은 하단 addGoldTransaction에서 처리하므로, 여기서는 현금 미수(공임비만)만 차감
-            customer.receivable_amount = Math.max(0, customer.receivable_amount - totalLaborCost);
+            customer.receivable_amount = customer.receivable_amount - totalLaborCost;
           } else {
             // 시세 거래: 전체 금액 차감
-            customer.receivable_amount = Math.max(0, customer.receivable_amount - itemAmount);
+            customer.receivable_amount = customer.receivable_amount - itemAmount;
           }
         } else if (division === 'DC') {
           // DC는 구분 없이 금액 미수만 차감
-          customer.receivable_amount = Math.max(0, customer.receivable_amount - itemAmount);
+          customer.receivable_amount = customer.receivable_amount - itemAmount;
         }
       });
       customer.updated_at = new Date().toISOString();
@@ -500,10 +512,10 @@ export const mockDb = {
 
           if (division === '판매') {
             if (isWeightTrade) {
-              customer.gold_balance_24k_g = Math.max(0, parseFloat((customer.gold_balance_24k_g - itemGoldWeight24k).toFixed(3)));
-              customer.receivable_amount = Math.max(0, customer.receivable_amount - totalLaborCost);
+              customer.gold_balance_24k_g = parseFloat((customer.gold_balance_24k_g - itemGoldWeight24k).toFixed(3));
+              customer.receivable_amount = customer.receivable_amount - totalLaborCost;
             } else {
-              customer.receivable_amount = Math.max(0, customer.receivable_amount - itemAmount);
+              customer.receivable_amount = customer.receivable_amount - itemAmount;
             }
           } else if (division === '결제' || division === '반품') {
             if (isWeightTrade) {
@@ -623,6 +635,23 @@ export const mockDb = {
       // 3. 재집계된 주문 데이터를 DB에 재생성하여 고객 잔고에 차액 반영
       this.createOrder(order);
     }
+  },
+
+  // AUDIT LOGS
+  getAuditLogs(): AuditLog[] {
+    return JSON.parse(localStorage.getItem('audit_logs') || '[]');
+  },
+
+  addAuditLog(log: Omit<AuditLog, 'log_id' | 'timestamp'>) {
+    const logs = this.getAuditLogs();
+    const newLog: AuditLog = {
+      ...log,
+      log_id: `log_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+      timestamp: new Date().toISOString()
+    };
+    logs.unshift(newLog); // 최신 순 정렬
+    localStorage.setItem('audit_logs', JSON.stringify(logs));
+    return newLog;
   }
 };
 

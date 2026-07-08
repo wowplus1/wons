@@ -146,7 +146,7 @@ export const CatalogDetailView: React.FC = () => {
         {/* 상단 닫기/컨트롤 바 */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px', marginBottom: '12px' }}>
           <span style={{ fontSize: '16px', fontWeight: '700', color: 'var(--primary)', letterSpacing: '0.05em' }}>
-            GOLDLINK PRODUCT DETAIL
+            원스쥬얼리 PRODUCT DETAIL
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <button 

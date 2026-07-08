@@ -2,9 +2,10 @@
 import React from 'react';
 import { useErpStore } from '../store/useErpStore';
 import { TrendingUp, Layers, DollarSign, Calendar } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 export const Dashboard: React.FC = () => {
-  const { currentRates, totalReceivable, totalGoldBalance24k, orders, customers } = useErpStore();
+  const { currentRates, totalReceivable, totalGoldBalance24k, orders, customers, setActiveTab } = useErpStore();
 
   // 당월 및 전월 기간 계산 (KST 대응)
   const now = new Date();
@@ -157,8 +158,197 @@ export const Dashboard: React.FC = () => {
 
 
 
+  const todayStr = React.useMemo(() => {
+    // 로컬 타임존 기준으로 오늘 날짜 추출 (KST 보정)
+    const d = new Date();
+    const offset = d.getTimezoneOffset() * 60000;
+    const todayKst = new Date(d.getTime() - offset);
+    return todayKst.toISOString().substring(0, 10);
+  }, []);
+
+  const isRateMissingToday = React.useMemo(() => {
+    if (!currentRates) return true;
+    return currentRates.date !== todayStr;
+  }, [currentRates, todayStr]);
+
+  const handleFullBackupExcel = () => {
+    try {
+      const wb = XLSX.utils.book_new();
+
+      // 1. 거래처 데이터
+      const customersData = customers.map(c => ({
+        '거래처 ID': c.customer_id,
+        '상호명': c.name,
+        '거래처 코드': c.code,
+        '등급': `${c.grade}등급`,
+        '대표자명': c.owner_name || '',
+        '전화번호': c.phone || '',
+        '핸드폰': c.mobile || '',
+        '해리적용율(%)': c.loss_rate,
+        '거래구분': c.trade_type === 'weight' ? '중량거래' : '시세거래',
+        '사업자 번호': c.business_number || '',
+        '순금 미수 잔고(g)': c.gold_balance_24k_g,
+        '미수 잔고 금액(원)': c.receivable_amount,
+        '비고': c.note || '',
+        '생성일자': c.created_at || '',
+        '수정일자': c.updated_at || ''
+      }));
+      const wsCustomers = XLSX.utils.json_to_sheet(customersData);
+      XLSX.utils.book_append_sheet(wb, wsCustomers, '거래처 목록');
+
+      // 2. 주문/명세서 목록
+      const ordersData: any[] = [];
+      orders.forEach(o => {
+        const items = o.items || [];
+        items.forEach((item, idx) => {
+          ordersData.push({
+            '주문번호': o.order_id,
+            '주문일자': o.order_date,
+            '거래처': o.customer_snapshot.name,
+            '품목 인덱스': idx + 1,
+            '구분': item.division || o.division || '판매',
+            '모델번호': item.model_number || '',
+            '재질': item.material || '',
+            '색상': item.color || '',
+            '사이즈': item.size || '',
+            '비고': item.note || '',
+            '메인스톤': item.stone_main_id || '',
+            '메인스톤 수량': item.qty_main || 0,
+            '보조스톤': item.stone_sub_id || '',
+            '보조스톤 수량': item.qty_sub || 0,
+            '수량': item.quantity,
+            '기본공임': item.labor_base || 0,
+            '추가공임': item.labor_extra || 0,
+            '스톤공임': item.labor_stone_total || 0,
+            '판매총액': item.calculated_price || 0,
+            '진행단계': item.status || o.status || '접수',
+            '결제상태': item.payment_status || '결제전',
+            '출고일자': item.release_date || ''
+          });
+        });
+      });
+      const wsOrders = XLSX.utils.json_to_sheet(ordersData);
+      XLSX.utils.book_append_sheet(wb, wsOrders, '주문 및 품목 내역');
+
+      // 3. 골드 트랜잭션 (수금 대장 등)
+      const { transactions } = useErpStore.getState();
+      const txData = (transactions || []).map(t => {
+        const c = customers.find(cust => cust.customer_id === t.customer_id);
+        return {
+          '거래 ID': t.transaction_id,
+          '거래처명': c ? c.name : t.customer_id,
+          '구분': t.type === 'in' ? '입고(차감)' : '출고(가산)',
+          '금타입': t.gold_type,
+          '중량(g)': t.weight_g,
+          '비고': t.note || '',
+          '생성자': t.created_by || '',
+          '등록일시': t.created_at
+        };
+      });
+      const wsTx = XLSX.utils.json_to_sheet(txData);
+      XLSX.utils.book_append_sheet(wb, wsTx, '골드 수금 내역');
+
+      // 4. 금 시세
+      const { catalog, stones } = useErpStore.getState();
+      
+      const ratesData = currentRates ? [{
+        '기준 일자': currentRates.date,
+        '24K 매입(돈)': currentRates.buy_rates.gold_24k_per_don,
+        '24K 매도(돈)': currentRates.sell_rates.gold_24k_per_don,
+        '18K 매입(g)': currentRates.buy_rates.gold_18k_per_g,
+        '18K 매도(g)': currentRates.sell_rates.gold_18k_per_g,
+        '14K 매입(g)': currentRates.buy_rates.gold_14k_per_g,
+        '14K 매도(g)': currentRates.sell_rates.gold_14k_per_g,
+        '업데이트 일시': currentRates.updated_at
+      }] : [];
+      const wsRates = XLSX.utils.json_to_sheet(ratesData);
+      XLSX.utils.book_append_sheet(wb, wsRates, '당일 금시세');
+
+      // 5. 상품 카탈로그
+      const catalogData = catalog.map(item => ({
+        '모델 번호': item.model_number,
+        '세트 여부': item.is_set ? 'Y' : 'N',
+        '기준 재질': item.materials.join(', '),
+        '기본 중량(g)': item.base_weight || 0,
+        '기본 공임비': item.base_labor_fees ? JSON.stringify(item.base_labor_fees) : '',
+        '스톤 차감 중량(g)': item.manual_deduction_weight || 0,
+        '추가 공임비': item.extra_labor_fee || 0,
+        '등록일자': item.created_at || ''
+      }));
+      const wsCatalog = XLSX.utils.json_to_sheet(catalogData);
+      XLSX.utils.book_append_sheet(wb, wsCatalog, '상품 카탈로그');
+
+      // 6. 스톤 단가 마스터
+      const stonesData = stones.map(s => ({
+        '스톤 ID': s.stone_id,
+        '스톤 이름': s.name,
+        '모양': s.shape,
+        '사이즈': s.size,
+        '중량(Carat)': s.weight_carat,
+        '차감중량': s.deduction_weight || 0,
+        '매입단가': s.purchase_price || 0,
+        '1등단가': s.grade_prices.grade_1 || 0,
+        '2등단가': s.grade_prices.grade_2 || 0,
+        '3등단가': s.grade_prices.grade_3 || 0,
+        '4등단가': s.grade_prices.grade_4 || 0,
+        '비고': s.note || '',
+        '등록일시': s.updated_at
+      }));
+      const wsStones = XLSX.utils.json_to_sheet(stonesData);
+      XLSX.utils.book_append_sheet(wb, wsStones, '스톤 마스터');
+
+      // 엑셀 내보내기 실행
+      const dateStr = new Date().toISOString().substring(0, 10);
+      XLSX.writeFile(wb, `원스ERP_통합백업_${dateStr}.xlsx`);
+      alert('전체 데이터 데이터베이스(DB) 통합 백업 엑셀 다운로드가 성공하였습니다. 안전한 곳에 저장해 주십시오.');
+    } catch (err) {
+      console.error(err);
+      alert('백업 도중 오류가 발생했습니다: ' + String(err));
+    }
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }} className="animate-fade-in">
+      
+      {/* ⚠️ 오늘자 금 시세 미입력 알림 경고 배너 */}
+      {isRateMissingToday && (
+        <div 
+          className="glass-panel" 
+          style={{ 
+            padding: '12px 20px', 
+            background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(220, 38, 38, 0.25) 100%)', 
+            border: '1px solid rgba(239, 68, 68, 0.4)',
+            borderLeft: '5px solid #ef4444',
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '12px'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontSize: '20px' }}>⚠️</span>
+            <h3 style={{ fontSize: '15px', color: 'var(--text-main)', fontWeight: '600' }}>
+              오늘자({todayStr}) 실시간 금 시세가 아직 등록되지 않았습니다. 정확한 정산을 위해 금 시세를 등록해 주십시오.
+            </h3>
+          </div>
+          <button 
+            onClick={() => setActiveTab('rates')} 
+            className="btn-primary" 
+            style={{ 
+              fontSize: '14px', 
+              padding: '6px 14px',
+              background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+              color: '#fff',
+              boxShadow: '0 2px 6px rgba(239, 68, 68, 0.2)',
+              border: 'none',
+              cursor: 'pointer'
+            }}
+          >
+            시세 등록하러 가기
+          </button>
+        </div>
+      )}
       
       {/* 1. Live Gold Rate Sticky Bar */}
       {currentRates && (
@@ -166,8 +356,9 @@ export const Dashboard: React.FC = () => {
           className="glass-panel" 
           style={{ 
             padding: '12px 20px', 
-            background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.08) 0%, rgba(17, 19, 28, 0.9) 100%)', 
-            borderLeft: '4px solid var(--primary)',
+            background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.12) 0%, var(--bg-surface-solid) 100%)', 
+            border: '1px solid rgba(212, 175, 55, 0.25)',
+            borderLeft: '5px solid var(--primary)',
             display: 'flex', 
             justifyContent: 'space-between', 
             alignItems: 'center',
@@ -194,19 +385,57 @@ export const Dashboard: React.FC = () => {
             </div>
             <div>
               <span style={{ color: 'var(--text-muted)' }}>18K 매입/매도 (g):</span>{' '}
-              <strong>{currentRates.buy_rates.gold_18k_per_g.toLocaleString()}원</strong>
+              <strong style={{ color: 'var(--text-main)' }}>{currentRates.buy_rates.gold_18k_per_g.toLocaleString()}원</strong>
               {' / '}
-              <strong>{currentRates.sell_rates.gold_18k_per_g.toLocaleString()}원</strong>
+              <strong style={{ color: 'var(--text-main)' }}>{currentRates.sell_rates.gold_18k_per_g.toLocaleString()}원</strong>
             </div>
             <div>
               <span style={{ color: 'var(--text-muted)' }}>14K 매입/매도 (g):</span>{' '}
-              <strong>{currentRates.buy_rates.gold_14k_per_g.toLocaleString()}원</strong>
+              <strong style={{ color: 'var(--text-main)' }}>{currentRates.buy_rates.gold_14k_per_g.toLocaleString()}원</strong>
               {' / '}
-              <strong>{currentRates.sell_rates.gold_14k_per_g.toLocaleString()}원</strong>
+              <strong style={{ color: 'var(--text-main)' }}>{currentRates.sell_rates.gold_14k_per_g.toLocaleString()}원</strong>
             </div>
           </div>
         </div>
       )}
+
+      {/* 1.5. ERP Database Administration Toolbar */}
+      <div 
+        className="glass-panel" 
+        style={{ 
+          padding: '10px 20px', 
+          background: 'var(--bg-surface-solid)', 
+          border: '1px solid var(--border-color)',
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '12px'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-main)' }}>시스템 관리 도구:</span>
+          <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>장부 실수 삭제 및 데이터 정리를 대비해 주기적 백업을 권장합니다.</span>
+        </div>
+        <button 
+          onClick={handleFullBackupExcel} 
+          className="btn-primary" 
+          style={{ 
+            fontSize: '14px', 
+            padding: '6px 14px',
+            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+            color: '#fff',
+            border: 'none',
+            boxShadow: '0 2px 6px rgba(16, 185, 129, 0.2)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px'
+          }}
+        >
+          📥 전체 데이터베이스 통합 백업 (엑셀)
+        </button>
+      </div>
 
       {/* 2. Key Indicator Widgets (KPI Grid) */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>

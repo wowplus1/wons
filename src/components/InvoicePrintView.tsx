@@ -5,13 +5,25 @@ import { Printer } from 'lucide-react';
 
 
 export const InvoicePrintView: React.FC = () => {
-  const { orders, customers, currentRates, stones, transactions } = useErpStore();
+  const { orders, customers, stones, transactions } = useErpStore();
 
   // Get orderId from query parameter
   const queryParams = new URLSearchParams(window.location.search);
   const orderId = queryParams.get('orderId') || '';
+  const source = queryParams.get('source') || '';
 
-  const order = orders.find(o => o.order_id === orderId);
+  let order = orders.find(o => o.order_id === orderId);
+
+  if (source === 'release') {
+    const savedData = sessionStorage.getItem('selected_invoice_order');
+    if (savedData) {
+      try {
+        order = JSON.parse(savedData);
+      } catch (e) {
+        console.error("Failed to parse selected_invoice_order", e);
+      }
+    }
+  }
 
   useEffect(() => {
     if (order) {
@@ -22,7 +34,7 @@ export const InvoicePrintView: React.FC = () => {
     }
   }, [order]);
 
-  if (!order || !currentRates) {
+  if (!order) {
     return (
       <div style={{ padding: '20px', color: '#000', textAlign: 'center', fontSize: '15px', background: '#fff' }}>
         해당 주문 정보 또는 시세 데이터를 불러올 수 없습니다. (주문번호: {orderId})
@@ -34,6 +46,43 @@ export const InvoicePrintView: React.FC = () => {
   const customer = customers.find(c => c.customer_id === order.customer_snapshot.customer_id);
   const customerLossRate = order.customer_snapshot.loss_rate || customer?.loss_rate || 0;
   const customerTradeType = order.customer_snapshot.trade_type || customer?.trade_type || 'price';
+
+  // 거래처별 누적 거래 차수(tradeNo) 계산
+  const tradeNo = React.useMemo(() => {
+    const cId = order.customer_snapshot.customer_id;
+    if (!cId) return '1';
+
+    // 1) 주문서 이벤트 수집
+    const customerEvents: { id: string; date: string }[] = [];
+    orders.forEach(o => {
+      if (o.customer_snapshot?.customer_id === cId) {
+        if (!customerEvents.some(e => e.id === o.order_id)) {
+          customerEvents.push({ id: o.order_id, date: o.order_date });
+        }
+      }
+    });
+
+    // 2) 결제(Transaction) 이벤트 수집
+    transactions.forEach(tx => {
+      if (tx.created_by === 'system') return;
+      if (tx.customer_id === cId) {
+        if (!customerEvents.some(e => e.id === tx.transaction_id)) {
+          customerEvents.push({ id: tx.transaction_id, date: tx.created_at });
+        }
+      }
+    });
+
+    // 3) 시간순 정렬
+    customerEvents.sort((a, b) => a.date.localeCompare(b.date));
+
+    // 4) 현재 order_id의 누적 인덱스 반환
+    if (order.order_id.startsWith('V-RELEASE')) {
+      return String(customerEvents.length + 1);
+    }
+
+    const matchedIndex = customerEvents.findIndex(e => e.id === order.order_id);
+    return matchedIndex !== -1 ? String(matchedIndex + 1) : '1';
+  }, [order.order_id, order.customer_snapshot.customer_id, orders, transactions]);
 
   // 1. Calculate sales metrics (Labor, Gold weight, Gold cost)
   let totalLaborSales = 0;
@@ -165,10 +214,47 @@ export const InvoicePrintView: React.FC = () => {
 
   const lastPaymentDateStr = lastInTx 
     ? new Date(lastInTx.created_at).toISOString().slice(5, 10) 
-    : '06-02'; // fallback matching user image
-  const lastPaymentGoldDon = lastInTx 
-    ? parseFloat((lastInTx.weight_g / 3.75).toFixed(3)) 
-    : 0.129; // fallback matching user image
+    : '-'; // 이력이 없는 경우 빈칸 처리
+
+  // 최근 결제일 당일에 입고된 모든 순금 중량 합산
+  const lastPaymentGoldDon = React.useMemo(() => {
+    if (lastPaymentDateStr === '-') return 0;
+    const sameDayTxs = transactions.filter(t => 
+      t.customer_id === order.customer_snapshot.customer_id && 
+      t.type === 'in' &&
+      new Date(t.created_at).toISOString().slice(5, 10) === lastPaymentDateStr
+    );
+    const sumG = sameDayTxs.reduce((acc, t) => acc + (t.weight_g || 0), 0);
+    return parseFloat((sumG / 3.75).toFixed(3));
+  }, [lastPaymentDateStr, transactions, order.customer_snapshot.customer_id]);
+
+  // 최근 결제일 당일에 주문서 결제 품목을 통해 입금된 현금 총합 계산
+  const lastPaymentCashAmount = React.useMemo(() => {
+    if (lastPaymentDateStr === '-') return 0;
+    
+    const customerOrders = orders.filter(o => o.customer_snapshot?.customer_id === order.customer_snapshot.customer_id);
+    let sumCash = 0;
+    
+    customerOrders.forEach(o => {
+      const oDateStr = new Date(o.order_date).toISOString().slice(5, 10);
+      if (oDateStr === lastPaymentDateStr) {
+        (o.items || []).forEach(item => {
+          if (item.division === '결제') {
+            const qty = item.quantity || 1;
+            const baseLabor = item.labor_base || 0;
+            const extraLabor = item.labor_extra || 0;
+            const stoneLabor = item.labor_stone_total !== undefined ? item.labor_stone_total : ((item.labor_main || 0) * (item.qty_main || 0)) + ((item.labor_sub || 0) * (item.qty_sub || 0));
+            const laborPerEa = baseLabor + extraLabor + stoneLabor;
+            const laborTotalRow = laborPerEa * qty;
+            
+            sumCash += item.calculated_price || laborTotalRow;
+          }
+        });
+      }
+    });
+    
+    return sumCash;
+  }, [lastPaymentDateStr, orders, order.customer_snapshot.customer_id]);
 
   // 12 rows fixed template builder
   const maxRows = 12;
@@ -184,6 +270,7 @@ export const InvoicePrintView: React.FC = () => {
     return (
       <div className="invoice-box" style={{ 
         width: '49%', 
+        height: '100%',
         display: 'flex', 
         flexDirection: 'column', 
         justifyContent: 'space-between',
@@ -191,9 +278,10 @@ export const InvoicePrintView: React.FC = () => {
         boxSizing: 'border-box',
         background: '#fff',
         color: '#000',
-        minHeight: '640px',
         border: '1.5px solid #000',
-        fontFamily: 'Gulim, "Malgun Gothic", sans-serif'
+        fontFamily: 'Gulim, "Malgun Gothic", sans-serif',
+        flexShrink: 0,
+        flexGrow: 0
       }}>
         {/* Invoice Header */}
         <div>
@@ -206,7 +294,7 @@ export const InvoicePrintView: React.FC = () => {
               <div style={{ fontSize: '12px', marginTop: '6px', color: '#000', fontFamily: 'Gulim, sans-serif', letterSpacing: '-0.5px' }}>
                 일자: {formatDate(order.order_date)} &nbsp;&nbsp;
                 G당시세: {sell24kDon.toLocaleString()}(별도) &nbsp;&nbsp;
-                거래No: {order.order_id.split('-').pop()?.slice(-4) || order.order_id.slice(-4)}
+                거래No: {tradeNo}
               </div>
             </div>
             
@@ -237,41 +325,41 @@ export const InvoicePrintView: React.FC = () => {
           <table className="print-table" style={{ 
             width: '100%', 
             borderCollapse: 'collapse', 
-            fontSize: '13px', 
+            fontSize: '11px', 
             marginTop: '5px', 
             borderBottom: '2px solid #000',
             tableLayout: 'fixed'
           }}>
             <colgroup>
-              <col style={{ width: '4%' }} />   {/* No */}
-              <col style={{ width: '20%' }} />  {/* 모델번호 */}
+              <col style={{ width: '3%' }} />   {/* No */}
+              <col style={{ width: '16%' }} />  {/* 모델번호 */}
               <col style={{ width: '8%' }} />   {/* 함량/색상 */}
-              <col style={{ width: '12%' }} />  {/* 금중량/알중량 */}
-              <col style={{ width: '5%' }} />   {/* 알수 */}
-              <col style={{ width: '9%' }} />   {/* 개당공임 기본/추가 */}
-              <col style={{ width: '9%' }} />   {/* 개당공임 보조/중심 */}
-              <col style={{ width: '5%' }} />   {/* 수량 */}
-              <col style={{ width: '9%' }} />   {/* VAT별도 공임합 */}
-              <col style={{ width: '9%' }} />   {/* VAT별도 금값 */}
-              <col style={{ width: '10%' }} />  {/* VAT별도 소계 */}
+              <col style={{ width: '11%' }} />  {/* 금중량/알중량 */}
+              <col style={{ width: '4%' }} />   {/* 알수 */}
+              <col style={{ width: '8.5%' }} /> {/* 개당공임 기본/추가 */}
+              <col style={{ width: '8.5%' }} /> {/* 개당공임 보조/중심 */}
+              <col style={{ width: '4%' }} />   {/* 수량 */}
+              <col style={{ width: '12%' }} />  {/* VAT별도 공임합 */}
+              <col style={{ width: '13%' }} />  {/* VAT별도 금값 */}
+              <col style={{ width: '12%' }} />  {/* VAT별도 소계 */}
             </colgroup>
             <thead>
-              <tr style={{ background: '#fff', borderTop: '1px solid #000', borderBottom: '1px solid #000', fontWeight: '700' }}>
-                <th rowSpan={2} style={{ border: '1px solid #000', padding: '3px 2px', textAlign: 'center' }}>No</th>
-                <th rowSpan={2} style={{ border: '1px solid #000', padding: '3px 2px', textAlign: 'center' }}>모델번호</th>
-                <th rowSpan={2} style={{ border: '1px solid #000', padding: '3px 2px', textAlign: 'center' }}>함량<br/>색상</th>
-                <th rowSpan={2} style={{ border: '1px solid #000', padding: '3px 2px', textAlign: 'center' }}>금중량<br/>알중량</th>
-                <th rowSpan={2} style={{ border: '1px solid #000', padding: '3px 2px', textAlign: 'center' }}>알<br/>수</th>
-                <th colSpan={2} style={{ border: '1px solid #000', padding: '2px 2px', textAlign: 'center' }}>개당공임</th>
-                <th rowSpan={2} style={{ border: '1px solid #000', padding: '3px 2px', textAlign: 'center' }}>수<br/>량</th>
-                <th colSpan={3} style={{ border: '1px solid #000', padding: '2px 2px', textAlign: 'center' }}>VAT별도</th>
+              <tr style={{ background: '#fff', borderTop: '1px solid #000', borderBottom: '1px solid #000', fontWeight: '700', fontSize: '10.5px' }}>
+                <th rowSpan={2} style={{ border: '1px solid #000', padding: '2px 1px', textAlign: 'center' }}>No</th>
+                <th rowSpan={2} style={{ border: '1px solid #000', padding: '2px 1px', textAlign: 'center' }}>모델번호</th>
+                <th rowSpan={2} style={{ border: '1px solid #000', padding: '2px 1px', textAlign: 'center' }}>함량<br/>색상</th>
+                <th rowSpan={2} style={{ border: '1px solid #000', padding: '2px 1px', textAlign: 'center' }}>금중량<br/>알중량</th>
+                <th rowSpan={2} style={{ border: '1px solid #000', padding: '2px 1px', textAlign: 'center' }}>알<br/>수</th>
+                <th colSpan={2} style={{ border: '1px solid #000', padding: '2px 1px', textAlign: 'center' }}>개당공임</th>
+                <th rowSpan={2} style={{ border: '1px solid #000', padding: '2px 1px', textAlign: 'center' }}>수<br/>량</th>
+                <th colSpan={3} style={{ border: '1px solid #000', padding: '2px 1px', textAlign: 'center' }}>VAT별도</th>
               </tr>
               <tr style={{ background: '#fff', borderBottom: '1px solid #000', fontSize: '8.5px' }}>
-                <th style={{ border: '1px solid #000', padding: '2px 2px', textAlign: 'center', fontWeight: '700' }}>기본/추가</th>
-                <th style={{ border: '1px solid #000', padding: '2px 2px', textAlign: 'center', fontWeight: '700' }}>보조/중심</th>
-                <th style={{ border: '1px solid #000', padding: '2px 2px', textAlign: 'center', fontWeight: '700' }}>공임합</th>
-                <th style={{ border: '1px solid #000', padding: '2px 2px', textAlign: 'center', fontWeight: '700' }}>금값</th>
-                <th style={{ border: '1px solid #000', padding: '2px 2px', textAlign: 'center', fontWeight: '700' }}>소계</th>
+                <th style={{ border: '1px solid #000', padding: '2px 1px', textAlign: 'center', fontWeight: '700' }}>기본/추가</th>
+                <th style={{ border: '1px solid #000', padding: '2px 1px', textAlign: 'center', fontWeight: '700' }}>보조/중심</th>
+                <th style={{ border: '1px solid #000', padding: '2px 1px', textAlign: 'center', fontWeight: '700' }}>공임합</th>
+                <th style={{ border: '1px solid #000', padding: '2px 1px', textAlign: 'center', fontWeight: '700' }}>금값</th>
+                <th style={{ border: '1px solid #000', padding: '2px 1px', textAlign: 'center', fontWeight: '700' }}>소계</th>
               </tr>
             </thead>
             <tbody>
@@ -282,39 +370,39 @@ export const InvoicePrintView: React.FC = () => {
                 if (item) {
                   return (
                     <tr key={i} style={{ height: '26px' }}>
-                      <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'center' }}>{i + 1}</td>
-                      <td style={{ border: '1px solid #000', padding: '2px 4px', fontWeight: '700', fontSize: '9.5px' }}>{item.model_number}</td>
-                      <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'center', lineHeight: '1.1' }}>
+                      <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'center', fontSize: '10px' }}>{i + 1}</td>
+                      <td style={{ border: '1px solid #000', padding: '2px 3px', fontWeight: '700', fontSize: '9px', letterSpacing: '-0.3px', wordBreak: 'break-all' }}>{item.model_number}</td>
+                      <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'center', lineHeight: '1.1', fontSize: '10px' }}>
                         {item.division && item.division !== '판매' ? (
-                          <span style={{ fontWeight: 'bold', color: item.division === '반품' ? 'red' : 'blue', display: 'block', fontSize: '8.5px' }}>
+                          <span style={{ fontWeight: 'bold', color: item.division === '반품' ? 'red' : 'blue', display: 'block', fontSize: '8px' }}>
                             [{item.division}]
                           </span>
                         ) : ''}
                         {item.material}<br/>{item.color}
                       </td>
-                      <td style={{ border: '1px solid #000', padding: '2px 4px', textAlign: 'right', lineHeight: '1.1' }}>
+                      <td style={{ border: '1px solid #000', padding: '2px 3px', textAlign: 'right', lineHeight: '1.1', fontSize: '11px', letterSpacing: '-0.5px' }}>
                         {item.goldWeightDon > 0 ? item.goldWeightDon.toFixed(3) : '0.000'}<br/>
-                        <span style={{ color: '#555', fontSize: '11px' }}>{item.totalStonesWeightRowDon > 0 ? item.totalStonesWeightRowDon.toFixed(3) : ''}</span>
+                        <span style={{ color: '#555', fontSize: '10px' }}>{item.totalStonesWeightRowDon > 0 ? item.totalStonesWeightRowDon.toFixed(3) : ''}</span>
                       </td>
-                      <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'center', verticalAlign: 'bottom' }}>
+                      <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'center', verticalAlign: 'bottom', fontSize: '11px' }}>
                         {item.qty_main || ''}
                       </td>
-                      <td style={{ border: '1px solid #000', padding: '2px 4px', textAlign: 'right', lineHeight: '1.1', fontSize: '12px' }}>
+                      <td style={{ border: '1px solid #000', padding: '2px 3px', textAlign: 'right', lineHeight: '1.1', fontSize: '10.5px', letterSpacing: '-0.5px' }}>
                         {item.baseLabor > 0 ? item.baseLabor.toLocaleString() : ''}<br/>
                         <span style={{ color: '#555' }}>{item.extraLabor > 0 ? item.extraLabor.toLocaleString() : ''}</span>
                       </td>
-                      <td style={{ border: '1px solid #000', padding: '2px 4px', textAlign: 'right', lineHeight: '1.1', fontSize: '12px' }}>
+                      <td style={{ border: '1px solid #000', padding: '2px 3px', textAlign: 'right', lineHeight: '1.1', fontSize: '10.5px', letterSpacing: '-0.5px' }}>
                         {item.labor_sub > 0 ? item.labor_sub.toLocaleString() : ''}<br/>
                         <span style={{ color: '#555' }}>{item.labor_main > 0 ? item.labor_main.toLocaleString() : ''}</span>
                       </td>
-                      <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'center', fontWeight: '700' }}>{item.qty}</td>
-                      <td style={{ border: '1px solid #000', padding: '2px 4px', textAlign: 'right', fontSize: '9.5px' }}>
+                      <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'center', fontWeight: '700', fontSize: '11px' }}>{item.qty}</td>
+                      <td style={{ border: '1px solid #000', padding: '2px 3px', textAlign: 'right', fontSize: '11px', letterSpacing: '-0.5px' }}>
                         {item.laborTotalRow.toLocaleString()}
                       </td>
-                      <td style={{ border: '1px solid #000', padding: '2px 4px', textAlign: 'right', fontSize: '9.5px', color: '#333' }}>
+                      <td style={{ border: '1px solid #000', padding: '2px 3px', textAlign: 'right', fontSize: '11px', letterSpacing: '-0.5px', color: '#333' }}>
                         {item.goldCostRow > 0 ? item.goldCostRow.toLocaleString() : ''}
                       </td>
-                      <td style={{ border: '1px solid #000', padding: '2px 4px', textAlign: 'right', fontSize: '9.5px', fontWeight: '700' }}>
+                      <td style={{ border: '1px solid #000', padding: '2px 3px', textAlign: 'right', fontSize: '11px', letterSpacing: '-0.5px', fontWeight: '700' }}>
                         {item.subtotalRow.toLocaleString()}
                       </td>
                     </tr>
@@ -323,8 +411,8 @@ export const InvoicePrintView: React.FC = () => {
 
                 return (
                   <tr key={i} style={{ height: '26px' }}>
-                    <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'center', color: '#999' }}>{i + 1}</td>
-                    <td style={{ border: '1px solid #000', padding: '2px 6px', color: '#333', fontStyle: 'italic', fontSize: '12px' }}>
+                    <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'center', color: '#999', fontSize: '10px' }}>{i + 1}</td>
+                    <td style={{ border: '1px solid #000', padding: '2px 6px', color: '#333', fontStyle: 'italic', fontSize: '11px' }}>
                       {isPlaceholder ? '-이하여백-' : ''}
                     </td>
                     <td style={{ border: '1px solid #000', padding: '2px' }}></td>
@@ -342,27 +430,27 @@ export const InvoicePrintView: React.FC = () => {
               
               {/* Summary Bottom Row */}
               <tr style={{ background: '#fff', fontWeight: '700', borderTop: '2px solid #000', borderBottom: '2px solid #000' }}>
-                <td colSpan={2} style={{ border: '1px solid #000', padding: '3px 4px', textAlign: 'center' }}>소계<br/>(판매-반품)</td>
+                <td colSpan={2} style={{ border: '1px solid #000', padding: '3px 4px', textAlign: 'center', fontSize: '11px' }}>소계<br/>(판매-반품)</td>
                 <td style={{ border: '1px solid #000', padding: '3px 2px', fontSize: '8.5px', textAlign: 'center', lineHeight: '1.1' }}>
                   {weight14kTotalDon !== 0 && '14K'}<br/>{weight18kTotalDon !== 0 && '18K'}
                 </td>
-                <td style={{ border: '1px solid #000', padding: '3px 4px', textAlign: 'right', lineHeight: '1.1' }}>
+                <td style={{ border: '1px solid #000', padding: '3px 4px', textAlign: 'right', lineHeight: '1.1', fontSize: '11px', letterSpacing: '-0.5px' }}>
                   {weight14kTotalDon !== 0 && `${weight14kTotalDon.toFixed(3)}`}<br/>
                   {weight18kTotalDon !== 0 && `${weight18kTotalDon.toFixed(3)}`}
                 </td>
                 <td style={{ border: '1px solid #000', padding: '3px 2px' }}></td>
                 <td style={{ border: '1px solid #000', padding: '3px 2px' }}></td>
                 <td style={{ border: '1px solid #000', padding: '3px 2px' }}></td>
-                <td style={{ border: '1px solid #000', padding: '3px 2px', textAlign: 'center' }}>
-                  {order.items.reduce((sum, item) => sum + (item.quantity || 1), 0).toFixed(1)}
+                <td style={{ border: '1px solid #000', padding: '3px 2px', textAlign: 'center', fontSize: '11px' }}>
+                  {order.items.reduce((sum, item) => sum + (item.quantity || 1), 0)}
                 </td>
-                <td style={{ border: '1px solid #000', padding: '3px 4px', textAlign: 'right' }}>
+                <td style={{ border: '1px solid #000', padding: '3px 4px', textAlign: 'right', fontSize: '11px', letterSpacing: '-0.5px' }}>
                   {printLaborSubtotal.toLocaleString()}
                 </td>
-                <td style={{ border: '1px solid #000', padding: '3px 4px', textAlign: 'right', color: '#333' }}>
+                <td style={{ border: '1px solid #000', padding: '3px 4px', textAlign: 'right', fontSize: '11px', letterSpacing: '-0.5px', color: '#333' }}>
                   {printGoldSubtotal !== 0 ? printGoldSubtotal.toLocaleString() : ''}
                 </td>
-                <td style={{ border: '1px solid #000', padding: '3px 4px', textAlign: 'right', fontWeight: '700' }}>
+                <td style={{ border: '1px solid #000', padding: '3px 4px', textAlign: 'right', fontSize: '11px', letterSpacing: '-0.5px', fontWeight: '700' }}>
                   {printAmountSubtotal.toLocaleString()}
                 </td>
               </tr>
@@ -391,7 +479,9 @@ export const InvoicePrintView: React.FC = () => {
                 <td style={{ border: '1px solid #000', padding: '2px 4px', textAlign: 'right' }}>
                   {lastPaymentGoldDon > 0 ? lastPaymentGoldDon.toFixed(3) : ''}
                 </td>
-                <td style={{ border: '1px solid #000', padding: '2px 4px' }}></td>
+                <td style={{ border: '1px solid #000', padding: '2px 4px', textAlign: 'right' }}>
+                  {lastPaymentCashAmount > 0 ? lastPaymentCashAmount.toLocaleString() : ''}
+                </td>
                 <td style={{ border: '1px solid #000', padding: '2px 4px' }}></td>
               </tr>
               <tr style={{ height: '21px', fontWeight: '700' }}>
@@ -534,11 +624,17 @@ export const InvoicePrintView: React.FC = () => {
       <div style={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
-        width: '100%',
-        maxWidth: '1200px',
+        width: '282mm',
+        height: '194mm',
         margin: '0 auto',
         gap: '2%',
-        position: 'relative'
+        position: 'relative',
+        background: '#fff',
+        padding: '12px',
+        borderRadius: '6px',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+        boxSizing: 'border-box',
+        border: '1px solid #ddd'
       }} className="print-sheets-wrapper">
         {renderSingleInvoice('보관용')}
         
@@ -559,8 +655,8 @@ export const InvoicePrintView: React.FC = () => {
       {/* Global Print-specific CSS Injection */}
       <style>{`
         @page {
-          size: landscape;
-          margin: 8mm 10mm;
+          size: A4 landscape;
+          margin: 5mm 6mm;
         }
         @media print {
           body {
@@ -578,19 +674,31 @@ export const InvoicePrintView: React.FC = () => {
             min-height: auto !important;
           }
           .print-sheets-wrapper {
-            width: 100% !important;
+            width: 285mm !important;
+            height: 200mm !important;
             max-width: 100% !important;
             gap: 2% !important;
             display: flex !important;
             flex-direction: row !important;
+            box-shadow: none !important;
+            border: none !important;
+            padding: 0 !important;
+            margin: 0 auto !important;
+            box-sizing: border-box !important;
           }
           .invoice-box {
+            width: 49% !important;
+            height: 100% !important;
             border: 1.5px solid #000 !important;
             padding: 10px !important;
             box-shadow: none !important;
             page-break-inside: avoid !important;
             background: #fff !important;
             color: #000 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: space-between !important;
+            box-sizing: border-box !important;
           }
           table {
             border-color: #000 !important;

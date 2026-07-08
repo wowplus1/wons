@@ -1198,7 +1198,11 @@ export const OrderGrid: React.FC = () => {
                   <>
                     <button
                       type="button"
-                      onClick={clearOrderForm}
+                      onClick={() => {
+                        if (window.confirm('작성 중인 주문서 내용을 모두 초기화하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')) {
+                          clearOrderForm();
+                        }
+                      }}
                       className="btn-primary"
                       style={{ background: 'rgba(255, 255, 255, 0.03)', color: 'var(--text-muted)', border: '1px solid var(--border-color)', boxShadow: 'none', fontSize: '16px', padding: '8px 18px', cursor: 'pointer' }}
                     >
