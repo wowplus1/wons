@@ -1,10 +1,13 @@
 // src/App.tsx
 import { useEffect, useState, lazy, Suspense } from 'react';
 import { useErpStore } from './store/useErpStore';
-import { LayoutDashboard, ShoppingCart, BookOpen, RefreshCw, Coins, Gem, Users, FileText, Package, FileCheck, Menu, X } from 'lucide-react';
+import { ShoppingCart, BookOpen, RefreshCw, Coins, Gem, Users, FileText, Package, FileCheck, Menu, X, BarChart3, ShieldCheck } from 'lucide-react';
+import { auth } from './firebase/config';
+import { onAuthStateChanged } from 'firebase/auth';
+import { Login } from './components/Login';
 
 // Lazy loaded components
-const Dashboard = lazy(() => import('./components/Dashboard').then(m => ({ default: m.Dashboard })));
+
 const OrderGrid = lazy(() => import('./components/OrderGrid').then(m => ({ default: m.OrderGrid })));
 const CatalogManager = lazy(() => import('./components/CatalogManager').then(m => ({ default: m.CatalogManager })));
 const RatesManager = lazy(() => import('./components/RatesManager').then(m => ({ default: m.RatesManager })));
@@ -20,6 +23,8 @@ const JewelryWorkList = lazy(() => import('./components/JewelryWorkList').then(m
 const JewelryWorkListPrint = lazy(() => import('./components/JewelryWorkListPrint').then(m => ({ default: m.JewelryWorkListPrint })));
 const ReleaseList = lazy(() => import('./components/ReleaseList').then(m => ({ default: m.ReleaseList })));
 const CompletedLedger = lazy(() => import('./components/CompletedLedger').then(m => ({ default: m.CompletedLedger })));
+const Statistics = lazy(() => import('./components/Statistics').then(m => ({ default: m.Statistics })));
+const AuditLogManager = lazy(() => import('./components/AuditLogManager').then(m => ({ default: m.AuditLogManager })));
 
 // 고급스러운 로딩 대체 UI
 const LoadingFallback = () => (
@@ -41,7 +46,28 @@ const LoadingFallback = () => (
 );
 
 function App() {
-  const { fetchDb, prefetchDb, updateGoldRate, currentRates, activeTab, setActiveTab, loading, customers } = useErpStore();
+  const { fetchDb, prefetchDb, activeTab, setActiveTab, loading, customers, orders, currentUser, setCurrentUser, logout } = useErpStore();
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+    });
+    return () => unsubscribe();
+  }, [setCurrentUser]);
+
+  // 공정별 대기 건수 계산 (탭 배지용)
+  const workListCount = orders.reduce((acc, o) => {
+    const cnt = (o.items || []).filter(item => (item.status || o.status || '') === '공장발주').length;
+    return acc + cnt;
+  }, 0);
+  const releaseListCount = orders.reduce((acc, o) => {
+    const cnt = (o.items || []).filter(item => (item.status || o.status || '') === '출고대기').length;
+    return acc + cnt;
+  }, 0);
+  const unpaidCount = orders.reduce((acc, o) => {
+    const cnt = (o.items || []).filter(item => (item.status || o.status || '') === '출고완료' && (item.payment_status || '결제전') === '결제전').length;
+    return acc + cnt;
+  }, 0);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   // Detect pop-up status from URL query parameter
@@ -77,9 +103,32 @@ function App() {
       }
     };
 
+    // Listen for storage change from other tabs
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key && (
+        e.key.includes('orders') || 
+        e.key.includes('customers') || 
+        e.key.includes('gold_rates') || 
+        e.key.includes('stones') || 
+        e.key.includes('catalog') || 
+        e.key.includes('gold_transactions')
+      )) {
+        fetchDb();
+      }
+    };
+
+    // Listen for window focus to catch any changes while tab was inactive
+    const handleWindowFocus = () => {
+      fetchDb();
+    };
+
     window.addEventListener('message', handleMessage);
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('focus', handleWindowFocus);
     return () => {
       window.removeEventListener('message', handleMessage);
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('focus', handleWindowFocus);
     };
   }, [fetchDb, popupType]);
 
@@ -91,7 +140,7 @@ function App() {
     const neededCollections: ('gold_rates' | 'stones' | 'customers' | 'catalog' | 'orders' | 'gold_transactions')[] = [];
 
     // 1. 상품(카탈로그) 관련 탭 또는 세공 작업 탭 접근 시 catalog 데이터가 없으면 로드
-    if (['catalog', 'order', 'work_list'].includes(activeTab)) {
+    if (['catalog', 'order', 'work_list', 'statistics'].includes(activeTab)) {
       if (state.catalog.length === 0) {
         neededCollections.push('catalog');
       }
@@ -131,6 +180,11 @@ function App() {
       }
     }
   }, [loading, customers, prefetchDb, popupType]);
+
+  // 로그인 검사 차단막
+  if (!currentUser) {
+    return <Suspense fallback={<LoadingFallback />}><Login /></Suspense>;
+  }
 
   // Render popup forms directly if matching URL query parameter is found
   if (popupType === 'stone') {
@@ -180,35 +234,7 @@ function App() {
     );
   }
 
-  // Simulate daily gold market rate changes (front-end playground helper)
-  const handleSimulateRateChange = () => {
-    if (!currentRates) return;
-    
-    const changeFactor = 1 + (Math.random() * 0.04 - 0.02);
-    const nextBuy24k = Math.round(currentRates.buy_rates.gold_24k_per_g * changeFactor);
-    const nextRates = {
-      date: new Date().toISOString().slice(0, 10),
-      buy_rates: {
-        gold_24k_per_g: nextBuy24k,
-        gold_18k_per_g: Math.round(nextBuy24k * 0.75),
-        gold_14k_per_g: Math.round(nextBuy24k * 0.585),
-        silver_per_g: Math.round(currentRates.buy_rates.silver_per_g * changeFactor),
-        gold_24k_per_don: Math.round(nextBuy24k * 3.75),
-      },
-      sell_rates: {
-        gold_24k_per_g: Math.round(nextBuy24k * 1.045),
-        gold_18k_per_g: Math.round(nextBuy24k * 1.045 * 0.75),
-        gold_14k_per_g: Math.round(nextBuy24k * 1.045 * 0.585),
-        silver_per_g: Math.round(currentRates.sell_rates.silver_per_g * changeFactor),
-        gold_24k_per_don: Math.round(nextBuy24k * 1.045 * 3.75),
-      },
-      updated_at: new Date().toISOString(),
-      updated_by: 'system_simulation'
-    };
 
-    updateGoldRate(nextRates);
-    alert(`금일 시장 금 시세 변동이 발생했습니다.\n새로운 순금 매입 시세(돈당): ${nextRates.buy_rates.gold_24k_per_don.toLocaleString()}원`);
-  };
 
   return (
     <div className="app-container">
@@ -227,7 +253,7 @@ function App() {
       >
         {/* 모바일 전용 상단 타이틀 바 */}
         <div className="mobile-header-bar" style={{ display: 'none', width: '100%', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span className="gradient-text" style={{ fontFamily: 'var(--font-title)', fontWeight: '700', fontSize: '18px' }}>GOLDLINK B2B ERP</span>
+          <span className="gradient-text" style={{ fontFamily: 'var(--font-title)', fontWeight: '700', fontSize: '18px' }}>원스쥬얼리 B2B ERP</span>
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="menu-toggle-btn btn-primary"
@@ -255,22 +281,43 @@ function App() {
           <div className="nav-group" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <span className="nav-group-label" style={{ fontSize: '14px', color: 'rgba(212, 175, 55, 0.7)', fontWeight: '700', marginRight: '2px', borderRight: '1px solid rgba(255,255,255,0.15)', paddingRight: '8px', width: '80px', textAlign: 'right', display: 'inline-block' }}>모니터링</span>
             <div className="nav-buttons-container">
+
               <button
-                onClick={() => { setActiveTab('dashboard'); setIsMenuOpen(false); }}
+                onClick={() => { setActiveTab('statistics'); setIsMenuOpen(false); }}
                 className="btn-primary"
                 style={{
                   padding: '6px 12px',
                   fontSize: '15px',
                   boxShadow: 'none',
-                  background: activeTab === 'dashboard' ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : 'transparent',
-                  color: activeTab === 'dashboard' ? 'var(--text-inverse)' : 'var(--text-muted)',
-                  border: activeTab === 'dashboard' ? 'none' : '1px solid var(--border-color)',
+                  background: activeTab === 'statistics' ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : 'transparent',
+                  color: activeTab === 'statistics' ? 'var(--text-inverse)' : 'var(--text-muted)',
+                  border: activeTab === 'statistics' ? 'none' : '1px solid var(--border-color)',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '4px'
+                  gap: '4px',
+                  marginLeft: '8px'
                 }}
               >
-                <LayoutDashboard size={13} /> 현황판 (대시보드)
+                <BarChart3 size={13} /> 통계 분석
+              </button>
+
+              <button
+                onClick={() => { setActiveTab('audit_logs'); setIsMenuOpen(false); }}
+                className="btn-primary"
+                style={{
+                  padding: '6px 12px',
+                  fontSize: '15px',
+                  boxShadow: 'none',
+                  background: activeTab === 'audit_logs' ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : 'transparent',
+                  color: activeTab === 'audit_logs' ? 'var(--text-inverse)' : 'var(--text-muted)',
+                  border: activeTab === 'audit_logs' ? 'none' : '1px solid var(--border-color)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  marginLeft: '8px'
+                }}
+              >
+                <ShieldCheck size={13} /> 감사 로그
               </button>
             </div>
           </div>
@@ -410,6 +457,19 @@ function App() {
                 }}
               >
                 <RefreshCw size={13} /> 3. 세공 작업
+                {workListCount > 0 && (
+                  <span style={{
+                    background: '#ef4444',
+                    color: '#fff',
+                    borderRadius: '10px',
+                    fontSize: '11px',
+                    fontWeight: '700',
+                    padding: '1px 6px',
+                    minWidth: '18px',
+                    textAlign: 'center',
+                    lineHeight: '16px',
+                  }}>{workListCount}</span>
+                )}
               </button>
               
               <button
@@ -428,6 +488,19 @@ function App() {
                 }}
               >
                 <Package size={13} /> 4. 출고 대기
+                {releaseListCount > 0 && (
+                  <span style={{
+                    background: '#f59e0b',
+                    color: '#000',
+                    borderRadius: '10px',
+                    fontSize: '11px',
+                    fontWeight: '700',
+                    padding: '1px 6px',
+                    minWidth: '18px',
+                    textAlign: 'center',
+                    lineHeight: '16px',
+                  }}>{releaseListCount}</span>
+                )}
               </button>
               
               <button
@@ -446,6 +519,19 @@ function App() {
                 }}
               >
                 <FileCheck size={13} /> 5. 미수 대장
+                {unpaidCount > 0 && (
+                  <span style={{
+                    background: '#3b82f6',
+                    color: '#fff',
+                    borderRadius: '10px',
+                    fontSize: '11px',
+                    fontWeight: '700',
+                    padding: '1px 6px',
+                    minWidth: '18px',
+                    textAlign: 'center',
+                    lineHeight: '16px',
+                  }}>{unpaidCount}</span>
+                )}
               </button>
 
               <button
@@ -487,31 +573,37 @@ function App() {
           </div>
         </nav>
 
-        {/* Global Action Tools */}
-        <div className={`global-action-tools ${isMenuOpen ? 'mobile-show' : 'mobile-hide'}`} style={{ display: 'flex', gap: '8px' }}>
-          <button 
-            onClick={handleSimulateRateChange}
-            className="btn-primary"
-            style={{
-              fontSize: '14px',
-              padding: '6px 12px',
-              background: 'rgba(255, 255, 255, 0.03)',
-              color: 'var(--text-muted)',
-              border: '1px solid var(--border-color)',
-              boxShadow: 'none'
-            }}
-            title="시세 임의 변동 시뮬레이션"
-          >
-            <RefreshCw size={12} /> 시세 시뮬레이션
-          </button>
-        </div>
+        {/* User Auth Info & Logout Button */}
+        {currentUser && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(255,255,255,0.05)', padding: '6px 14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', flexShrink: 0, marginTop: '2px' }}>
+            <span style={{ fontSize: '13.5px', color: 'var(--text-muted)' }}>
+              🟢 <strong style={{ color: 'var(--primary)' }}>{currentUser.email}</strong> 님
+            </span>
+            <button 
+              onClick={logout} 
+              className="btn-primary" 
+              style={{ 
+                padding: '4px 10px', 
+                fontSize: '13px', 
+                background: 'rgba(239, 68, 68, 0.1)', 
+                color: '#ef4444', 
+                border: '1px solid rgba(239, 68, 68, 0.2)', 
+                boxShadow: 'none', 
+                cursor: 'pointer' 
+              }}
+            >
+              로그아웃
+            </button>
+          </div>
+        )}
+
       </header>
 
       {/* Main Feature Rendering Panel */}
       <main style={{ flex: 1, overflowY: 'auto' }}>
         <Suspense fallback={<LoadingFallback />}>
           {activeTab === 'customers' && <CustomerManager />}
-          {activeTab === 'dashboard' && <Dashboard />}
+          {activeTab === 'statistics' && <Statistics />}
           {activeTab === 'order' && <OrderGrid />}
           {activeTab === 'orders' && <OrderList />}
           {activeTab === 'catalog' && <CatalogManager />}
@@ -520,13 +612,14 @@ function App() {
           {activeTab === 'work_list' && <JewelryWorkList />}
           {activeTab === 'release_list' && <ReleaseList />}
           {(activeTab === 'unpaid_ledger' || activeTab === 'paid_ledger' || activeTab === 'hold_ledger') && <CompletedLedger />}
+          {activeTab === 'audit_logs' && <AuditLogManager />}
         </Suspense>
       </main>
 
       {/* Bottom Footer Info */}
       <footer style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: 'var(--text-muted)', padding: '0 8px' }}>
-        <span>&copy; 2026 GOLDLINK B2B ERP System. All Rights Reserved.</span>
-        <span>클라우드 동기화 상태: 온라인 (Local Mocking)</span>
+        <span>&copy; 2026 원스쥬얼리 B2B ERP System. All Rights Reserved.</span>
+        <span>🟢 실시간 클라우드 연결됨</span>
       </footer>
 
     </div>
