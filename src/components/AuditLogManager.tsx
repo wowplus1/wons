@@ -179,9 +179,16 @@ export const AuditLogManager: React.FC = () => {
                                 <button
                                   onClick={async (e) => {
                                     e.stopPropagation();
+                                    const targetTypeName = 
+                                      log.target_type === 'customer' ? '거래처' :
+                                      log.target_type === 'order' ? '주문서' :
+                                      log.target_type === 'rates' ? '금시세' :
+                                      log.target_type === 'catalog' ? '카탈로그 상품' :
+                                      log.target_type === 'stones' ? '스톤(나스)' : log.target_type;
+
                                     const confirmRestore = window.confirm(
                                       `⚠️ 경고: 정말로 이 감사 로그(ID: ${log.log_id})를 기준으로 데이터를 복구하시겠습니까?\n\n` +
-                                      `대상 유형: ${log.target_type === 'customer' ? '거래처' : (log.target_type === 'order' ? '주문서' : '금시세')}\n` +
+                                      `대상 유형: ${targetTypeName}\n` +
                                       `현재의 실제 데이터가 과거 시점의 스냅샷 데이터로 강제 변경됩니다.`
                                     );
                                     if (confirmRestore) {

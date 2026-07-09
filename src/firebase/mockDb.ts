@@ -40,7 +40,7 @@ export interface AuditLog {
   log_id: string;
   timestamp: string;
   operator: string;
-  target_type: 'order' | 'customer' | 'rates';
+  target_type: 'order' | 'customer' | 'rates' | 'catalog' | 'stones';
   target_id: string;
   action_type: 'create' | 'modify' | 'delete';
   description: string;

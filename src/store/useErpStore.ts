@@ -158,6 +158,7 @@ interface ErpState {
   updateMultipleOrderStatus: (orderIds: string[], status: Order['status']) => Promise<void>;
   updateMultipleItemsStatus: (updates: { orderId: string, itemId: number }[], status: Order['status']) => Promise<void>;
   addStone: (stone: Stone) => Promise<void>;
+  deleteStone: (stoneId: string) => Promise<void>;
   saveCustomer: (customer: Customer) => Promise<void>;
   deleteCustomer: (customerId: string) => Promise<void>;
   updateItemPaymentStatus: (orderId: string, itemId: number, status: '결제완료' | '결제전' | '보류') => Promise<void>;
@@ -354,8 +355,38 @@ export const useErpStore = create<ErpState>((set, get) => {
             after_value: JSON.stringify(beforeData)
           });
         }
+        else if (targetType === 'catalog') {
+          await setDoc(doc(db, 'catalog', targetId), beforeData);
+
+          await get().addAuditLog({
+            action_type: 'modify',
+            target_type: 'catalog',
+            target_id: targetId,
+            description: `[복구 완료] 로그 ID: ${logId}를 기준으로 카탈로그 상품(${targetId}) 정보를 되돌렸습니다.`,
+            before_value: JSON.stringify(state.catalog.find(c => c.model_number === targetId) || null),
+            after_value: JSON.stringify(beforeData)
+          });
+        }
+        else if (targetType === 'stones') {
+          await setDoc(doc(db, 'stones', targetId), beforeData);
+
+          await get().addAuditLog({
+            action_type: 'modify',
+            target_type: 'stones',
+            target_id: targetId,
+            description: `[복구 완료] 로그 ID: ${logId}를 기준으로 스톤(${beforeData.name || targetId}) 정보를 되돌렸습니다.`,
+            before_value: JSON.stringify(state.stones.find(s => s.stone_id === targetId) || null),
+            after_value: JSON.stringify(beforeData)
+          });
+        }
         
-        await get().fetchDb([targetType === 'rates' ? 'gold_rates' : (targetType === 'customer' ? 'customers' : 'orders')], true);
+        let fetchCol: 'gold_rates' | 'customers' | 'orders' | 'catalog' | 'stones' = 'orders';
+        if (targetType === 'rates') fetchCol = 'gold_rates';
+        else if (targetType === 'customer') fetchCol = 'customers';
+        else if (targetType === 'catalog') fetchCol = 'catalog';
+        else if (targetType === 'stones') fetchCol = 'stones';
+        
+        await get().fetchDb([fetchCol], true);
         return true;
       } catch (err) {
         console.error("Restore from audit log failed: ", err);
@@ -1204,7 +1235,19 @@ export const useErpStore = create<ErpState>((set, get) => {
 
   addStone: async (stone: Stone) => {
     try {
+      const existing = get().stones.find(s => s.stone_id === stone.stone_id);
+      const isNew = !existing;
       await setDoc(doc(db, 'stones', stone.stone_id), stone);
+      await get().addAuditLog({
+        target_type: 'stones',
+        target_id: stone.stone_id,
+        action_type: isNew ? 'create' : 'modify',
+        description: isNew 
+          ? `스톤 [${stone.name}] 신규 등록 완료`
+          : `스톤 [${stone.name}] 정보 수정 완료`,
+        before_value: isNew ? undefined : JSON.stringify(existing),
+        after_value: JSON.stringify(stone)
+      });
       await get().fetchDb(undefined, false, true);
     } catch (error) {
       console.error("addStone error: ", error);
@@ -1212,9 +1255,40 @@ export const useErpStore = create<ErpState>((set, get) => {
     }
   },
 
+  deleteStone: async (stoneId: string) => {
+    try {
+      const target = get().stones.find(s => s.stone_id === stoneId);
+      await deleteDoc(doc(db, 'stones', stoneId));
+      await get().addAuditLog({
+        target_type: 'stones',
+        target_id: stoneId,
+        action_type: 'delete',
+        description: `스톤 [${target?.name || stoneId}] 정보를 완전히 삭제하였습니다.`,
+        before_value: target ? JSON.stringify(target) : undefined,
+        after_value: undefined
+      });
+      await get().fetchDb(undefined, false, true);
+    } catch (error) {
+      console.error("deleteStone error: ", error);
+      throw error;
+    }
+  },
+
   saveCatalogItem: async (item: CatalogItem) => {
     try {
+      const existing = get().catalog.find(c => c.model_number === item.model_number);
+      const isNew = !existing;
       await setDoc(doc(db, 'catalog', item.model_number), item);
+      await get().addAuditLog({
+        target_type: 'catalog',
+        target_id: item.model_number,
+        action_type: isNew ? 'create' : 'modify',
+        description: isNew 
+          ? `카탈로그 상품 [${item.model_number}] 신규 등록 완료`
+          : `카탈로그 상품 [${item.model_number}] 정보 수정 완료`,
+        before_value: isNew ? undefined : JSON.stringify(existing),
+        after_value: JSON.stringify(item)
+      });
       await get().fetchDb(undefined, false, true);
     } catch (error) {
       console.error("saveCatalogItem error: ", error);
@@ -1224,7 +1298,16 @@ export const useErpStore = create<ErpState>((set, get) => {
 
   deleteCatalogItem: async (modelNumber: string) => {
     try {
+      const target = get().catalog.find(c => c.model_number === modelNumber);
       await deleteDoc(doc(db, 'catalog', modelNumber));
+      await get().addAuditLog({
+        target_type: 'catalog',
+        target_id: modelNumber,
+        action_type: 'delete',
+        description: `카탈로그 상품 [${modelNumber}] 정보를 완전히 삭제하였습니다.`,
+        before_value: target ? JSON.stringify(target) : undefined,
+        after_value: undefined
+      });
       await get().fetchDb(undefined, false, true);
     } catch (error) {
       console.error("deleteCatalogItem error: ", error);
@@ -1234,14 +1317,16 @@ export const useErpStore = create<ErpState>((set, get) => {
 
   saveCustomer: async (customer: Customer) => {
     try {
-      const exist = get().customers.some(c => c.customer_id === customer.customer_id);
+      const existing = get().customers.find(c => c.customer_id === customer.customer_id);
+      const exist = !!existing;
       await setDoc(doc(db, 'customers', customer.customer_id), customer);
       await get().addAuditLog({
-        operator: '관리자',
         target_type: 'customer',
         target_id: customer.customer_id,
         action_type: exist ? 'modify' : 'create',
-        description: exist ? `거래처 [${customer.name}] 정보 수정 완료` : `신규 거래처 [${customer.name}] 등록 완료`
+        description: exist ? `거래처 [${customer.name}] 정보 수정 완료` : `신규 거래처 [${customer.name}] 등록 완료`,
+        before_value: exist ? JSON.stringify(existing) : undefined,
+        after_value: JSON.stringify(customer)
       });
       await get().fetchDb(undefined, false, true);
     } catch (error) {
@@ -1255,15 +1340,17 @@ export const useErpStore = create<ErpState>((set, get) => {
       const target = get().customers.find(c => c.customer_id === customerId);
       await deleteDoc(doc(db, 'customers', customerId));
       await get().addAuditLog({
-        operator: '관리자',
         target_type: 'customer',
         target_id: customerId,
         action_type: 'delete',
-        description: `거래처 [${target?.name || customerId}] 정보를 완전히 삭제하였습니다.`
+        description: `거래처 [${target?.name || customerId}] 정보를 완전히 삭제하였습니다.`,
+        before_value: target ? JSON.stringify(target) : undefined,
+        after_value: undefined
       });
       await get().fetchDb(undefined, false, true);
     } catch (error) {
       console.error("deleteCustomer error: ", error);
+      throw error;
     }
   },
 
