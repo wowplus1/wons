@@ -1142,51 +1142,6 @@ export const CatalogRegisterForm: React.FC = () => {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13px' }}>
               
-              {/* Zoom Control */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ width: '60px', color: 'var(--text-muted)' }}>확대/축소</span>
-                <input 
-                  type="range" 
-                  min="0.5" 
-                  max="3.0" 
-                  step="0.05" 
-                  value={editorZoom} 
-                  onChange={e => setEditorZoom(parseFloat(e.target.value))}
-                  style={{ flex: 1, accentColor: 'var(--primary)' }}
-                />
-                <span style={{ width: '35px', textAlign: 'right' }}>{Math.round(editorZoom * 100)}%</span>
-              </div>
-
-              {/* Brightness Control */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ width: '60px', color: 'var(--text-muted)' }}>밝기 조절</span>
-                <input 
-                  type="range" 
-                  min="-100" 
-                  max="100" 
-                  step="5" 
-                  value={editorBrightness} 
-                  onChange={e => setEditorBrightness(parseInt(e.target.value, 10))}
-                  style={{ flex: 1, accentColor: 'var(--primary)' }}
-                />
-                <span style={{ width: '35px', textAlign: 'right' }}>{editorBrightness > 0 ? `+${editorBrightness}` : editorBrightness}</span>
-              </div>
-
-              {/* Contrast Control */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ width: '60px', color: 'var(--text-muted)' }}>대비 조절</span>
-                <input 
-                  type="range" 
-                  min="-100" 
-                  max="100" 
-                  step="5" 
-                  value={editorContrast} 
-                  onChange={e => setEditorContrast(parseInt(e.target.value, 10))}
-                  style={{ flex: 1, accentColor: 'var(--primary)' }}
-                />
-                <span style={{ width: '35px', textAlign: 'right' }}>{editorContrast > 0 ? `+${editorContrast}` : editorContrast}</span>
-              </div>
-
               {/* Rotation & Reset Buttons */}
               <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
                 <button
