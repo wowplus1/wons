@@ -190,12 +190,12 @@ export const CatalogManager: React.FC = () => {
                   style={{ width: '100%', height: '130px', objectFit: 'cover', borderBottom: '1px solid var(--border-color)' }}
                 />
               ) : (
-                <div style={{ width: '100%', height: '130px', background: 'rgba(255,255,255,0.03)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px', borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
+                <div className="catalog-no-image" style={{ width: '100%', height: '130px', background: 'rgba(255,255,255,0.03)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px', borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
                   <Image size={28} />
                   <span style={{ fontSize: '14px' }}>이미지 없음</span>
                 </div>
               )}
-              <div style={{ padding: '10px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+              <div className="catalog-card-details" style={{ padding: '10px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '17px', fontWeight: '700', color: 'var(--primary)', fontFamily: 'var(--font-title)' }}>
                     {item.model_number}
