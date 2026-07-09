@@ -197,6 +197,7 @@ export const StoneManager: React.FC = () => {
               <th style={{ padding: '8px', width: '80px', textAlign: 'left', color: 'var(--primary)' }}>2등급</th>
               <th style={{ padding: '8px', width: '80px', textAlign: 'left', color: 'var(--primary)' }}>3등급</th>
               <th style={{ padding: '8px', width: '80px', textAlign: 'left', color: 'var(--primary)' }}>4등급</th>
+              <th style={{ padding: '8px', width: '60px', textAlign: 'left' }}>삭제</th>
             </tr>
           </thead>
           <tbody>
@@ -211,48 +212,22 @@ export const StoneManager: React.FC = () => {
               >
                 <td style={{ padding: '8px', textAlign: 'left', color: 'var(--text-muted)' }}>{startIndex + idx + 1}</td>
                 
-                {/* Action trigger */}
+                {/* Action trigger: Always show Select/Detail */}
                 <td style={{ padding: '8px', textAlign: 'left' }}>
-                  {catalog.some(c => c.default_stones?.some(ds => ds.stone_id === s.stone_id)) ? (
-                    <button 
-                      onClick={() => handleSelectStone(s)}
-                      style={{ 
-                        background: 'none', 
-                        border: 'none', 
-                        color: 'var(--primary)', 
-                        textDecoration: 'underline', 
-                        cursor: 'pointer',
-                        fontSize: '15px',
-                        fontWeight: '600'
-                      }}
-                    >
-                      조회
-                    </button>
-                  ) : (
-                    <button 
-                      onClick={async () => {
-                        if (window.confirm(`스톤 [${s.name}] 정보를 정말 삭제하시겠습니까?\n이 작업은 감사 로그를 통해 다시 복구하실 수 있습니다.`)) {
-                          try {
-                            await useErpStore.getState().deleteStone(s.stone_id);
-                            alert("스톤 정보가 성공적으로 삭제되었습니다.");
-                          } catch (err: any) {
-                            alert(`삭제 중 오류가 발생했습니다: ${err.message || err}`);
-                          }
-                        }
-                      }}
-                      style={{ 
-                        background: 'none', 
-                        border: 'none', 
-                        color: '#ef4444', 
-                        textDecoration: 'underline', 
-                        cursor: 'pointer',
-                        fontSize: '15px',
-                        fontWeight: '600'
-                      }}
-                    >
-                      삭제
-                    </button>
-                  )}
+                  <button 
+                    onClick={() => handleSelectStone(s)}
+                    style={{ 
+                      background: 'none', 
+                      border: 'none', 
+                      color: 'var(--primary)', 
+                      textDecoration: 'underline', 
+                      cursor: 'pointer',
+                      fontSize: '15px',
+                      fontWeight: '600'
+                    }}
+                  >
+                    조회
+                  </button>
                 </td>
                 
                 <td style={{ padding: '8px', textAlign: 'left', fontWeight: '600' }}>{s.name}</td>
@@ -278,6 +253,37 @@ export const StoneManager: React.FC = () => {
                 </td>
                 <td style={{ padding: '8px', textAlign: 'left', fontFamily: 'var(--font-title)', fontWeight: '500' }}>
                   {s.grade_prices.grade_4.toLocaleString()}
+                </td>
+
+                {/* Delete button column (at the very end of row) */}
+                <td style={{ padding: '8px', textAlign: 'left' }}>
+                  {catalog.some(c => c.default_stones?.some(ds => ds.stone_id === s.stone_id)) ? (
+                    <span style={{ color: 'var(--text-muted)', fontSize: '14px' }}>사용중</span>
+                  ) : (
+                    <button 
+                      onClick={async () => {
+                        if (window.confirm(`스톤 [${s.name}] 정보를 정말 삭제하시겠습니까?\n이 작업은 감사 로그를 통해 다시 복구하실 수 있습니다.`)) {
+                          try {
+                            await useErpStore.getState().deleteStone(s.stone_id);
+                            alert("스톤 정보가 성공적으로 삭제되었습니다.");
+                          } catch (err: any) {
+                            alert(`삭제 중 오류가 발생했습니다: ${err.message || err}`);
+                          }
+                        }
+                      }}
+                      style={{ 
+                        background: 'none', 
+                        border: 'none', 
+                        color: '#ef4444', 
+                        textDecoration: 'underline', 
+                        cursor: 'pointer',
+                        fontSize: '15px',
+                        fontWeight: '600'
+                      }}
+                    >
+                      삭제
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}
