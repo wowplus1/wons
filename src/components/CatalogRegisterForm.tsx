@@ -86,6 +86,10 @@ export const CatalogRegisterForm: React.FC = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
+  // 모바일 터치 기반 핀치 줌 제어용 상태
+  const [touchStartDist, setTouchStartDist] = useState<number | null>(null);
+  const [touchStartZoom, setTouchStartZoom] = useState<number>(1.0);
+
   useEffect(() => {
     const queryParams = new URLSearchParams(window.location.search);
     const modelParam = queryParams.get('model');
@@ -208,20 +212,49 @@ export const CatalogRegisterForm: React.FC = () => {
       ctx.rotate((editorRotation * Math.PI) / 180);
       ctx.scale(editorZoom, editorZoom);
 
-      // 이미지를 중앙 정렬하여 렌더링
+      // 이미지를 중앙 정렬하여 렌더링 (크롭 가이드에 맞춰 320x320 기준으로 스케일링)
       const imgRatio = img.width / img.height;
-      let drawWidth = 400;
-      let drawHeight = 400;
+      let drawWidth = 320;
+      let drawHeight = 320;
       if (imgRatio > 1) {
-        drawHeight = 400 / imgRatio;
+        drawHeight = 320 / imgRatio;
       } else {
-        drawWidth = 400 * imgRatio;
+        drawWidth = 320 * imgRatio;
       }
 
       ctx.drawImage(img, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
       ctx.restore();
+
+      // 밝기/대비 필터 초기화 후 크롭 가이드라인(틀) 그리기
+      ctx.filter = 'none';
+
+      // 1. 바깥 테두리 어둡게 채우기 (딤 처리)
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
+      ctx.fillRect(0, 0, 400, 40); // 상
+      ctx.fillRect(0, 360, 400, 40); // 하
+      ctx.fillRect(0, 40, 40, 320); // 좌
+      ctx.fillRect(360, 40, 40, 320); // 우
+
+      // 2. 금색 대시 선으로 1:1 크롭 영역 틀 렌더링
+      ctx.strokeStyle = '#d4af37';
+      ctx.lineWidth = 2.5;
+      ctx.setLineDash([8, 5]); // 금색 점선틀
+      ctx.strokeRect(40, 40, 320, 320);
+      ctx.setLineDash([]); // 대시 리셋
     };
     img.src = editorOriginalSrc;
+
+    // 마우스 휠 줌(늘렸다 줄였다) 리스너 직접 연동 (e.preventDefault() 방어 목적)
+    const handleCanvasWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const zoomDelta = -e.deltaY * 0.0015;
+      setEditorZoom(prev => Math.min(4.0, Math.max(0.4, prev + zoomDelta)));
+    };
+
+    canvas.addEventListener('wheel', handleCanvasWheel, { passive: false });
+    return () => {
+      canvas.removeEventListener('wheel', handleCanvasWheel);
+    };
   }, [isEditorOpen, editorOriginalSrc, editorRotation, editorZoom, editorOffsetX, editorOffsetY, editorBrightness, editorContrast]);
 
   // 마우스 드래그를 이용한 이미지 이동 제어 핸들러
@@ -240,11 +273,55 @@ export const CatalogRegisterForm: React.FC = () => {
     setIsDragging(false);
   };
 
+  // 모바일 터치(드래그 및 핀치 줌) 제어 핸들러
+  const handleTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    if (e.touches.length === 1) {
+      setIsDragging(true);
+      setDragStart({ x: e.touches[0].clientX - editorOffsetX, y: e.touches[0].clientY - editorOffsetY });
+      setTouchStartDist(null);
+    } else if (e.touches.length === 2) {
+      setIsDragging(false);
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      setTouchStartDist(dist);
+      setTouchStartZoom(editorZoom);
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    if (e.touches.length === 1 && isDragging) {
+      setEditorOffsetX(e.touches[0].clientX - dragStart.x);
+      setEditorOffsetY(e.touches[0].clientY - dragStart.y);
+    } else if (e.touches.length === 2 && touchStartDist !== null) {
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      const factor = dist / touchStartDist;
+      setEditorZoom(Math.min(4.0, Math.max(0.4, touchStartZoom * factor)));
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+    setTouchStartDist(null);
+  };
+
   const handleApplyEdit = () => {
     const canvas = document.getElementById('image-editor-canvas') as HTMLCanvasElement | null;
     if (canvas) {
-      // 400x400 크기의 JPEG 포맷으로 0.7 압축율 변환
-      const editedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+      // 320x320 크롭 틀 영역만 잘라내어 새 400x400 규격 캔버스에 그리기
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = 400;
+      tempCanvas.height = 400;
+      const tempCtx = tempCanvas.getContext('2d');
+      if (tempCtx) {
+        tempCtx.drawImage(canvas, 40, 40, 320, 320, 0, 0, 400, 400);
+      }
+      
+      const editedDataUrl = tempCanvas.toDataURL('image/jpeg', 0.7);
       setImages([editedDataUrl]);
       setIsEditorOpen(false);
       setEditorOriginalSrc(null);
@@ -1041,6 +1118,9 @@ export const CatalogRegisterForm: React.FC = () => {
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUpOrLeave}
                 onMouseLeave={handleMouseUpOrLeave}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
               />
               <div style={{
                 position: 'absolute',
@@ -1048,12 +1128,13 @@ export const CatalogRegisterForm: React.FC = () => {
                 left: '8px',
                 background: 'rgba(0,0,0,0.6)',
                 color: 'rgba(255,255,255,0.7)',
-                padding: '2px 8px',
+                padding: '4px 8px',
                 borderRadius: '4px',
                 fontSize: '11px',
-                pointerEvents: 'none'
+                pointerEvents: 'none',
+                lineHeight: '1.4'
               }}>
-                💡 드래그하여 이미지 이동
+                💡 드래그: 이동 | 휠/핀치: 확대·축소 (늘렸다 줄였다)
               </div>
             </div>
 
