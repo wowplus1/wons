@@ -212,22 +212,26 @@ export const StoneManager: React.FC = () => {
               >
                 <td style={{ padding: '8px', textAlign: 'left', color: 'var(--text-muted)' }}>{startIndex + idx + 1}</td>
                 
-                {/* Action trigger: Always show Select/Detail */}
+                {/* Action trigger: Only show Select/Detail when the stone is used in catalog models */}
                 <td style={{ padding: '8px', textAlign: 'left' }}>
-                  <button 
-                    onClick={() => handleSelectStone(s)}
-                    style={{ 
-                      background: 'none', 
-                      border: 'none', 
-                      color: 'var(--primary)', 
-                      textDecoration: 'underline', 
-                      cursor: 'pointer',
-                      fontSize: '15px',
-                      fontWeight: '600'
-                    }}
-                  >
-                    조회
-                  </button>
+                  {catalog.some(c => c.default_stones?.some(ds => ds.stone_id === s.stone_id)) ? (
+                    <button 
+                      onClick={() => handleSelectStone(s)}
+                      style={{ 
+                        background: 'none', 
+                        border: 'none', 
+                        color: 'var(--primary)', 
+                        textDecoration: 'underline', 
+                        cursor: 'pointer',
+                        fontSize: '15px',
+                        fontWeight: '600'
+                      }}
+                    >
+                      조회
+                    </button>
+                  ) : (
+                    <span style={{ color: 'var(--text-muted)' }}>-</span>
+                  )}
                 </td>
                 
                 <td style={{ padding: '8px', textAlign: 'left', fontWeight: '600' }}>{s.name}</td>
