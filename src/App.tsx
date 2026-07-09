@@ -141,21 +141,16 @@ function App() {
   useEffect(() => {
     if (popupType) return; // 팝업 모드일 때는 각 팝업 초기화 로직을 따름
 
-    const state = useErpStore.getState();
     const neededCollections: ('gold_rates' | 'stones' | 'customers' | 'catalog' | 'orders' | 'gold_transactions')[] = [];
 
-    // 1. 상품(카탈로그) 관련 탭 또는 세공 작업 탭 접근 시 catalog 데이터가 없으면 로드
+    // 1. 상품(카탈로그) 관련 탭 또는 세공 작업 탭 접근 시 catalog 데이터 로드 (증분 업데이트)
     if (['catalog', 'order', 'work_list', 'statistics'].includes(activeTab)) {
-      if (state.catalog.length === 0) {
-        neededCollections.push('catalog');
-      }
+      neededCollections.push('catalog');
     }
 
-    // 2. 스톤 관련 탭 또는 주문 작성 탭 접근 시 stones 데이터가 없으면 로드
+    // 2. 스톤 관련 탭 또는 주문 작성 탭 접근 시 stones 데이터 로드 (증분 업데이트)
     if (['stones', 'order', 'catalog'].includes(activeTab)) {
-      if (state.stones.length === 0) {
-        neededCollections.push('stones');
-      }
+      neededCollections.push('stones');
     }
 
     if (neededCollections.length > 0) {

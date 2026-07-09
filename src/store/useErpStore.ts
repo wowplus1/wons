@@ -423,7 +423,7 @@ export const useErpStore = create<ErpState>((set, get) => {
 
       set({ loading: true });
       try {
-        const promises = filteredCollections.map(col => {
+        const promises = filteredCollections.map(async (col) => {
           let cachedItems: any[] = [];
           if (col === 'stones') cachedItems = state.stones;
           else if (col === 'customers') cachedItems = state.customers;
@@ -433,64 +433,104 @@ export const useErpStore = create<ErpState>((set, get) => {
           else if (col === 'audit_logs') cachedItems = state.auditLogs;
 
           const lastFetched = localStorage.getItem(`last_fetched_${col}`);
-          
-          if (lastFetched && cachedItems.length > 0 && !forceFull && col !== 'gold_rates') {
-            return getDocs(query(collection(db, col), where('updated_at', '>', lastFetched)));
+          let fetchedDocs: any[] = [];
+          let deletedIds: string[] = [];
+          const isIncremental = !!(lastFetched && cachedItems.length > 0 && !forceFull && col !== 'gold_rates');
+
+          if (isIncremental) {
+            // 1. 새롭거나 수정된 항목들만 가져옴
+            const q = query(collection(db, col), where('updated_at', '>', lastFetched));
+            const snap = await getDocs(q);
+            fetchedDocs = snap.docs.map(d => d.data());
+
+            // 2. 해당 시점 이후에 삭제된 항목들의 ID를 가져옴
+            try {
+              const delQ = query(collection(db, 'deletions'), where('deletedAt', '>', lastFetched));
+              const delSnap = await getDocs(delQ);
+              deletedIds = delSnap.docs
+                .map(d => d.data())
+                .filter((d: any) => d.collection === col)
+                .map((d: any) => d.targetId);
+            } catch (e) {
+              console.error(`Failed to fetch deletions for ${col}:`, e);
+            }
           } else {
-            return getDocs(collection(db, col));
+            // 전체 가져오기
+            const snap = await getDocs(collection(db, col));
+            fetchedDocs = snap.docs.map(d => d.data());
           }
+
+          return { col, fetchedDocs, deletedIds, isIncremental };
         });
 
         const results = await Promise.all(promises);
         const updates: any = {};
-        const nowStr = new Date().toISOString();
+        
+        // 5분 안전 버퍼 차감한 시간 문자열 생성 (클라이언트/서버 시차 보정용)
+        const bufferTime = new Date(Date.now() - 5 * 60 * 1000).toISOString();
         const nextFetchMap = { ...state.lastFetchTimeMap };
 
-        filteredCollections.forEach((col, index) => {
-          const snap = results[index];
-          const data = snap.docs.map(d => d.data());
+        results.forEach(({ col, fetchedDocs, deletedIds, isIncremental }) => {
           nextFetchMap[col] = now;
 
           if (col === 'gold_rates') {
-            updates.goldRates = data as GoldRates[];
-            const sortedRates = [...(data as GoldRates[])].sort((a, b) => b.date.localeCompare(a.date));
+            updates.goldRates = fetchedDocs as GoldRates[];
+            const sortedRates = [...(fetchedDocs as GoldRates[])].sort((a, b) => b.date.localeCompare(a.date));
             updates.currentRates = sortedRates[0] || null;
-            localStorage.setItem(`last_fetched_${col}`, nowStr);
+            localStorage.setItem(`last_fetched_${col}`, bufferTime);
           } 
           else if (col === 'stones') {
-            const merged = mergeArrays(state.stones, data, 'stone_id');
+            let merged = isIncremental ? mergeArrays(state.stones, fetchedDocs, 'stone_id') : (fetchedDocs as Stone[]);
+            if (isIncremental && deletedIds.length > 0) {
+              merged = merged.filter(item => !deletedIds.includes(item.stone_id));
+            }
             updates.stones = merged;
-            localStorage.setItem(`last_fetched_${col}`, nowStr);
+            localStorage.setItem(`last_fetched_${col}`, bufferTime);
           } 
           else if (col === 'customers') {
-            const merged = mergeArrays(state.customers, data, 'customer_id');
+            let merged = isIncremental ? mergeArrays(state.customers, fetchedDocs, 'customer_id') : (fetchedDocs as Customer[]);
+            if (isIncremental && deletedIds.length > 0) {
+              merged = merged.filter(item => !deletedIds.includes(item.customer_id));
+            }
             updates.customers = merged;
             updates.totalReceivable = merged.reduce((sum, c) => sum + c.receivable_amount, 0);
             updates.totalGoldBalance24k = merged.reduce((sum, c) => sum + c.gold_balance_24k_g, 0);
-            localStorage.setItem(`last_fetched_${col}`, nowStr);
+            localStorage.setItem(`last_fetched_${col}`, bufferTime);
           } 
           else if (col === 'catalog') {
-            const merged = mergeArrays(state.catalog, data, 'model_number');
+            let merged = isIncremental ? mergeArrays(state.catalog, fetchedDocs, 'model_number') : (fetchedDocs as CatalogItem[]);
+            if (isIncremental && deletedIds.length > 0) {
+              merged = merged.filter(item => !deletedIds.includes(item.model_number));
+            }
             updates.catalog = merged;
-            localStorage.setItem(`last_fetched_${col}`, nowStr);
+            localStorage.setItem(`last_fetched_${col}`, bufferTime);
           } 
           else if (col === 'orders') {
-            const merged = mergeArrays(state.orders, data, 'order_id');
+            let merged = isIncremental ? mergeArrays(state.orders, fetchedDocs, 'order_id') : (fetchedDocs as Order[]);
+            if (isIncremental && deletedIds.length > 0) {
+              merged = merged.filter(item => !deletedIds.includes(item.order_id));
+            }
             updates.orders = merged;
-            localStorage.setItem(`last_fetched_${col}`, nowStr);
+            localStorage.setItem(`last_fetched_${col}`, bufferTime);
           } 
           else if (col === 'gold_transactions') {
-            const merged = mergeArrays(state.transactions, data, 'transaction_id');
+            let merged = isIncremental ? mergeArrays(state.transactions, fetchedDocs, 'transaction_id') : (fetchedDocs as GoldTransaction[]);
+            if (isIncremental && deletedIds.length > 0) {
+              merged = merged.filter(item => !deletedIds.includes(item.transaction_id));
+            }
             updates.transactions = merged;
-            localStorage.setItem(`last_fetched_${col}`, nowStr);
+            localStorage.setItem(`last_fetched_${col}`, bufferTime);
           } 
           else if (col === 'audit_logs') {
-            const logData = (data as AuditLog[]) || [];
-            const merged = mergeArrays(state.auditLogs, logData, 'log_id');
+            const logData = (fetchedDocs as AuditLog[]) || [];
+            let merged = isIncremental ? mergeArrays(state.auditLogs, logData, 'log_id') : logData;
+            if (isIncremental && deletedIds.length > 0) {
+              merged = merged.filter(item => !deletedIds.includes(item.log_id));
+            }
             const sorted = [...merged].sort((a, b) => b.timestamp.localeCompare(a.timestamp));
             updates.auditLogs = sorted;
             localStorage.setItem('audit_logs', JSON.stringify(sorted));
-            localStorage.setItem(`last_fetched_${col}`, nowStr);
+            localStorage.setItem(`last_fetched_${col}`, bufferTime);
           }
         });
 
@@ -966,11 +1006,21 @@ export const useErpStore = create<ErpState>((set, get) => {
             const txData = d.data() as GoldTransaction;
             if (txData.note.includes(editingOrderId)) {
               batch.delete(doc(db, 'gold_transactions', d.id));
+              batch.set(doc(db, 'deletions', `gold_transactions_${d.id}`), {
+                collection: 'gold_transactions',
+                targetId: d.id,
+                deletedAt: new Date().toISOString()
+              });
             }
           });
 
           // 기존 주문서 삭제 예약
           batch.delete(doc(db, 'orders', editingOrderId));
+          batch.set(doc(db, 'deletions', `orders_${editingOrderId}`), {
+            collection: 'orders',
+            targetId: editingOrderId,
+            deletedAt: new Date().toISOString()
+          });
         }
       }
 
@@ -1186,6 +1236,11 @@ export const useErpStore = create<ErpState>((set, get) => {
                   if (isWeightTrade && itemGoldWeight24k > 0) {
                     const txId = `TX-${orderId}-${i.item_id}`;
                     batch.delete(doc(db, 'gold_transactions', txId));
+                    batch.set(doc(db, 'deletions', `gold_transactions_${txId}`), {
+                      collection: 'gold_transactions',
+                      targetId: txId,
+                      deletedAt: new Date().toISOString()
+                    });
                   }
                 }
               }
@@ -1259,6 +1314,14 @@ export const useErpStore = create<ErpState>((set, get) => {
     try {
       const target = get().stones.find(s => s.stone_id === stoneId);
       await deleteDoc(doc(db, 'stones', stoneId));
+      
+      // deletions 컬렉션에 기록
+      await setDoc(doc(db, 'deletions', `stones_${stoneId}`), {
+        collection: 'stones',
+        targetId: stoneId,
+        deletedAt: new Date().toISOString()
+      });
+
       await get().addAuditLog({
         target_type: 'stones',
         target_id: stoneId,
@@ -1267,6 +1330,21 @@ export const useErpStore = create<ErpState>((set, get) => {
         before_value: target ? JSON.stringify(target) : undefined,
         after_value: undefined
       });
+
+      // 로컬 상태 및 캐시 즉각 업데이트 (UI 실시간 반영용)
+      const updatedStones = get().stones.filter(s => s.stone_id !== stoneId);
+      set({ stones: updatedStones });
+      
+      const storeState = get();
+      saveCacheToLocalStorage({
+        goldRates: storeState.goldRates,
+        stones: storeState.stones,
+        customers: storeState.customers,
+        catalog: storeState.catalog,
+        orders: storeState.orders,
+        transactions: storeState.transactions
+      });
+
       await get().fetchDb(undefined, false, true);
     } catch (error) {
       console.error("deleteStone error: ", error);
@@ -1300,6 +1378,14 @@ export const useErpStore = create<ErpState>((set, get) => {
     try {
       const target = get().catalog.find(c => c.model_number === modelNumber);
       await deleteDoc(doc(db, 'catalog', modelNumber));
+      
+      // deletions 컬렉션에 기록
+      await setDoc(doc(db, 'deletions', `catalog_${modelNumber}`), {
+        collection: 'catalog',
+        targetId: modelNumber,
+        deletedAt: new Date().toISOString()
+      });
+
       await get().addAuditLog({
         target_type: 'catalog',
         target_id: modelNumber,
@@ -1308,6 +1394,21 @@ export const useErpStore = create<ErpState>((set, get) => {
         before_value: target ? JSON.stringify(target) : undefined,
         after_value: undefined
       });
+
+      // 로컬 상태 및 캐시 즉각 업데이트 (UI 실시간 반영용)
+      const updatedCatalog = get().catalog.filter(c => c.model_number !== modelNumber);
+      set({ catalog: updatedCatalog });
+      
+      const storeState = get();
+      saveCacheToLocalStorage({
+        goldRates: storeState.goldRates,
+        stones: storeState.stones,
+        customers: storeState.customers,
+        catalog: storeState.catalog,
+        orders: storeState.orders,
+        transactions: storeState.transactions
+      });
+
       await get().fetchDb(undefined, false, true);
     } catch (error) {
       console.error("deleteCatalogItem error: ", error);
@@ -1339,6 +1440,14 @@ export const useErpStore = create<ErpState>((set, get) => {
     try {
       const target = get().customers.find(c => c.customer_id === customerId);
       await deleteDoc(doc(db, 'customers', customerId));
+      
+      // deletions 컬렉션에 기록
+      await setDoc(doc(db, 'deletions', `customers_${customerId}`), {
+        collection: 'customers',
+        targetId: customerId,
+        deletedAt: new Date().toISOString()
+      });
+
       await get().addAuditLog({
         target_type: 'customer',
         target_id: customerId,
@@ -1347,6 +1456,25 @@ export const useErpStore = create<ErpState>((set, get) => {
         before_value: target ? JSON.stringify(target) : undefined,
         after_value: undefined
       });
+
+      // 로컬 상태 및 캐시 즉각 업데이트 (UI 실시간 반영용)
+      const updatedCustomers = get().customers.filter(c => c.customer_id !== customerId);
+      set({
+        customers: updatedCustomers,
+        totalReceivable: updatedCustomers.reduce((sum, c) => sum + c.receivable_amount, 0),
+        totalGoldBalance24k: updatedCustomers.reduce((sum, c) => sum + c.gold_balance_24k_g, 0)
+      });
+      
+      const storeState = get();
+      saveCacheToLocalStorage({
+        goldRates: storeState.goldRates,
+        stones: storeState.stones,
+        customers: storeState.customers,
+        catalog: storeState.catalog,
+        orders: storeState.orders,
+        transactions: storeState.transactions
+      });
+
       await get().fetchDb(undefined, false, true);
     } catch (error) {
       console.error("deleteCustomer error: ", error);
@@ -1440,6 +1568,11 @@ export const useErpStore = create<ErpState>((set, get) => {
 
                   const txId = `TX-PAY-${orderId}-${i.item_id}`;
                   batch.delete(doc(db, 'gold_transactions', txId));
+                  batch.set(doc(db, 'deletions', `gold_transactions_${txId}`), {
+                    collection: 'gold_transactions',
+                    targetId: txId,
+                    deletedAt: new Date().toISOString()
+                  });
                 }
               }
             }
@@ -1817,12 +1950,36 @@ export const useErpStore = create<ErpState>((set, get) => {
         const txData = d.data() as GoldTransaction;
         if (txData.note.includes(orderId)) {
           batch.delete(doc(db, 'gold_transactions', d.id));
+          batch.set(doc(db, 'deletions', `gold_transactions_${d.id}`), {
+            collection: 'gold_transactions',
+            targetId: d.id,
+            deletedAt: new Date().toISOString()
+          });
         }
       });
 
       batch.delete(doc(db, 'orders', orderId));
+      batch.set(doc(db, 'deletions', `orders_${orderId}`), {
+        collection: 'orders',
+        targetId: orderId,
+        deletedAt: new Date().toISOString()
+      });
 
       await batch.commit();
+
+      // 로컬 상태 및 캐시 즉각 업데이트 (UI 실시간 반영용)
+      const updatedOrders = get().orders.filter(o => o.order_id !== orderId);
+      set({ orders: updatedOrders });
+      
+      const storeState = get();
+      saveCacheToLocalStorage({
+        goldRates: storeState.goldRates,
+        stones: storeState.stones,
+        customers: storeState.customers,
+        catalog: storeState.catalog,
+        orders: storeState.orders,
+        transactions: storeState.transactions
+      });
 
       // 감사 로그 연동
       await get().addAuditLog({
@@ -1926,12 +2083,27 @@ export const useErpStore = create<ErpState>((set, get) => {
       const txId2 = `TX-PAY-${orderId}-${itemId}`;
       batch.delete(doc(db, 'gold_transactions', txId1));
       batch.delete(doc(db, 'gold_transactions', txId2));
+      batch.set(doc(db, 'deletions', `gold_transactions_${txId1}`), {
+        collection: 'gold_transactions',
+        targetId: txId1,
+        deletedAt: new Date().toISOString()
+      });
+      batch.set(doc(db, 'deletions', `gold_transactions_${txId2}`), {
+        collection: 'gold_transactions',
+        targetId: txId2,
+        deletedAt: new Date().toISOString()
+      });
 
       // 4. 주문서 내 품목 리스트 수정 및 업데이트
       const nextItems = order.items.filter(i => i.item_id !== itemId);
 
       if (nextItems.length === 0) {
         batch.delete(doc(db, 'orders', orderId));
+        batch.set(doc(db, 'deletions', `orders_${orderId}`), {
+          collection: 'orders',
+          targetId: orderId,
+          deletedAt: new Date().toISOString()
+        });
       } else {
         const revisedTotalAmount = nextItems.reduce((sum, i) => {
           const sign = i.division === '판매' ? 1 : -1;
@@ -2033,6 +2205,11 @@ export const useErpStore = create<ErpState>((set, get) => {
 
       // 1. 트랜잭션 삭제
       batch.delete(doc(db, 'gold_transactions', transactionId));
+      batch.set(doc(db, 'deletions', `gold_transactions_${transactionId}`), {
+        collection: 'gold_transactions',
+        targetId: transactionId,
+        deletedAt: new Date().toISOString()
+      });
 
       // 2. 고객 잔고 복구
       const customersSnap = await getDocs(collection(db, 'customers'));
@@ -2053,6 +2230,21 @@ export const useErpStore = create<ErpState>((set, get) => {
       }
 
       await batch.commit();
+
+      // 로컬 상태 및 캐시 즉각 업데이트 (UI 실시간 반영용)
+      const updatedTransactions = get().transactions.filter(t => t.transaction_id !== transactionId);
+      set({ transactions: updatedTransactions });
+
+      const storeState = get();
+      saveCacheToLocalStorage({
+        goldRates: storeState.goldRates,
+        stones: storeState.stones,
+        customers: storeState.customers,
+        catalog: storeState.catalog,
+        orders: storeState.orders,
+        transactions: storeState.transactions
+      });
+
       await get().fetchDb(undefined, false, true);
     } catch (error) {
       console.error("deleteTransaction error: ", error);
@@ -2063,6 +2255,7 @@ export const useErpStore = create<ErpState>((set, get) => {
 
 if (typeof window !== 'undefined') {
   (window as any).syncErpDb = () => {
-    useErpStore.getState().fetchDb();
+    useErpStore.getState().syncFromLocalStorage();
+    useErpStore.getState().fetchDb(undefined, false, true);
   };
 }
