@@ -96,7 +96,9 @@ function App() {
     // Listen for data update messages from child popup windows
     const handleMessage = (event: MessageEvent) => {
       if (event.data === 'db_update') {
-        fetchDb(); // Reload data in parent window
+        // 팝업에서 저장 완료 시 로컬 스토리지를 즉시 동기화하고 Firestore로부터 강제 전체 새로고침(forceFull) 실행
+        useErpStore.getState().syncFromLocalStorage();
+        fetchDb(undefined, true, true);
       } else if (event.data && event.data.type === 'select_catalog') {
         const { modelNumber, rowIndex } = event.data;
         useErpStore.getState().updateOrderItem(rowIndex, { model_number: modelNumber }, true);
@@ -105,6 +107,9 @@ function App() {
 
     // Listen for storage change from other tabs
     const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'wons_erp_cache') {
+        useErpStore.getState().syncFromLocalStorage();
+      }
       if (e.key && (
         e.key.includes('orders') || 
         e.key.includes('customers') || 

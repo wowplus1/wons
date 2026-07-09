@@ -171,6 +171,7 @@ interface ErpState {
   saveCatalogItem: (item: CatalogItem) => Promise<void>;
   deleteCatalogItem: (modelNumber: string) => Promise<void>;
   prefetchDb: (targetCollections: ('catalog' | 'stones')[]) => Promise<void>;
+  syncFromLocalStorage: () => void;
 }
 
 const LOCAL_STORAGE_KEY = 'wons_erp_cache';
@@ -262,6 +263,24 @@ export const useErpStore = create<ErpState>((set, get) => {
     setActiveTab: (tab) => {
       localStorage.setItem('wons_active_tab', tab);
       set({ activeTab: tab });
+    },
+
+    syncFromLocalStorage: () => {
+      const cached = loadCacheFromLocalStorage();
+      if (cached) {
+        const sortedRates = cached.goldRates ? [...cached.goldRates].sort((a: any, b: any) => b.date.localeCompare(a.date)) : [];
+        set({
+          goldRates: cached.goldRates || [],
+          stones: cached.stones || [],
+          customers: cached.customers || [],
+          catalog: cached.catalog || [],
+          orders: cached.orders || [],
+          transactions: cached.transactions || [],
+          currentRates: sortedRates[0] || null,
+          totalReceivable: cached.customers ? cached.customers.reduce((sum: number, c: any) => sum + c.receivable_amount, 0) : 0,
+          totalGoldBalance24k: cached.customers ? cached.customers.reduce((sum: number, c: any) => sum + c.gold_balance_24k_g, 0) : 0,
+        });
+      }
     },
 
     addAuditLog: async (log) => {
