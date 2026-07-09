@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [react()],
   base: '/wons/',
   build: {
-    outDir: 'dist',
+    outDir: 'docs',
     emptyOutDir: true,
     rollupOptions: {
       output: {
