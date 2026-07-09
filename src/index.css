@@ -308,35 +308,44 @@ select.excel-input {
 }
 
 @media (max-width: 768px) {
-  /* 카탈로그 매니저 목록 */
+  /* 카탈로그 매니저 목록 - 모바일에서 더욱 보기 편리한 2열 카드 그리드로 최적화 */
   .catalog-grid {
-    grid-template-columns: 1fr !important;
-    gap: 8px !important;
-    max-height: 70vh !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+    max-height: 72vh !important;
+    padding-bottom: 24px !important;
   }
 
   .catalog-card {
-    flex-direction: row !important;
-    padding: 8px !important;
-    align-items: center !important;
-    gap: 12px !important;
+    flex-direction: column !important;
+    padding: 0 !important;
+    align-items: stretch !important;
+    gap: 0 !important;
   }
 
   .catalog-card img {
-    width: 80px !important;
-    height: 80px !important;
-    border-radius: 6px !important;
-    border-bottom: none !important;
+    width: 100% !important;
+    height: 120px !important;
+    border-radius: 8px 8px 0 0 !important;
+    border-bottom: 1px solid var(--border-color) !important;
     object-fit: cover !important;
     flex-shrink: 0 !important;
   }
 
   .catalog-card > div {
-    padding: 0 !important;
+    padding: 8px !important;
     flex: 1 !important;
     display: flex !important;
     flex-direction: column !important;
-    gap: 2px !important;
+    gap: 3.5px !important;
+  }
+
+  .catalog-card span {
+    font-size: 14.5px !important;
+  }
+
+  .catalog-card div {
+    font-size: 11.5px !important;
   }
   
   .catalog-header-bar {
@@ -1086,13 +1095,58 @@ select.excel-input {
   }
 }
 
+/* --- 사용자 정보 헤더 프로필 모바일 반응형 --- */
+.header-user-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
 
+.header-user-profile-buttons {
+  display: flex;
+  gap: 8px;
+}
 
+@media (max-width: 768px) {
+  .header-user-profile {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    width: 100% !important;
+    gap: 10px !important;
+    padding: 10px 12px !important;
+    box-sizing: border-box !important;
+  }
 
+  .header-user-profile > span {
+    text-align: center !important;
+    font-size: 13.5px !important;
+    display: block !important;
+    width: 100% !important;
+    word-break: break-all !important;
+    margin-bottom: 2px;
+  }
 
+  .header-user-profile-buttons {
+    display: flex !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
 
-
-
-
-
+  .header-user-profile-buttons button {
+    flex: 1 !important;
+    justify-content: center !important;
+    padding: 8px 10px !important;
+    font-size: 13px !important;
+    white-space: nowrap !important;
+    box-shadow: none !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+}
 
