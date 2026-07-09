@@ -16,7 +16,7 @@ export const StoneManager: React.FC = () => {
   const [filterShape, setFilterShape] = useState('');
   const [searchCriteria, setSearchCriteria] = useState('stone_name');
   const [searchKeyword, setSearchKeyword] = useState('');
-  const [sortOrder, setSortOrder] = useState('no_asc');
+  const [sortOrder, setSortOrder] = useState('newest');
 
   useEffect(() => {
     setCurrentPage(1);
@@ -64,7 +64,9 @@ export const StoneManager: React.FC = () => {
     }
     return true;
   }).sort((a, b) => {
-    if (sortOrder === 'no_asc') {
+    if (sortOrder === 'newest') {
+      return (b.updated_at || '').localeCompare(a.updated_at || '');
+    } else if (sortOrder === 'no_asc') {
       const aNo = parseInt(a.stone_id.split('_')[0], 10) || 0;
       const bNo = parseInt(b.stone_id.split('_')[0], 10) || 0;
       return aNo - bNo;
@@ -148,6 +150,7 @@ export const StoneManager: React.FC = () => {
           className="input-field"
           style={{ fontSize: '15px', padding: '4px 8px', width: '100px' }}
         >
+          <option value="newest">최신순▼</option>
           <option value="no_asc">등록순▲</option>
           <option value="name_asc">이름순▲</option>
           <option value="name_desc">이름순▼</option>

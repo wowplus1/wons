@@ -164,13 +164,17 @@ export const CustomerManager: React.FC = () => {
     }
   };
 
-  // Filtered customer list
+  // Filtered customer list (sorted by newest first)
   const filteredCustomers = customers.filter(c => {
     const matchesSearch = c.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           c.code.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           (c.owner_name && c.owner_name.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesGrade = filterGrade === 'all' ? true : c.grade.toString() === filterGrade;
     return matchesSearch && matchesGrade;
+  }).sort((a, b) => {
+    const tA = a.updated_at || a.created_at || '';
+    const tB = b.updated_at || b.created_at || '';
+    return tB.localeCompare(tA);
   });
 
   const totalPages = Math.ceil(filteredCustomers.length / pageSize);

@@ -213,13 +213,27 @@ export const useErpStore = create<ErpState>((set, get) => {
   const cachedData = loadCacheFromLocalStorage() || {};
   const sortedRates = cachedData.goldRates ? [...cachedData.goldRates].sort((a: any, b: any) => b.date.localeCompare(a.date)) : [];
 
+  const sortedStones = (cachedData.stones || []).sort((a: any, b: any) => (b.updated_at || '').localeCompare(a.updated_at || ''));
+  const sortedCustomers = (cachedData.customers || []).sort((a: any, b: any) => {
+    const tA = a.updated_at || a.created_at || '';
+    const tB = b.updated_at || b.created_at || '';
+    return tB.localeCompare(tA);
+  });
+  const sortedCatalog = (cachedData.catalog || []).sort((a: any, b: any) => {
+    const tA = a.updated_at || a.created_at || '';
+    const tB = b.updated_at || b.created_at || '';
+    return tB.localeCompare(tA);
+  });
+  const sortedOrders = (cachedData.orders || []).sort((a: any, b: any) => (b.created_at || '').localeCompare(a.created_at || ''));
+  const sortedTransactions = (cachedData.transactions || []).sort((a: any, b: any) => (b.created_at || '').localeCompare(a.created_at || ''));
+
   return {
     goldRates: cachedData.goldRates || [],
-    stones: cachedData.stones || [],
-    customers: cachedData.customers || [],
-    catalog: cachedData.catalog || [],
-    orders: cachedData.orders || [],
-    transactions: cachedData.transactions || [],
+    stones: sortedStones,
+    customers: sortedCustomers,
+    catalog: sortedCatalog,
+    orders: sortedOrders,
+    transactions: sortedTransactions,
     auditLogs: [],
     
     currentRates: sortedRates[0] || null,
@@ -484,6 +498,7 @@ export const useErpStore = create<ErpState>((set, get) => {
             if (isIncremental && deletedIds.length > 0) {
               merged = merged.filter(item => !deletedIds.includes(item.stone_id));
             }
+            merged.sort((a, b) => (b.updated_at || '').localeCompare(a.updated_at || ''));
             updates.stones = merged;
             localStorage.setItem(`last_fetched_${col}`, bufferTime);
           } 
@@ -492,6 +507,11 @@ export const useErpStore = create<ErpState>((set, get) => {
             if (isIncremental && deletedIds.length > 0) {
               merged = merged.filter(item => !deletedIds.includes(item.customer_id));
             }
+            merged.sort((a, b) => {
+              const tA = a.updated_at || a.created_at || '';
+              const tB = b.updated_at || b.created_at || '';
+              return tB.localeCompare(tA);
+            });
             updates.customers = merged;
             updates.totalReceivable = merged.reduce((sum, c) => sum + c.receivable_amount, 0);
             updates.totalGoldBalance24k = merged.reduce((sum, c) => sum + c.gold_balance_24k_g, 0);
@@ -502,6 +522,11 @@ export const useErpStore = create<ErpState>((set, get) => {
             if (isIncremental && deletedIds.length > 0) {
               merged = merged.filter(item => !deletedIds.includes(item.model_number));
             }
+            merged.sort((a, b) => {
+              const tA = a.updated_at || a.created_at || '';
+              const tB = b.updated_at || b.created_at || '';
+              return tB.localeCompare(tA);
+            });
             updates.catalog = merged;
             localStorage.setItem(`last_fetched_${col}`, bufferTime);
           } 
@@ -510,6 +535,7 @@ export const useErpStore = create<ErpState>((set, get) => {
             if (isIncremental && deletedIds.length > 0) {
               merged = merged.filter(item => !deletedIds.includes(item.order_id));
             }
+            merged.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
             updates.orders = merged;
             localStorage.setItem(`last_fetched_${col}`, bufferTime);
           } 
@@ -518,6 +544,7 @@ export const useErpStore = create<ErpState>((set, get) => {
             if (isIncremental && deletedIds.length > 0) {
               merged = merged.filter(item => !deletedIds.includes(item.transaction_id));
             }
+            merged.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
             updates.transactions = merged;
             localStorage.setItem(`last_fetched_${col}`, bufferTime);
           } 

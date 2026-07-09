@@ -9,12 +9,20 @@ export const CatalogManager: React.FC = () => {
   const [searchTerm, setSearchTerm] = React.useState('');
   const pageSize = 30;
 
+  const sortedCatalog = React.useMemo(() => {
+    return [...catalog].sort((a, b) => {
+      const tA = a.updated_at || a.created_at || '';
+      const tB = b.updated_at || b.created_at || '';
+      return tB.localeCompare(tA);
+    });
+  }, [catalog]);
+
   // 검색 필터 적용 (모델번호, 카테고리, 제조사, 총판, 비고, 재질, 매칭되는 스톤 명 등을 다각도 검색)
   const filteredCatalog = React.useMemo(() => {
-    if (!searchTerm.trim()) return catalog;
+    if (!searchTerm.trim()) return sortedCatalog;
     const term = searchTerm.trim().toLowerCase();
     
-    return catalog.filter(item => {
+    return sortedCatalog.filter(item => {
       // 1. 모델번호
       if (item.model_number.toLowerCase().includes(term)) return true;
       
