@@ -280,28 +280,39 @@ export const StoneManager: React.FC = () => {
             이전
           </button>
           
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
-            const isActive = page === currentPage;
-            return (
-              <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                style={{
-                  fontSize: '12px',
-                  padding: '4px 10px',
-                  borderRadius: '4px',
-                  border: isActive ? '1px solid var(--primary)' : '1px solid var(--border-color)',
-                  background: isActive ? 'rgba(170, 133, 19, 0.15)' : 'transparent',
-                  color: isActive ? 'var(--primary)' : 'var(--text-main)',
-                  fontWeight: isActive ? 'bold' : 'normal',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}
-              >
-                {page}
-              </button>
-            );
-          })}
+          {(() => {
+            const pageNumbers = [];
+            let startPage = Math.max(1, currentPage - 2);
+            let endPage = Math.min(totalPages, startPage + 4);
+            if (endPage - startPage < 4) {
+              startPage = Math.max(1, endPage - 4);
+            }
+            for (let i = startPage; i <= endPage; i++) {
+              pageNumbers.push(i);
+            }
+            return pageNumbers.map(page => {
+              const isActive = page === currentPage;
+              return (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  style={{
+                    fontSize: '12px',
+                    padding: '4px 10px',
+                    borderRadius: '4px',
+                    border: isActive ? '1px solid var(--primary)' : '1px solid var(--border-color)',
+                    background: isActive ? 'rgba(170, 133, 19, 0.15)' : 'transparent',
+                    color: isActive ? 'var(--primary)' : 'var(--text-main)',
+                    fontWeight: isActive ? 'bold' : 'normal',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  {page}
+                </button>
+              );
+            });
+          })()}
           
           <button
             disabled={currentPage === totalPages}
