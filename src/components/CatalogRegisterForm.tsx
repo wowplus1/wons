@@ -72,6 +72,20 @@ export const CatalogRegisterForm: React.FC = () => {
   const [note, setNote] = useState('');
   const [images, setImages] = useState<string[]>([]);
 
+  // 이미지 편집기 관련 상태
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [editorOriginalSrc, setEditorOriginalSrc] = useState<string | null>(null);
+  const [editorRotation, setEditorRotation] = useState<number>(0);
+  const [editorZoom, setEditorZoom] = useState<number>(1.0);
+  const [editorOffsetX, setEditorOffsetX] = useState<number>(0);
+  const [editorOffsetY, setEditorOffsetY] = useState<number>(0);
+  const [editorBrightness, setEditorBrightness] = useState<number>(0);
+  const [editorContrast, setEditorContrast] = useState<number>(0);
+
+  // 드래그(이동) 제어용 상태
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+
   useEffect(() => {
     const queryParams = new URLSearchParams(window.location.search);
     const modelParam = queryParams.get('model');
@@ -172,65 +186,93 @@ export const CatalogRegisterForm: React.FC = () => {
     }
   }, [catalog, stones]);
 
-  const resizeImage = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 400;
-          const MAX_HEIGHT = 400;
-          let width = img.width;
-          let height = img.height;
+  // Canvas 실시간 렌더링 효과
+  useEffect(() => {
+    if (!isEditorOpen || !editorOriginalSrc) return;
+    const canvas = document.getElementById('image-editor-canvas') as HTMLCanvasElement | null;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
-          if (width > height) {
-            if (width > MAX_WIDTH) {
-              height *= MAX_WIDTH / width;
-              width = MAX_WIDTH;
-            }
-          } else {
-            if (height > MAX_HEIGHT) {
-              width *= MAX_HEIGHT / height;
-              height = MAX_HEIGHT;
-            }
-          }
+    const img = new Image();
+    img.crossOrigin = 'anonymous'; // CORS 방지
+    img.onload = () => {
+      ctx.clearRect(0, 0, 400, 400);
 
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            ctx.drawImage(img, 0, 0, width, height);
-          }
-          // 60% 압축율로 JPEG Base64 추출 (용량 극적 축소)
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
-          resolve(dataUrl);
-        };
-        img.onerror = () => {
-          reject(new Error('이미지 파일 변환에 실패했습니다.'));
-        };
-        img.src = event.target?.result as string;
-      };
-      reader.onerror = () => {
-        reject(new Error('파일을 읽는 중에 오류가 발생했습니다.'));
-      };
-      reader.readAsDataURL(file);
-    });
+      // 밝기 및 대비 필터 적용 (Canvas 2D API 하드웨어 가속 활용)
+      ctx.filter = `brightness(${100 + editorBrightness}%) contrast(${100 + editorContrast}%)`;
+
+      ctx.save();
+      // 화면 기준 좌표(Center)로 먼저 평행 이동 후 회전 및 확대/축소 적용 (드래그 방향 일관성 유지)
+      ctx.translate(200 + editorOffsetX, 200 + editorOffsetY);
+      ctx.rotate((editorRotation * Math.PI) / 180);
+      ctx.scale(editorZoom, editorZoom);
+
+      // 이미지를 중앙 정렬하여 렌더링
+      const imgRatio = img.width / img.height;
+      let drawWidth = 400;
+      let drawHeight = 400;
+      if (imgRatio > 1) {
+        drawHeight = 400 / imgRatio;
+      } else {
+        drawWidth = 400 * imgRatio;
+      }
+
+      ctx.drawImage(img, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
+      ctx.restore();
+    };
+    img.src = editorOriginalSrc;
+  }, [isEditorOpen, editorOriginalSrc, editorRotation, editorZoom, editorOffsetX, editorOffsetY, editorBrightness, editorContrast]);
+
+  // 마우스 드래그를 이용한 이미지 이동 제어 핸들러
+  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    setIsDragging(true);
+    setDragStart({ x: e.clientX - editorOffsetX, y: e.clientY - editorOffsetY });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!isDragging) return;
+    setEditorOffsetX(e.clientX - dragStart.x);
+    setEditorOffsetY(e.clientY - dragStart.y);
+  };
+
+  const handleMouseUpOrLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleApplyEdit = () => {
+    const canvas = document.getElementById('image-editor-canvas') as HTMLCanvasElement | null;
+    if (canvas) {
+      // 400x400 크기의 JPEG 포맷으로 0.7 압축율 변환
+      const editedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+      setImages([editedDataUrl]);
+      setIsEditorOpen(false);
+      setEditorOriginalSrc(null);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditorOpen(false);
+    setEditorOriginalSrc(null);
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const files = Array.from(e.target.files);
-      const promises = files.map(file => resizeImage(file));
-
-      Promise.all(promises)
-        .then(base64Urls => {
-          setImages(prev => [...prev, ...base64Urls]);
-        })
-        .catch(err => {
-          console.error(err);
-          alert('이미지 처리 중 오류가 발생했습니다: ' + (err.message || err));
-        });
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          setEditorOriginalSrc(event.target.result as string);
+          setEditorRotation(0);
+          setEditorZoom(1.0);
+          setEditorOffsetX(0);
+          setEditorOffsetY(0);
+          setEditorBrightness(0);
+          setEditorContrast(0);
+          setIsEditorOpen(true);
+        }
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -413,8 +455,28 @@ export const CatalogRegisterForm: React.FC = () => {
                         type="button" 
                         onClick={(e) => { e.preventDefault(); e.stopPropagation(); setImages([]); }} 
                         style={{ position: 'absolute', top: '4px', right: '4px', background: 'rgba(239, 68, 68, 0.9)', color: '#fff', border: 'none', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' }}
+                        title="사진 삭제"
                       >
                         ✕
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={(e) => { 
+                          e.preventDefault(); 
+                          e.stopPropagation(); 
+                          setEditorOriginalSrc(images[0]);
+                          setEditorRotation(0);
+                          setEditorZoom(1.0);
+                          setEditorOffsetX(0);
+                          setEditorOffsetY(0);
+                          setEditorBrightness(0);
+                          setEditorContrast(0);
+                          setIsEditorOpen(true);
+                        }} 
+                        style={{ position: 'absolute', bottom: '4px', right: '4px', background: 'rgba(0, 0, 0, 0.75)', color: '#fff', border: 'none', borderRadius: '4px', padding: '2px 8px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
+                        title="사진 편집"
+                      >
+                        편집
                       </button>
                     </div>
                   ) : (
@@ -871,7 +933,7 @@ export const CatalogRegisterForm: React.FC = () => {
                   }}
                   className="input-field" 
                   style={{ width: '80px', padding: '3px 6px', fontSize: '14px', border: '1px solid var(--border-color)', background: 'var(--bg-surface)', color: 'var(--text-main)', textAlign: 'right', borderRadius: '3px' }} 
-                />g
+                /> <span style={{ marginLeft: '2px' }}>g</span>
               </div>
               <div style={{ color: 'var(--warning)', fontWeight: '600' }}>
                 = 총 차감중량: <strong>{totalDeductionWeight.toFixed(3)}g</strong>
@@ -897,6 +959,230 @@ export const CatalogRegisterForm: React.FC = () => {
           </div>
         </form>
       </div>
+
+      {/* 이미지 편집 모달 포탈/렌더러 */}
+      {isEditorOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0, 0, 0, 0.85)',
+          zIndex: 10000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backdropFilter: 'blur(8px)',
+          padding: '16px'
+        }}>
+          <div style={{
+            background: '#0f0f15',
+            border: '1.5px solid var(--primary)',
+            borderRadius: '12px',
+            width: '100%',
+            maxWidth: '440px',
+            padding: '20px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '14px',
+            color: 'var(--text-main)',
+            boxShadow: '0 12px 40px rgba(0,0,0,0.6)'
+          }}>
+            <div style={{
+              fontSize: '16px',
+              fontWeight: '700',
+              color: 'var(--primary)',
+              borderBottom: '1px solid var(--border-color)',
+              paddingBottom: '8px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <span>📷 이미지 편집 및 자르기</span>
+              <button 
+                type="button" 
+                onClick={handleCancelEdit} 
+                style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '18px' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div 
+              style={{ 
+                position: 'relative',
+                display: 'flex', 
+                justifyContent: 'center', 
+                alignItems: 'center', 
+                background: '#050508', 
+                border: '1px solid var(--border-color)', 
+                borderRadius: '8px', 
+                overflow: 'hidden', 
+                width: '100%', 
+                aspectRatio: '1',
+                cursor: isDragging ? 'grabbing' : 'grab'
+              }}
+            >
+              <canvas 
+                id="image-editor-canvas" 
+                width={400} 
+                height={400} 
+                style={{ width: '100%', height: '100%', display: 'block' }}
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUpOrLeave}
+                onMouseLeave={handleMouseUpOrLeave}
+              />
+              <div style={{
+                position: 'absolute',
+                bottom: '8px',
+                left: '8px',
+                background: 'rgba(0,0,0,0.6)',
+                color: 'rgba(255,255,255,0.7)',
+                padding: '2px 8px',
+                borderRadius: '4px',
+                fontSize: '11px',
+                pointerEvents: 'none'
+              }}>
+                💡 드래그하여 이미지 이동
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13px' }}>
+              
+              {/* Zoom Control */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ width: '60px', color: 'var(--text-muted)' }}>확대/축소</span>
+                <input 
+                  type="range" 
+                  min="0.5" 
+                  max="3.0" 
+                  step="0.05" 
+                  value={editorZoom} 
+                  onChange={e => setEditorZoom(parseFloat(e.target.value))}
+                  style={{ flex: 1, accentColor: 'var(--primary)' }}
+                />
+                <span style={{ width: '35px', textAlign: 'right' }}>{Math.round(editorZoom * 100)}%</span>
+              </div>
+
+              {/* Brightness Control */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ width: '60px', color: 'var(--text-muted)' }}>밝기 조절</span>
+                <input 
+                  type="range" 
+                  min="-100" 
+                  max="100" 
+                  step="5" 
+                  value={editorBrightness} 
+                  onChange={e => setEditorBrightness(parseInt(e.target.value, 10))}
+                  style={{ flex: 1, accentColor: 'var(--primary)' }}
+                />
+                <span style={{ width: '35px', textAlign: 'right' }}>{editorBrightness > 0 ? `+${editorBrightness}` : editorBrightness}</span>
+              </div>
+
+              {/* Contrast Control */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ width: '60px', color: 'var(--text-muted)' }}>대비 조절</span>
+                <input 
+                  type="range" 
+                  min="-100" 
+                  max="100" 
+                  step="5" 
+                  value={editorContrast} 
+                  onChange={e => setEditorContrast(parseInt(e.target.value, 10))}
+                  style={{ flex: 1, accentColor: 'var(--primary)' }}
+                />
+                <span style={{ width: '35px', textAlign: 'right' }}>{editorContrast > 0 ? `+${editorContrast}` : editorContrast}</span>
+              </div>
+
+              {/* Rotation & Reset Buttons */}
+              <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                <button
+                  type="button"
+                  onClick={() => setEditorRotation(prev => (prev + 90) % 360)}
+                  className="btn-primary"
+                  style={{
+                    flex: 1,
+                    padding: '6px 12px',
+                    fontSize: '13px',
+                    background: 'rgba(255,255,255,0.05)',
+                    color: 'var(--text-main)',
+                    border: '1px solid var(--border-color)',
+                    boxShadow: 'none',
+                    cursor: 'pointer'
+                  }}
+                >
+                  🔄 90° 회전
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditorZoom(1.0);
+                    setEditorRotation(0);
+                    setEditorOffsetX(0);
+                    setEditorOffsetY(0);
+                    setEditorBrightness(0);
+                    setEditorContrast(0);
+                  }}
+                  className="btn-primary"
+                  style={{
+                    flex: 1,
+                    padding: '6px 12px',
+                    fontSize: '13px',
+                    background: 'rgba(255,255,255,0.05)',
+                    color: 'var(--text-muted)',
+                    border: '1px solid var(--border-color)',
+                    boxShadow: 'none',
+                    cursor: 'pointer'
+                  }}
+                >
+                  🧹 설정 초기화
+                </button>
+              </div>
+
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', gap: '8px', borderTop: '1px solid var(--border-color)', paddingTop: '12px', marginTop: '4px' }}>
+              <button
+                type="button"
+                onClick={handleCancelEdit}
+                className="btn-primary"
+                style={{
+                  flex: 1,
+                  padding: '8px 16px',
+                  fontSize: '14px',
+                  background: 'rgba(255, 255, 255, 0.03)',
+                  color: 'var(--text-muted)',
+                  border: '1px solid var(--border-color)',
+                  boxShadow: 'none',
+                  justifyContent: 'center',
+                  cursor: 'pointer'
+                }}
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                onClick={handleApplyEdit}
+                className="btn-primary"
+                style={{
+                  flex: 1,
+                  padding: '8px 16px',
+                  fontSize: '14px',
+                  background: 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)',
+                  color: '#000',
+                  fontWeight: '700',
+                  border: 'none',
+                  justifyContent: 'center',
+                  cursor: 'pointer'
+                }}
+              >
+                편집 적용하기
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
     </div>
   );
 };
