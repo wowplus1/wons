@@ -228,7 +228,7 @@ export const useErpStore = create<ErpState>((set, get) => {
     loading: false,
     selectedCustomerForOrder: null,
     currentOrderItems: [],
-    activeTab: 'statistics',
+    activeTab: (localStorage.getItem('wons_active_tab') || 'statistics') as any,
     editingOrderId: null,
     currentUser: null,
 
@@ -259,7 +259,10 @@ export const useErpStore = create<ErpState>((set, get) => {
       }
     },
 
-    setActiveTab: (tab) => set({ activeTab: tab }),
+    setActiveTab: (tab) => {
+      localStorage.setItem('wons_active_tab', tab);
+      set({ activeTab: tab });
+    },
 
     addAuditLog: async (log) => {
       const user = get().currentUser;

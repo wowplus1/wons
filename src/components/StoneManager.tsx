@@ -33,16 +33,21 @@ export const StoneManager: React.FC = () => {
 
   // Open Pop-up window for Stone Registration
   const handleOpenRegisterWindow = () => {
+    const isMobile = window.innerWidth < 768 || /Mobi|Android|iPhone/i.test(navigator.userAgent);
     const w = 520;
     const h = 720;
     const left = window.screen.width / 2 - w / 2;
     const top = window.screen.height / 2 - h / 2;
     
-    window.open(
-      './?popup=stone', 
-      'stone_register_popup', 
-      `width=${w},height=${h},top=${top},left=${left},resizable=yes,scrollbars=yes`
-    );
+    if (isMobile) {
+      window.location.href = './?popup=stone';
+    } else {
+      window.open(
+        './?popup=stone', 
+        'stone_register_popup', 
+        `width=${w},height=${h},top=${top},left=${left},resizable=yes,scrollbars=yes`
+      );
+    }
   };
 
   // Filter and Sort Logic for Stone List

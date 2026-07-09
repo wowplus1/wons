@@ -411,7 +411,12 @@ export const CatalogRegisterForm: React.FC = () => {
       }
 
       alert(isEditMode ? `카탈로그 [${newItem.model_number}]이 정상 수정되었습니다.` : `카탈로그 [${newItem.model_number}]이 정상 등록되었습니다.`);
-      window.close();
+      
+      if (window.opener) {
+        window.close();
+      } else {
+        window.location.href = './';
+      }
     } catch (err: any) {
       console.error("saveCatalogItem failed: ", err);
       alert(`카탈로그 저장 중 오류가 발생했습니다.\n오류 내용: ${err.message || err}`);
@@ -950,7 +955,13 @@ export const CatalogRegisterForm: React.FC = () => {
           </div>
 
           <div className="catalog-form-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid var(--border-color)', paddingTop: '12px' }}>
-            <button type="button" onClick={() => window.close()} className="btn-primary" style={{ padding: '6px 12px', background: 'var(--bg-surface)', color: 'var(--text-muted)', border: '1px solid var(--border-color)', boxShadow: 'none' }}>
+            <button type="button" onClick={() => {
+              if (window.opener) {
+                window.close();
+              } else {
+                window.location.href = './';
+              }
+            }} className="btn-primary" style={{ padding: '6px 12px', background: 'var(--bg-surface)', color: 'var(--text-muted)', border: '1px solid var(--border-color)', boxShadow: 'none' }}>
               닫기
             </button>
             <button type="submit" className="btn-primary" style={{ padding: '6px 20px' }}>

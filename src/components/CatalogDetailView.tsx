@@ -25,8 +25,10 @@ export const CatalogDetailView: React.FC = () => {
           } catch (e) {
             console.error("Failed to sync opener window", e);
           }
+          window.close();
+        } else {
+          window.location.href = './';
         }
-        window.close();
       } catch (e) {
         alert("삭제 중 오류가 발생했습니다.");
       }
@@ -63,7 +65,13 @@ export const CatalogDetailView: React.FC = () => {
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: 'var(--bg-base)', color: 'var(--text-muted)' }}>
         <div className="glass-panel" style={{ textAlign: 'center', padding: '30px' }}>
           <p style={{ marginBottom: '12px' }}>상품 데이터를 불러오는 중이거나 존재하지 않는 모델입니다.</p>
-          <button onClick={() => window.close()} className="btn-primary" style={{ padding: '6px 16px' }}>닫기</button>
+          <button onClick={() => {
+            if (window.opener) {
+              window.close();
+            } else {
+              window.location.href = './';
+            }
+          }} className="btn-primary" style={{ padding: '6px 16px' }}>닫기</button>
         </div>
       </div>
     );
@@ -190,7 +198,13 @@ export const CatalogDetailView: React.FC = () => {
               <X size={12} /> <span>삭제</span>
             </button>
             <button 
-              onClick={() => window.close()} 
+              onClick={() => {
+                if (window.opener) {
+                  window.close();
+                } else {
+                  window.location.href = './';
+                }
+              }} 
               style={{ 
                 background: 'transparent', 
                 border: 'none', 
@@ -459,7 +473,13 @@ export const CatalogDetailView: React.FC = () => {
 
         {/* 5. 닫기 버튼 */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px', borderTop: '1px solid var(--border-color)', paddingTop: '12px' }}>
-          <button onClick={() => window.close()} className="btn-primary" style={{ padding: '6px 24px' }}>
+          <button onClick={() => {
+            if (window.opener) {
+              window.close();
+            } else {
+              window.location.href = './';
+            }
+          }} className="btn-primary" style={{ padding: '6px 24px' }}>
             확인 및 닫기
           </button>
         </div>

@@ -55,7 +55,12 @@ export const StoneRegisterForm: React.FC = () => {
     }
     
     alert(`스톤 [${newStone.name}]이 등록되었습니다.`);
-    window.close();
+    
+    if (window.opener) {
+      window.close();
+    } else {
+      window.location.href = './';
+    }
   };
 
   return (
@@ -157,7 +162,13 @@ export const StoneRegisterForm: React.FC = () => {
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid var(--border-color)', paddingTop: '12px', marginTop: '4px' }}>
-            <button type="button" onClick={() => window.close()} className="btn-primary" style={{ padding: '6px 12px', background: 'rgba(255,255,255,0.03)', color: 'var(--text-muted)', border: '1px solid var(--border-color)', boxShadow: 'none' }}>
+            <button type="button" onClick={() => {
+              if (window.opener) {
+                window.close();
+              } else {
+                window.location.href = './';
+              }
+            }} className="btn-primary" style={{ padding: '6px 12px', background: 'rgba(255,255,255,0.03)', color: 'var(--text-muted)', border: '1px solid var(--border-color)', boxShadow: 'none' }}>
               닫기
             </button>
             <button type="submit" className="btn-primary" style={{ padding: '6px 16px' }}>

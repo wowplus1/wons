@@ -61,35 +61,39 @@ export const CatalogManager: React.FC = () => {
   // Open Pop-up window for Catalog Registration
   const handleOpenRegisterWindow = () => {
     const isMobile = window.innerWidth < 768 || /Mobi|Android|iPhone/i.test(navigator.userAgent);
-    const w = isMobile ? window.innerWidth : 1020;
-    const h = isMobile ? window.innerHeight : 820;
-    const left = isMobile ? 0 : window.screen.width / 2 - w / 2;
-    const top = isMobile ? 0 : window.screen.height / 2 - h / 2;
+    const w = 1020;
+    const h = 820;
+    const left = window.screen.width / 2 - w / 2;
+    const top = window.screen.height / 2 - h / 2;
     
-    window.open(
-      './?popup=catalog', 
-      'catalog_register_popup', 
-      isMobile 
-        ? `width=${w},height=${h},top=0,left=0,resizable=yes,scrollbars=yes`
-        : `width=${w},height=${h},top=${top},left=${left},resizable=yes,scrollbars=yes`
-    );
+    if (isMobile) {
+      window.location.href = './?popup=catalog';
+    } else {
+      window.open(
+        './?popup=catalog', 
+        'catalog_register_popup', 
+        `width=${w},height=${h},top=${top},left=${left},resizable=yes,scrollbars=yes`
+      );
+    }
   };
 
   // Open Pop-up window for Catalog Item Details
   const handleOpenDetailWindow = (modelNumber: string) => {
     const isMobile = window.innerWidth < 768 || /Mobi|Android|iPhone/i.test(navigator.userAgent);
-    const w = isMobile ? window.innerWidth : 860;
-    const h = isMobile ? window.innerHeight : 900;
-    const left = isMobile ? 0 : window.screen.width / 2 - w / 2;
-    const top = isMobile ? 0 : window.screen.height / 2 - h / 2;
+    const w = 860;
+    const h = 900;
+    const left = window.screen.width / 2 - w / 2;
+    const top = window.screen.height / 2 - h / 2;
     
-    window.open(
-      `./?popup=catalog_detail&model=${encodeURIComponent(modelNumber)}`, 
-      `catalog_detail_popup_${modelNumber.replace(/[^a-zA-Z0-9가-힣]/g, '_')}`, 
-      isMobile 
-        ? `width=${w},height=${h},top=0,left=0,resizable=yes,scrollbars=yes`
-        : `width=${w},height=${h},top=${top},left=${left},resizable=yes,scrollbars=yes`
-    );
+    if (isMobile) {
+      window.location.href = `./?popup=catalog_detail&model=${encodeURIComponent(modelNumber)}`;
+    } else {
+      window.open(
+        `./?popup=catalog_detail&model=${encodeURIComponent(modelNumber)}`, 
+        `catalog_detail_popup_${modelNumber.replace(/[^a-zA-Z0-9가-힣]/g, '_')}`, 
+        `width=${w},height=${h},top=${top},left=${left},resizable=yes,scrollbars=yes`
+      );
+    }
   };
 
   return (
