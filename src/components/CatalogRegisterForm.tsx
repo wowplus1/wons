@@ -461,6 +461,8 @@ export const CatalogRegisterForm: React.FC = () => {
       default_stones: defaultStonesMap,
       images: images.length > 0 ? images : [],
       created_at: existingItem?.created_at || new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      set_model_numbers: relatedSetNo ? relatedSetNo.split(',').map(s => s.trim().toUpperCase()) : [],
       manufacturer: manufacturer || '자체제작',
       manufacturer_code: manufacturerCode || '',
       vendor: vendor || '',

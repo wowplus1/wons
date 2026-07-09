@@ -116,6 +116,7 @@ export interface CatalogItem {
       grade_4: number;
     }[];
   };
+  updated_at: string;
 }
 
 export interface OrderItem {
