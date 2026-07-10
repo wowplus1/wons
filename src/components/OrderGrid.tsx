@@ -337,7 +337,7 @@ export const OrderGrid: React.FC = () => {
 
         <h2 style={{ fontSize: '19px', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span className="gradient-text" style={{ fontFamily: 'var(--font-title)', fontWeight: '600' }}>
-            {editingOrderId ? `주문 작성 (수정 중: ${editingOrderId})` : 'ì£¼ë¬¸ ìì±'}
+            {editingOrderId ? `주문 작성 (수정 중: ${editingOrderId})` : '주문 작성'}
           </span> 
         </h2>
 
