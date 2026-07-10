@@ -304,7 +304,8 @@ export const useErpStore = create<ErpState>((set, get) => {
           goldRates: cached.goldRates || [],
           stones: cached.stones || [],
           customers: cached.customers || [],
-          catalog: cached.catalog || [],
+          // ⚠️ catalog 은 localStorage 가 아닌 IndexedDB 에서 관리되므로 여기서 덮어쓰지 않는다.
+          // (덮어쓰면 IDB 하이드레이션으로 불러온 카탈로그가 [] 로 지워져 "리스트가 사라지는" 버그 발생)
           orders: cached.orders || [],
           transactions: cached.transactions || [],
           currentRates: sortedRates[0] || null,
