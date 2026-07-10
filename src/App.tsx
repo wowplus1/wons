@@ -1,5 +1,5 @@
 // src/App.tsx
-import { useEffect, useState, lazy, Suspense } from 'react';
+import { useEffect, useState, useRef, lazy, Suspense } from 'react';
 import { useErpStore } from './store/useErpStore';
 import { ShoppingCart, BookOpen, RefreshCw, Coins, Gem, Users, FileText, Package, FileCheck, Menu, X, BarChart3, ShieldCheck } from 'lucide-react';
 import { auth } from './firebase/config';
@@ -47,6 +47,12 @@ const LoadingFallback = () => (
 
 function App() {
   const { fetchDb, prefetchDb, activeTab, setActiveTab, loading, customers, orders, currentUser, setCurrentUser, logout } = useErpStore();
+
+  // 화면(탭) 전환 시 콘텐츠 스크롤을 최상단으로 리셋 (이전 화면의 스크롤 위치가 남지 않도록)
+  const mainRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    if (mainRef.current) mainRef.current.scrollTop = 0;
+  }, [activeTab]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -609,7 +615,7 @@ function App() {
       </header>
 
       {/* Main Feature Rendering Panel */}
-      <main style={{ flex: 1, overflowY: 'auto' }}>
+      <main ref={mainRef} style={{ flex: 1, overflowY: 'auto' }}>
         <Suspense fallback={<LoadingFallback />}>
           {activeTab === 'customers' && <CustomerManager />}
           {activeTab === 'statistics' && <Statistics />}
