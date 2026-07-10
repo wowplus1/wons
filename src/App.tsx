@@ -578,41 +578,8 @@ function App() {
               🟢 <strong style={{ color: 'var(--primary)' }}>{currentUser.email}</strong> 님
             </span>
             <div className="header-user-profile-buttons">
-              <button 
-                onClick={async () => {
-                  if (window.confirm("기기에 임시 저장된 캐시 데이터를 비우고, 클라우드 서버의 최신 데이터를 강제 전체 동기화하시겠습니까?")) {
-                    localStorage.removeItem('wons_erp_cache');
-                    localStorage.removeItem('last_fetched_catalog');
-                    localStorage.removeItem('last_fetched_stones');
-                    localStorage.removeItem('last_fetched_customers');
-                    localStorage.removeItem('last_fetched_orders');
-                    localStorage.removeItem('last_fetched_gold_rates');
-                    localStorage.removeItem('last_fetched_gold_transactions');
-                    localStorage.removeItem('last_fetched_audit_logs');
-                    
-                    try {
-                      await useErpStore.getState().fetchDb(undefined, true, true);
-                      alert("최신 데이터 강제 동기화가 완료되었습니다!");
-                    } catch (err: any) {
-                      alert(`동기화 중 오류가 발생했습니다: ${err.message || err}`);
-                    }
-                  }
-                }} 
-                className="btn-primary" 
-                style={{ 
-                  padding: '4px 10px', 
-                  fontSize: '13px', 
-                  background: 'rgba(212, 175, 55, 0.1)', 
-                  color: 'var(--primary)', 
-                  border: '1px solid rgba(212, 175, 55, 0.2)', 
-                  boxShadow: 'none', 
-                  cursor: 'pointer'
-                }}
-              >
-                🔄 강제 동기화
-              </button>
-              <button 
-                onClick={logout} 
+              <button
+                onClick={logout}
                 className="btn-primary" 
                 style={{ 
                   padding: '4px 10px', 
