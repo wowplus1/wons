@@ -3,7 +3,7 @@ import { useErpStore } from '../store/useErpStore';
 import { ShieldAlert, Key, User, ArrowRight, Sparkles } from 'lucide-react';
 
 export const Login: React.FC = () => {
-  const { login, setCurrentUser } = useErpStore();
+  const { login } = useErpStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -33,15 +33,6 @@ export const Login: React.FC = () => {
     }
   };
 
-  // 파이어베이스 계정이 아직 설정되지 않았거나 오프라인 가상 구동을 위한 게스트 강제 진입 함수
-  const handleGuestLogin = () => {
-    // 가짜 Firebase User 객체 주입
-    setCurrentUser({
-      email: 'guest@wons.com',
-      uid: 'guest-temporary-id',
-      emailVerified: true
-    } as any);
-  };
 
   return (
     <div style={{
@@ -214,25 +205,10 @@ export const Login: React.FC = () => {
           borderTop: '1px solid var(--border-color)',
           paddingTop: '24px'
         }}>
-          <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: '1.6', margin: '0 0 12px 0' }}>
+          <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: '1.6', margin: 0 }}>
             본 시스템은 내부 권한이 부여된 임직원 전용 ERP 장부입니다.<br />
             계정 생성/조회는 <strong>Firebase Console Auth</strong>를 이용하십시오.
           </p>
-          <button
-            onClick={handleGuestLogin}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: 'var(--primary)',
-              cursor: 'pointer',
-              fontSize: '13px',
-              fontWeight: '600',
-              textDecoration: 'underline',
-              padding: '4px'
-            }}
-          >
-            임시 게스트로 시스템 둘러보기 (체험용 로그인)
-          </button>
         </div>
       </div>
     </div>
