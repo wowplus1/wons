@@ -85,7 +85,7 @@ function App() {
     if (currentUser) {
       // Initialize DB and fetch based on popupType
       if (popupType === 'catalog_select') {
-        fetchDb(['catalog']);
+        fetchDb(['catalog', 'stones']);
       } else if (popupType === 'stone') {
         fetchDb(['stones']);
       } else if (popupType === 'catalog') {

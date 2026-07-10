@@ -4,8 +4,21 @@ import { X } from 'lucide-react';
 import { CatalogImage } from './CatalogImage';
 
 export const CatalogSelectPopup: React.FC = () => {
-  const { catalog } = useErpStore();
+  const { catalog, stones } = useErpStore();
   const [searchText, setSearchText] = useState('');
+
+  // 공임합계 = 기본공임(등급) + 추가공임 + 스톤공임(스톤 등급단가 × 알수 합)
+  const calcTotalLabor = (c: any, grade: number) => {
+    const baseObj = (c.base_labor_fees && c.base_labor_fees['14K']) || {};
+    const baseLabor = Number(baseObj[`grade_${grade}`] ?? baseObj[String(grade)] ?? 0) || 0;
+    const extraLabor = Number(c.extra_labor_fee || 0) || 0;
+    const stoneLabor = (c.default_stones || []).reduce((sum: number, ds: any) => {
+      const st = stones.find(s => s.stone_id === ds.stone_id);
+      const gp = st ? (Number(st.grade_prices?.[`grade_${grade}`]) || 0) : 0;
+      return sum + gp * (ds.quantity || 0);
+    }, 0);
+    return baseLabor + extraLabor + stoneLabor;
+  };
 
   // Parse URL Parameters
   const queryParams = new URLSearchParams(window.location.search);
@@ -178,7 +191,7 @@ export const CatalogSelectPopup: React.FC = () => {
 
         {displayedCatalog.length > 0 ? (
           displayedCatalog.map(c => {
-            const price = c.base_labor_fees['14K']?.[`grade_${targetGrade}`] || 0;
+            const totalLabor = calcTotalLabor(c, targetGrade);
             return (
               <div 
                 key={c.model_number} 
@@ -216,7 +229,7 @@ export const CatalogSelectPopup: React.FC = () => {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
                     <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>제조사: {c.manufacturer || '자체'}</span>
                     <span style={{ fontWeight: '700', color: 'var(--primary)', fontSize: '15px' }}>
-                      공임: {price.toLocaleString()} 원
+                      공임합계: {totalLabor.toLocaleString()} 원
                     </span>
                   </div>
                 </div>
