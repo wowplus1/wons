@@ -302,8 +302,6 @@ select.excel-input {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 16px;
-  overflow-y: auto;
-  max-height: 75vh;
   padding-right: 4px;
 }
 
@@ -312,7 +310,6 @@ select.excel-input {
   .catalog-grid {
     grid-template-columns: 1fr !important;
     gap: 12px !important;
-    max-height: 72vh !important;
     padding-bottom: 24px !important;
   }
 
