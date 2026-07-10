@@ -50,7 +50,12 @@ function App() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
+      if (!user && import.meta.env.DEV && localStorage.getItem('wons_dev_guest') === '1') {
+        // 개발 전용: 게스트 세션을 창 간(팝업 포함) 공유하여 팝업도 정상 렌더되게 함
+        setCurrentUser({ email: 'guest@wons.com', uid: 'guest-temporary-id', emailVerified: true } as any);
+      } else {
+        setCurrentUser(user);
+      }
     });
     return () => unsubscribe();
   }, [setCurrentUser]);

@@ -281,6 +281,7 @@ export const useErpStore = create<ErpState>((set, get) => {
     logout: async () => {
       set({ loading: true });
       try {
+        try { localStorage.removeItem('wons_dev_guest'); } catch { /* ignore */ }
         await firebaseSignOut(auth);
         set({ currentUser: null });
       } catch (error) {

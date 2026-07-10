@@ -31,22 +31,16 @@ export const CatalogSelectPopup: React.FC = () => {
     (c.manufacturer && c.manufacturer.toLowerCase().includes(searchText.toLowerCase()))
   );
 
-  const [displayLimit, setDisplayLimit] = useState(30);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 30;
 
   useEffect(() => {
-    setDisplayLimit(30);
+    setCurrentPage(1);
   }, [searchText]);
 
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const target = e.currentTarget;
-    if (target.scrollHeight - target.scrollTop <= target.clientHeight + 50) {
-      if (displayLimit < filteredCatalog.length) {
-        setDisplayLimit(prev => prev + 30);
-      }
-    }
-  };
-
-  const displayedCatalog = filteredCatalog.slice(0, displayLimit);
+  const totalPages = Math.max(1, Math.ceil(filteredCatalog.length / pageSize));
+  const startIndex = (currentPage - 1) * pageSize;
+  const displayedCatalog = filteredCatalog.slice(startIndex, startIndex + pageSize);
 
   return (
     <div style={{
@@ -89,12 +83,12 @@ export const CatalogSelectPopup: React.FC = () => {
       </div>
 
       {/* List */}
-      <div 
-        onScroll={handleScroll}
+      <div
         style={{ overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', paddingRight: '4px' }}
       >
-        {/* 디자인출력 가상 선택 카드 (상시 노출) */}
-        <div 
+        {currentPage === 1 && (<>
+        {/* 디자인출력 가상 선택 카드 (첫 페이지에만 노출) */}
+        <div
           onClick={() => handleSelectCatalogItem('디자인출력')}
           style={{
             padding: '8px',
@@ -180,6 +174,7 @@ export const CatalogSelectPopup: React.FC = () => {
             </div>
           </div>
         </div>
+        </>)}
 
         {displayedCatalog.length > 0 ? (
           displayedCatalog.map(c => {
@@ -234,19 +229,58 @@ export const CatalogSelectPopup: React.FC = () => {
           </div>
         )}
 
-        {filteredCatalog.length > displayLimit && (
-          <div style={{ textAlign: 'center', padding: '10px', fontSize: '14px', color: 'var(--text-muted)' }}>
-            아래로 스크롤하여 더 많은 모델 표시 ({displayLimit} / {filteredCatalog.length})
-          </div>
-        )}
       </div>
-      
+
+      {/* Pagination (30개/페이지) */}
+      {totalPages > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px', paddingTop: '4px' }}>
+          <button
+            type="button"
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            className="btn-primary"
+            style={{ padding: '4px 10px', fontSize: '13px', background: currentPage === 1 ? 'rgba(15,23,42,0.04)' : undefined, color: currentPage === 1 ? 'var(--text-muted)' : undefined, border: currentPage === 1 ? '1px solid var(--border-color)' : 'none', boxShadow: 'none', cursor: currentPage === 1 ? 'not-allowed' : 'pointer' }}
+          >
+            이전
+          </button>
+          {(() => {
+            const start = Math.max(1, Math.min(currentPage - 2, totalPages - 4));
+            const end = Math.min(totalPages, start + 4);
+            const pages = [];
+            for (let p = start; p <= end; p++) pages.push(p);
+            return pages.map(p => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => setCurrentPage(p)}
+                className="btn-primary"
+                style={{ padding: '4px 9px', fontSize: '13px', minWidth: '28px', background: p === currentPage ? undefined : 'rgba(15,23,42,0.04)', color: p === currentPage ? undefined : 'var(--text-muted)', border: p === currentPage ? 'none' : '1px solid var(--border-color)', boxShadow: 'none', fontWeight: p === currentPage ? '700' : '400' }}
+              >
+                {p}
+              </button>
+            ));
+          })()}
+          <button
+            type="button"
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+            className="btn-primary"
+            style={{ padding: '4px 10px', fontSize: '13px', background: currentPage === totalPages ? 'rgba(15,23,42,0.04)' : undefined, color: currentPage === totalPages ? 'var(--text-muted)' : undefined, border: currentPage === totalPages ? '1px solid var(--border-color)' : 'none', boxShadow: 'none', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer' }}
+          >
+            다음
+          </button>
+        </div>
+      )}
+
       {/* Footer */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid var(--border-color)', paddingTop: '8px' }}>
-        <button 
-          type="button" 
-          onClick={() => window.close()} 
-          className="btn-primary" 
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-color)', paddingTop: '8px' }}>
+        <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+          전체 {filteredCatalog.length}개 · {currentPage}/{totalPages} 페이지
+        </span>
+        <button
+          type="button"
+          onClick={() => window.close()}
+          className="btn-primary"
           style={{ padding: '5px 14px', background: 'rgba(15,23,42,0.05)', color: 'var(--text-muted)', border: '1px solid var(--border-color)', boxShadow: 'none' }}
         >
           닫기

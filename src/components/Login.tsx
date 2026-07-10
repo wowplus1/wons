@@ -35,6 +35,8 @@ export const Login: React.FC = () => {
 
   // 개발 전용 게스트 진입 (Firebase 인증 우회). 프로덕션 빌드에서는 버튼이 렌더링되지 않는다.
   const handleGuestLogin = () => {
+    // 창 간(팝업 포함) 공유를 위해 플래그 저장 → onAuthStateChanged 가 게스트 세션을 복원
+    try { localStorage.setItem('wons_dev_guest', '1'); } catch { /* ignore */ }
     setCurrentUser({
       email: 'guest@wons.com',
       uid: 'guest-temporary-id',
