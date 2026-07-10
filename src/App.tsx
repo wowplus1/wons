@@ -75,22 +75,26 @@ function App() {
   const popupType = queryParams.get('popup');
 
   useEffect(() => {
-    // Initialize DB and fetch based on popupType
-    if (popupType === 'catalog_select') {
-      fetchDb(['catalog']);
-    } else if (popupType === 'stone') {
-      fetchDb(['stones']);
-    } else if (popupType === 'catalog') {
-      fetchDb(['catalog', 'stones']);
-    } else if (popupType === 'catalog_detail') {
-      fetchDb(['catalog', 'stones']);
-    } else if (popupType === 'invoice') {
-      fetchDb(['orders', 'customers', 'gold_rates', 'stones', 'gold_transactions']);
-    } else if (popupType === 'jewelry_work_list_print') {
-      fetchDb(['orders', 'catalog']);
-    } else {
-      // 대시보드와 대장에 필요한 핵심 데이터셋만 우선 로드 (용량이 매우 큰 catalog와 stones 제외)
-      fetchDb(['gold_rates', 'orders', 'customers', 'gold_transactions']);
+    // ⚠️ 인증(로그인) 완료 후에만 Firestore 를 조회한다.
+    // (Firestore 보안 규칙이 인증 필수여도 정상 동작하도록: 로그인 전 조회는 거부되므로 하지 않는다)
+    if (currentUser) {
+      // Initialize DB and fetch based on popupType
+      if (popupType === 'catalog_select') {
+        fetchDb(['catalog']);
+      } else if (popupType === 'stone') {
+        fetchDb(['stones']);
+      } else if (popupType === 'catalog') {
+        fetchDb(['catalog', 'stones']);
+      } else if (popupType === 'catalog_detail') {
+        fetchDb(['catalog', 'stones']);
+      } else if (popupType === 'invoice') {
+        fetchDb(['orders', 'customers', 'gold_rates', 'stones', 'gold_transactions']);
+      } else if (popupType === 'jewelry_work_list_print') {
+        fetchDb(['orders', 'catalog']);
+      } else {
+        // 대시보드와 대장에 필요한 핵심 데이터셋만 우선 로드 (용량이 매우 큰 catalog와 stones 제외)
+        fetchDb(['gold_rates', 'orders', 'customers', 'gold_transactions']);
+      }
     }
 
     // Listen for data update messages from child popup windows
@@ -135,11 +139,12 @@ function App() {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('focus', handleWindowFocus);
     };
-  }, [fetchDb, popupType]);
+  }, [fetchDb, popupType, currentUser]);
 
   // activeTab 전환 시 필요한 데이터를 지연 로딩(Lazy Loading)하는 useEffect
   useEffect(() => {
     if (popupType) return; // 팝업 모드일 때는 각 팝업 초기화 로직을 따름
+    if (!currentUser) return; // 인증 후에만 조회
 
     const neededCollections: ('gold_rates' | 'stones' | 'customers' | 'catalog' | 'orders' | 'gold_transactions')[] = [];
 
@@ -156,7 +161,7 @@ function App() {
     if (neededCollections.length > 0) {
       fetchDb(neededCollections);
     }
-  }, [activeTab, fetchDb, popupType]);
+  }, [activeTab, fetchDb, popupType, currentUser]);
 
   // 최초 핵심 데이터 로드 완료 직후 (사용자가 대시보드를 보는 시점)
   // 백그라운드에서 용량이 큰 catalog, stones 데이터를 무소음(로딩 표시 없음)으로 미리 로드(Prefetch)
