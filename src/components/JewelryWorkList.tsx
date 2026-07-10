@@ -236,14 +236,15 @@ export const JewelryWorkList: React.FC = () => {
   const isAllChecked = paginatedWorkItems.length > 0 && paginatedWorkItems.every(r => checkedItems.has(r.id));
   
   const handleToggleAll = () => {
+    const next = new Set(checkedItems);
     if (isAllChecked) {
-      const next = new Set(checkedItems);
-      setCheckedItems(next);
+      // 현재 페이지 항목 전체 해제
+      paginatedWorkItems.forEach(r => next.delete(r.id));
     } else {
-      const next = new Set(checkedItems);
-      workItems.forEach(r => next.add(r.id));
-      setCheckedItems(next);
+      // 현재 페이지 항목 전체 선택
+      paginatedWorkItems.forEach(r => next.add(r.id));
     }
+    setCheckedItems(next);
   };
 
   const handleToggleRow = (id: string) => {

@@ -252,10 +252,13 @@ export const CompletedLedger: React.FC = () => {
 
   // Selection Checkbox Handlers
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const ids = paginatedRows.map(r => r.id);
     if (e.target.checked) {
-      setSelectedRows(paginatedRows.map(r => r.id));
+      // 현재 페이지 항목 전체 선택 (다른 페이지 선택은 유지)
+      setSelectedRows(prev => Array.from(new Set([...prev, ...ids])));
     } else {
-      setSelectedRows([]);
+      // 현재 페이지 항목 전체 해제
+      setSelectedRows(prev => prev.filter(id => !ids.includes(id)));
     }
   };
 
@@ -584,8 +587,8 @@ export const CompletedLedger: React.FC = () => {
               <th rowSpan={2} style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>
                 <input 
                   type="checkbox" 
-                  onChange={handleSelectAll} 
-                  checked={filteredRows.length > 0 && selectedRows.length === filteredRows.length}
+                  onChange={handleSelectAll}
+                  checked={paginatedRows.length > 0 && paginatedRows.every(r => selectedRows.includes(r.id))}
                   style={{ cursor: 'pointer' }}
                 />
               </th>
