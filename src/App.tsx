@@ -578,7 +578,7 @@ function App() {
 
         {/* User Auth Info & Logout Button */}
         {currentUser && (
-          <div className="header-user-profile">
+          <div className={`header-user-profile ${isMenuOpen ? 'mobile-show' : 'mobile-hide'}`}>
             <span style={{ fontSize: '13.5px', color: 'var(--text-muted)' }}>
               🟢 <strong style={{ color: 'var(--primary)' }}>{currentUser.email}</strong> 님
             </span>

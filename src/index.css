@@ -685,6 +685,14 @@ select.excel-input {
   .global-action-tools.mobile-show {
     display: flex !important;
   }
+
+  /* 모바일: 계정/로그아웃은 메뉴가 열렸을 때만 표시 (접힌 헤더 공간 확보) */
+  .header-user-profile.mobile-hide {
+    display: none !important;
+  }
+  .header-user-profile.mobile-show {
+    display: flex !important;
+  }
 }
 
 /* --- 거래처 마스터 화면 모바일 반응형 --- */
