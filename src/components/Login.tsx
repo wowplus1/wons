@@ -3,7 +3,7 @@ import { useErpStore } from '../store/useErpStore';
 import { ShieldAlert, Key, User, ArrowRight, Sparkles } from 'lucide-react';
 
 export const Login: React.FC = () => {
-  const { login } = useErpStore();
+  const { login, setCurrentUser } = useErpStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -33,6 +33,14 @@ export const Login: React.FC = () => {
     }
   };
 
+  // 개발 전용 게스트 진입 (Firebase 인증 우회). 프로덕션 빌드에서는 버튼이 렌더링되지 않는다.
+  const handleGuestLogin = () => {
+    setCurrentUser({
+      email: 'guest@wons.com',
+      uid: 'guest-temporary-id',
+      emailVerified: true
+    } as any);
+  };
 
   return (
     <div style={{
@@ -205,10 +213,27 @@ export const Login: React.FC = () => {
           borderTop: '1px solid var(--border-color)',
           paddingTop: '24px'
         }}>
-          <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: '1.6', margin: 0 }}>
+          <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: '1.6', margin: import.meta.env.DEV ? '0 0 12px 0' : 0 }}>
             본 시스템은 내부 권한이 부여된 임직원 전용 ERP 장부입니다.<br />
             계정 생성/조회는 <strong>Firebase Console Auth</strong>를 이용하십시오.
           </p>
+          {import.meta.env.DEV && (
+            <button
+              onClick={handleGuestLogin}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--primary)',
+                cursor: 'pointer',
+                fontSize: '13px',
+                fontWeight: '600',
+                textDecoration: 'underline',
+                padding: '4px'
+              }}
+            >
+              [개발용] 게스트로 둘러보기
+            </button>
+          )}
         </div>
       </div>
     </div>
