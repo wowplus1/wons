@@ -366,7 +366,7 @@ export const JewelryWorkList: React.FC = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
         <h2 style={{ fontSize: '19px', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Wrench size={18} style={{ color: 'var(--primary)' }} />
-          <span className="gradient-text" style={{ fontFamily: 'var(--font-title)', fontWeight: '600' }}>Jewelry Workshop Manager</span>
+          <span className="gradient-text" style={{ fontFamily: 'var(--font-title)', fontWeight: '600' }}>ì¸ê³µ ìì</span>
           <span style={{ fontSize: '15px', color: 'var(--text-muted)' }}>(주얼리 세공 및 작업 현황 관리대장)</span>
         </h2>
       </div>

@@ -118,7 +118,7 @@ export const RatesManager: React.FC = () => {
         >
         <h2 style={{ fontSize: '19px', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', width: '100%' }}>
           <Coins size={18} style={{ color: 'var(--primary)' }} />
-          일별 금 시세 (앞시세 / 뒷시세) 등록 및 관리
+          금 시세
         </h2>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>

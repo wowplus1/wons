@@ -113,7 +113,7 @@ export const CatalogManager: React.FC = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <Eye size={18} style={{ color: 'var(--primary)' }} />
           <h2 style={{ fontSize: '19px', fontFamily: 'var(--font-title)', fontWeight: '600' }}>
-            B2B 상품 카탈로그 마스터 조회
+            상품
           </h2>
         </div>
         

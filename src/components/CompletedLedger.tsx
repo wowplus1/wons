@@ -324,7 +324,7 @@ export const CompletedLedger: React.FC = () => {
         <h2 style={{ fontSize: '19px', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <FileCheck size={18} style={{ color: 'var(--primary)' }} />
           <span className="gradient-text" style={{ fontFamily: 'var(--font-title)', fontWeight: '600' }}>
-            {activeTab === 'unpaid_ledger' ? 'Unpaid Release Ledger' : activeTab === 'paid_ledger' ? 'Paid Release Ledger' : 'Hold Release Ledger'}
+            {activeTab === 'unpaid_ledger' ? 'ë¯¸ì ëì¥' : activeTab === 'paid_ledger' ? 'ê²°ì ìë£ ëì¥' : 'ë³´ë¥ ëì¥'}
           </span>
           <span style={{ fontSize: '15px', color: 'var(--text-muted)' }}>
             {activeTab === 'unpaid_ledger' ? '(미수금 장부 대장 - 결제전)' : activeTab === 'paid_ledger' ? '(수금완료 장부 대장 - 결제완료)' : '(보류 대장)'}

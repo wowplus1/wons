@@ -210,7 +210,7 @@ export const CustomerManager: React.FC = () => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', flexWrap: 'wrap', gap: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <UserPlus size={18} style={{ color: 'var(--primary)' }} />
-            <h2 style={{ fontSize: '19px', fontWeight: '600', fontFamily: 'var(--font-title)', margin: 0 }}>거래처 마스터 관리</h2>
+            <h2 style={{ fontSize: '19px', fontWeight: '600', fontFamily: 'var(--font-title)', margin: 0 }}>거래처</h2>
           </div>
           
           <button

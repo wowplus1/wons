@@ -461,7 +461,7 @@ export const OrderList: React.FC = () => {
       <div className="order-list-header">
         <h2 style={{ fontSize: '19px', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <ShoppingBag size={18} style={{ color: 'var(--primary)' }} />
-          <span className="gradient-text" style={{ fontFamily: 'var(--font-title)', fontWeight: '600' }}>Order & Transaction History Master</span>
+          <span className="gradient-text" style={{ fontFamily: 'var(--font-title)', fontWeight: '600' }}>ì£¼ë¬¸/ëªì¸ì</span>
           <span className="header-subtitle">(거래처 원장 명세서 원본 관리 대장)</span>
         </h2>
       </div>

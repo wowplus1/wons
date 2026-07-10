@@ -46,7 +46,7 @@ export const AuditLogManager: React.FC = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h2 style={{ fontSize: '20px', fontWeight: '700', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Shield size={22} style={{ color: 'var(--primary)' }} />
-          시스템 감사 로그 (Audit Log)
+          감사 로그
         </h2>
         <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
           총 {auditLogs.length}건의 시스템 변경 이력이 기록되었습니다.

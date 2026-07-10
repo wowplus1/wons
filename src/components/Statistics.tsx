@@ -566,7 +566,7 @@ export const Statistics: React.FC = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <BarChart3 style={{ color: 'var(--primary)' }} size={22} />
           <h3 style={{ fontSize: '20px', color: 'var(--text-main)', margin: 0, fontWeight: '700' }}>
-            ERP 매출 및 판매 통계 분석
+            통계 분석
           </h3>
         </div>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>

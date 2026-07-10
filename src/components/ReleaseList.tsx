@@ -403,7 +403,7 @@ export const ReleaseList: React.FC = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
         <h2 style={{ fontSize: '19px', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Package size={18} style={{ color: 'var(--primary)' }} />
-          <span className="gradient-text" style={{ fontFamily: 'var(--font-title)', fontWeight: '600' }}>Release Management Center</span>
+          <span className="gradient-text" style={{ fontFamily: 'var(--font-title)', fontWeight: '600' }}>ì¶ê³  ëê¸°</span>
           <span style={{ fontSize: '15px', color: 'var(--text-muted)' }}>(주얼리 세공완료 출고 대기 대장)</span>
         </h2>
       </div>

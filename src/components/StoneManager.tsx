@@ -93,7 +93,7 @@ export const StoneManager: React.FC = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <Gem size={18} style={{ color: 'var(--primary)' }} />
           <h2 style={{ fontSize: '19px', fontFamily: 'var(--font-title)', fontWeight: '600' }}>
-            B2B 스톤 목록 및 시세 조회
+            스톤
           </h2>
         </div>
         
