@@ -569,13 +569,13 @@ export const OrderGrid: React.FC = () => {
                               top: '100%',
                               left: 0,
                               right: 0,
-                              background: 'var(--card-bg)',
-                              border: '1px solid var(--border-color)',
+                              background: 'var(--bg-surface-solid)',
+                              border: '1px solid #2563eb',
                               borderRadius: '6px',
                               maxHeight: '200px',
                               overflowY: 'auto',
-                              zIndex: 9999, 
-                              boxShadow: 'var(--glass-shadow)',
+                              zIndex: 9999,
+                              boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.15)',
                               padding: '4px 0',
                               marginTop: '4px'
                             }}
