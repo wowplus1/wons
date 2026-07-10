@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useErpStore } from '../store/useErpStore';
 import { X } from 'lucide-react';
 import { CatalogImage } from './CatalogImage';
@@ -46,10 +46,16 @@ export const CatalogSelectPopup: React.FC = () => {
 
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 30;
+  const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setCurrentPage(1);
   }, [searchText]);
+
+  // 페이지 번호 이동 시 리스트 상단으로 스크롤
+  useEffect(() => {
+    if (listRef.current) listRef.current.scrollTop = 0;
+  }, [currentPage]);
 
   const totalPages = Math.max(1, Math.ceil(filteredCatalog.length / pageSize));
   const startIndex = (currentPage - 1) * pageSize;
@@ -97,6 +103,7 @@ export const CatalogSelectPopup: React.FC = () => {
 
       {/* List */}
       <div
+        ref={listRef}
         style={{ overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', paddingRight: '4px' }}
       >
         {currentPage === 1 && (<>

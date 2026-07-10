@@ -8,6 +8,8 @@ export const CatalogManager: React.FC = () => {
   const { catalog, stones } = useErpStore();
   const [currentPage, setCurrentPage] = React.useState(1);
   const [searchTerm, setSearchTerm] = React.useState('');
+  // 페이지 번호 이동 시 콘텐츠 상단으로 스크롤
+  React.useEffect(() => { const m = document.querySelector('main'); if (m) m.scrollTop = 0; }, [currentPage]);
   const pageSize = 30;
 
   const sortedCatalog = React.useMemo(() => {

@@ -40,6 +40,8 @@ export const ReleaseList: React.FC = () => {
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 30;
+  // 페이지 번호 이동 시 콘텐츠 상단으로 스크롤
+  useEffect(() => { const m = document.querySelector('main'); if (m) m.scrollTop = 0; }, [currentPage]);
 
   useEffect(() => {
     setCurrentPage(1);

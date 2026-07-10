@@ -58,6 +58,8 @@ export const OrderList: React.FC = () => {
   const [checkedRows, setCheckedRows] = useState<Set<string>>(new Set());
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 30;
+  // 페이지 번호 이동 시 콘텐츠 상단으로 스크롤
+  React.useEffect(() => { const m = document.querySelector('main'); if (m) m.scrollTop = 0; }, [currentPage]);
 
   React.useEffect(() => {
     setCurrentPage(1);
