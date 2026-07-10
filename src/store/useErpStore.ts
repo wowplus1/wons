@@ -19,6 +19,29 @@ import { mockDb } from '../firebase/mockDb';
 import { primeCatalogImage, invalidateCatalogImage } from '../utils/imageStore';
 import { loadCatalogCache, saveCatalogCache } from '../utils/catalogCache';
 
+// base_labor_fees 의 등급 키를 정규화한다. (일부 마이그레이션 데이터가 '1'~'4' 로 저장되어 있어
+// 앱 전역이 사용하는 'grade_1'~'grade_4' 로 변환. Firestore 규칙이 잠겨 데이터 직접 수정이 불가하므로
+// 로드 시점에 in-memory 로 정규화한다. labor_fees_v2 는 이미 grade_N 형식이라 대상 아님.)
+const normalizeGradeKeys = (obj: any): any => {
+  if (!obj || typeof obj !== 'object') return obj;
+  const out: any = { ...obj };
+  (['1', '2', '3', '4'] as const).forEach((n) => {
+    const gk = `grade_${n}`;
+    if (n in obj && (out[gk] === undefined || out[gk] === 0)) out[gk] = obj[n];
+  });
+  return out;
+};
+const normalizeCatalogItem = <T extends { base_labor_fees?: any }>(item: T): T => {
+  if (!item || !item.base_labor_fees || typeof item.base_labor_fees !== 'object') return item;
+  const blf: any = {};
+  Object.keys(item.base_labor_fees).forEach((mat) => {
+    blf[mat] = normalizeGradeKeys(item.base_labor_fees[mat]);
+  });
+  return { ...item, base_labor_fees: blf };
+};
+const normalizeCatalog = <T extends { base_labor_fees?: any }>(items: T[]): T[] =>
+  (items || []).map(normalizeCatalogItem);
+
 // 증분 데이터를 기존 배열과 합치는 헬퍼 함수
 const mergeArrays = <T>(existing: T[], incoming: any[], idKey: keyof T): T[] => {
   if (!incoming || incoming.length === 0) return existing || [];
@@ -564,7 +587,7 @@ export const useErpStore = create<ErpState>((set, get) => {
               const tB = b.updated_at || b.created_at || '';
               return tB.localeCompare(tA);
             });
-            updates.catalog = merged;
+            updates.catalog = normalizeCatalog(merged);
             localStorage.setItem(`last_fetched_${col}`, bufferTime);
           } 
           else if (col === 'orders') {
@@ -2350,7 +2373,7 @@ loadCatalogCache()
         const tB = b.updated_at || b.created_at || '';
         return tB.localeCompare(tA);
       });
-      useErpStore.setState({ catalog: sorted });
+      useErpStore.setState({ catalog: normalizeCatalog(sorted) });
     }
   })
   .catch(() => { /* ignore */ })
