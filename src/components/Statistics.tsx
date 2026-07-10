@@ -554,7 +554,7 @@ export const Statistics: React.FC = () => {
         className="glass-panel" 
         style={{ 
           padding: '16px 20px', 
-          background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.08) 0%, var(--bg-surface-solid) 100%)', 
+          background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, var(--bg-surface-solid) 100%)', 
           borderLeft: '4px solid var(--primary)',
           display: 'flex', 
           justifyContent: 'space-between', 
@@ -579,13 +579,13 @@ export const Statistics: React.FC = () => {
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
-              background: 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)',
+              background: 'linear-gradient(135deg, var(--primary) 0%, #2563eb 100%)',
               border: 'none',
               color: '#000',
               fontWeight: '700',
               borderRadius: '6px',
               cursor: 'pointer',
-              boxShadow: '0 2px 8px rgba(212, 175, 55, 0.2)'
+              boxShadow: '0 2px 8px rgba(37, 99, 235, 0.2)'
             }}
           >
             <Download size={15} /> 전체 데이터 백업 (DB 통합)
@@ -753,7 +753,7 @@ export const Statistics: React.FC = () => {
         {/* 카드 1: 총 매출액 */}
         <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ padding: '8px', borderRadius: '6px', background: 'rgba(212, 175, 55, 0.1)', color: 'var(--primary)' }}>
+            <div style={{ padding: '8px', borderRadius: '6px', background: 'rgba(37, 99, 235, 0.1)', color: 'var(--primary)' }}>
               <DollarSign size={18} />
             </div>
             <span style={{ fontSize: '15px', color: 'var(--text-muted)', fontWeight: '600' }}>총 매출액 (실적)</span>

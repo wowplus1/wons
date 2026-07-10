@@ -83,7 +83,7 @@ export const Ledger: React.FC = () => {
       {/* 상단 타이틀 + 뷰 전환 탭 */}
       <div className="glass-panel" style={{
         padding: '14px 20px',
-        background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.08) 0%, var(--bg-surface-solid) 100%)',
+        background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, var(--bg-surface-solid) 100%)',
         borderLeft: '4px solid var(--primary)',
         display: 'flex',
         justifyContent: 'space-between',
@@ -105,7 +105,7 @@ export const Ledger: React.FC = () => {
               display: 'flex', alignItems: 'center', gap: '6px',
               padding: '7px 16px', borderRadius: '6px', fontSize: '14px', fontWeight: '600',
               border: viewMode === 'all' ? '1.5px solid var(--primary)' : '1.5px solid var(--border-color)',
-              background: viewMode === 'all' ? 'rgba(212,175,55,0.12)' : 'transparent',
+              background: viewMode === 'all' ? 'rgba(37,99,235,0.12)' : 'transparent',
               color: viewMode === 'all' ? 'var(--primary)' : 'var(--text-muted)',
               cursor: 'pointer', transition: 'all 0.2s'
             }}
@@ -118,7 +118,7 @@ export const Ledger: React.FC = () => {
               display: 'flex', alignItems: 'center', gap: '6px',
               padding: '7px 16px', borderRadius: '6px', fontSize: '14px', fontWeight: '600',
               border: viewMode === 'by-customer' ? '1.5px solid var(--primary)' : '1.5px solid var(--border-color)',
-              background: viewMode === 'by-customer' ? 'rgba(212,175,55,0.12)' : 'transparent',
+              background: viewMode === 'by-customer' ? 'rgba(37,99,235,0.12)' : 'transparent',
               color: viewMode === 'by-customer' ? 'var(--primary)' : 'var(--text-muted)',
               cursor: 'pointer', transition: 'all 0.2s'
             }}
@@ -185,7 +185,7 @@ export const Ledger: React.FC = () => {
             </h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto', maxHeight: '420px', paddingRight: '4px' }}>
               {orders.slice(0, 20).map(o => (
-                <div key={o.order_id} style={{ border: '1px solid var(--border-color)', borderRadius: '8px', padding: '12px', background: 'rgba(255,255,255,0.01)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div key={o.order_id} style={{ border: '1px solid var(--border-color)', borderRadius: '8px', padding: '12px', background: 'rgba(15,23,42,0.01)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: '14px', fontFamily: 'var(--font-title)', fontWeight: '600', color: 'var(--primary)' }}>{o.order_id}</span>
                     <span style={{ fontSize: '12px', fontWeight: '700', color: statusColor(o.status) }}>{o.status}</span>
@@ -231,7 +231,7 @@ export const Ledger: React.FC = () => {
                         gap: '10px',
                         padding: '12px 8px',
                         cursor: 'pointer',
-                        background: isFocused ? 'rgba(212,175,55,0.07)' : 'transparent',
+                        background: isFocused ? 'rgba(37,99,235,0.07)' : 'transparent',
                         borderLeft: isFocused ? '3px solid var(--primary)' : '3px solid transparent',
                         transition: 'all 0.15s'
                       }}
@@ -284,7 +284,7 @@ export const Ledger: React.FC = () => {
                             </thead>
                             <tbody>
                               {custOrders.map(o => (
-                                <tr key={o.order_id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', height: '32px' }}>
+                                <tr key={o.order_id} style={{ borderBottom: '1px solid rgba(15,23,42,0.04)', height: '32px' }}>
                                   <td style={{ padding: '4px 6px', fontFamily: 'var(--font-title)', color: 'var(--primary)', fontWeight: '600' }}>{o.order_id}</td>
                                   <td style={{ padding: '4px 6px', color: 'var(--text-muted)' }}>{o.order_date}</td>
                                   <td style={{ padding: '4px 6px', textAlign: 'center' }}>
@@ -321,7 +321,7 @@ export const Ledger: React.FC = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {/* 거래처 요약 카드 */}
               <div className="glass-panel" style={{
-                background: 'linear-gradient(135deg, rgba(212,175,55,0.1) 0%, var(--bg-surface-solid) 100%)',
+                background: 'linear-gradient(135deg, rgba(37,99,235,0.1) 0%, var(--bg-surface-solid) 100%)',
                 borderLeft: '4px solid var(--primary)'
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
@@ -337,7 +337,7 @@ export const Ledger: React.FC = () => {
                   </button>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                  <div style={{ background: 'rgba(212,175,55,0.08)', borderRadius: '8px', padding: '12px', textAlign: 'center' }}>
+                  <div style={{ background: 'rgba(37,99,235,0.08)', borderRadius: '8px', padding: '12px', textAlign: 'center' }}>
                     <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>순금 미수 중량</div>
                     <div style={{ fontSize: '22px', fontWeight: '800', color: focusedCustomer.gold_balance_24k_g < 0 ? '#10b981' : 'var(--primary)' }}>
                       {focusedCustomer.gold_balance_24k_g < 0
@@ -372,7 +372,7 @@ export const Ledger: React.FC = () => {
                     <div style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '24px 0', fontSize: '14px' }}>주문 내역이 없습니다.</div>
                   ) : (
                     focusedOrders.map(o => (
-                      <div key={o.order_id} style={{ border: '1px solid var(--border-color)', borderRadius: '8px', padding: '12px', background: 'rgba(255,255,255,0.01)' }}>
+                      <div key={o.order_id} style={{ border: '1px solid var(--border-color)', borderRadius: '8px', padding: '12px', background: 'rgba(15,23,42,0.01)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                           <span style={{ fontSize: '14px', fontFamily: 'var(--font-title)', fontWeight: '700', color: 'var(--primary)' }}>{o.order_id}</span>
                           <span style={{ fontSize: '12px', fontWeight: '700', color: statusColor(o.status) }}>{o.status}</span>
@@ -398,7 +398,7 @@ export const Ledger: React.FC = () => {
       {/* 금 입고 정산 모달 */}
       {showPayModal && selectedCust && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 100, backdropFilter: 'blur(4px)' }}>
-          <div className="glass-panel animate-fade-in" style={{ width: '400px', background: 'var(--bg-surface-solid)', border: '1px solid var(--primary)', boxShadow: '0 0 24px rgba(212,175,55,0.15)' }}>
+          <div className="glass-panel animate-fade-in" style={{ width: '400px', background: 'var(--bg-surface-solid)', border: '1px solid var(--primary)', boxShadow: '0 0 24px rgba(37,99,235,0.15)' }}>
             <h3 style={{ fontSize: '18px', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', marginBottom: '16px' }}>
               <ShieldCheck size={17} style={{ color: 'var(--primary)' }} />
               실물 순금 입고 정산
@@ -418,7 +418,7 @@ export const Ledger: React.FC = () => {
                 <input type="text" placeholder="예: 종로공장 실물 골드바 정산" value={note} onChange={e => setNote(e.target.value)} className="input-field" style={{ width: '100%' }} />
               </div>
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid var(--border-color)', paddingTop: '12px' }}>
-                <button type="button" onClick={() => setShowPayModal(false)} className="btn-primary" style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-main)', border: '1px solid var(--border-color)', boxShadow: 'none' }}>취소</button>
+                <button type="button" onClick={() => setShowPayModal(false)} className="btn-primary" style={{ background: 'rgba(15,23,42,0.05)', color: 'var(--text-main)', border: '1px solid var(--border-color)', boxShadow: 'none' }}>취소</button>
                 <button type="submit" className="btn-primary">장부 정산 승인</button>
               </div>
             </form>

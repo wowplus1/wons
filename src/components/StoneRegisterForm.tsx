@@ -72,7 +72,7 @@ export const StoneRegisterForm: React.FC = () => {
         </h2>
         
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <div style={{ padding: '4px 8px', borderRadius: '4px', background: 'rgba(212, 175, 55, 0.05)', fontSize: '14px', color: 'var(--primary)', fontWeight: '600', width: 'fit-content' }}>
+          <div style={{ padding: '4px 8px', borderRadius: '4px', background: 'rgba(37, 99, 235, 0.05)', fontSize: '14px', color: 'var(--primary)', fontWeight: '600', width: 'fit-content' }}>
             * 표시는 반드시 입력해야 합니다.
           </div>
 
@@ -113,7 +113,7 @@ export const StoneRegisterForm: React.FC = () => {
             </div>
             <div>
               <label style={{ display: 'block', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px' }}>스톤명 (자동 조합)</label>
-              <input type="text" value={stoneName} className="input-field" style={{ width: '100%', padding: '6px', background: 'rgba(255, 255, 255, 0.03)', color: 'var(--primary)', fontWeight: '600' }} disabled />
+              <input type="text" value={stoneName} className="input-field" style={{ width: '100%', padding: '6px', background: 'rgba(15, 23, 42, 0.03)', color: 'var(--primary)', fontWeight: '600' }} disabled />
             </div>
           </div>
 
@@ -137,7 +137,7 @@ export const StoneRegisterForm: React.FC = () => {
             </div>
           </div>
 
-          <div style={{ border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px', background: 'rgba(255,255,255,0.01)' }}>
+          <div style={{ border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px', background: 'rgba(15,23,42,0.01)' }}>
             <span style={{ fontSize: '14px', color: 'var(--primary)', fontWeight: '600', display: 'block', marginBottom: '8px', borderBottom: '1px dashed var(--border-color)', paddingBottom: '4px' }}>
               거래처 등급별 공급가 설정
             </span>
@@ -168,7 +168,7 @@ export const StoneRegisterForm: React.FC = () => {
               } else {
                 window.location.href = './';
               }
-            }} className="btn-primary" style={{ padding: '6px 12px', background: 'rgba(255,255,255,0.03)', color: 'var(--text-muted)', border: '1px solid var(--border-color)', boxShadow: 'none' }}>
+            }} className="btn-primary" style={{ padding: '6px 12px', background: 'rgba(15,23,42,0.03)', color: 'var(--text-muted)', border: '1px solid var(--border-color)', boxShadow: 'none' }}>
               닫기
             </button>
             <button type="submit" className="btn-primary" style={{ padding: '6px 16px' }}>

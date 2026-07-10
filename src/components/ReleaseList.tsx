@@ -409,7 +409,7 @@ export const ReleaseList: React.FC = () => {
       </div>
 
       {/* Batch Action Buttons */}
-      <div className="ledger-action-toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+      <div className="ledger-action-toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(15,23,42,0.02)', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           <button
             onClick={handleCompleteRelease}
@@ -464,7 +464,7 @@ export const ReleaseList: React.FC = () => {
             <col style={{ width: '5%' }} />
           </colgroup>
           <thead>
-            <tr style={{ background: 'rgba(255, 255, 255, 0.03)', borderBottom: '2px solid var(--border-color)', color: 'var(--text-muted)' }}>
+            <tr style={{ background: 'rgba(15, 23, 42, 0.03)', borderBottom: '2px solid var(--border-color)', color: 'var(--text-muted)' }}>
               <th style={{ padding: '8px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>
                 <input 
                   type="checkbox" 
@@ -494,7 +494,7 @@ export const ReleaseList: React.FC = () => {
           <tbody>
             {paginatedReleaseItems.length > 0 ? (
               paginatedReleaseItems.map((row, idx) => (
-                <tr key={row.id} style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: idx % 2 === 0 ? 'transparent' : 'rgba(255, 255, 255, 0.01)' }}>
+                <tr key={row.id} style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: idx % 2 === 0 ? 'transparent' : 'rgba(15, 23, 42, 0.01)' }}>
                   <td style={{ padding: '6px 4px', textAlign: 'center', verticalAlign: 'middle' }}>
                     <input type="checkbox" checked={checkedItems.has(row.id)} onChange={() => handleToggleRow(row.id)} style={{ cursor: 'pointer' }} />
                   </td>
@@ -565,10 +565,10 @@ export const ReleaseList: React.FC = () => {
               style={{
                 padding: '5px 12px',
                 fontSize: '13px',
-                background: currentPage === 1 ? 'rgba(0,0,0,0.02)' : 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)',
+                background: currentPage === 1 ? 'rgba(0,0,0,0.02)' : 'linear-gradient(135deg, var(--primary) 0%, #2563eb 100%)',
                 color: currentPage === 1 ? 'var(--text-muted)' : 'var(--text-inverse)',
                 border: currentPage === 1 ? '1px solid var(--border-color)' : 'none',
-                boxShadow: currentPage === 1 ? 'none' : '0 2px 6px rgba(170, 133, 19, 0.15)',
+                boxShadow: currentPage === 1 ? 'none' : '0 2px 6px rgba(37, 99, 235, 0.15)',
                 cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
               }}
             >
@@ -598,10 +598,10 @@ export const ReleaseList: React.FC = () => {
                       padding: '5px 12px',
                       fontSize: '13px',
                       minWidth: '32px',
-                      background: isActive ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : 'transparent',
+                      background: isActive ? 'linear-gradient(135deg, var(--primary) 0%, #2563eb 100%)' : 'transparent',
                       color: isActive ? 'var(--text-inverse)' : 'var(--text-muted)',
                       border: isActive ? 'none' : '1px solid var(--border-color)',
-                      boxShadow: isActive ? '0 2px 6px rgba(170, 133, 19, 0.15)' : 'none',
+                      boxShadow: isActive ? '0 2px 6px rgba(37, 99, 235, 0.15)' : 'none',
                       cursor: 'pointer'
                     }}
                   >
@@ -620,10 +620,10 @@ export const ReleaseList: React.FC = () => {
               style={{
                 padding: '5px 12px',
                 fontSize: '13px',
-                background: currentPage === totalPages ? 'rgba(0,0,0,0.02)' : 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)',
+                background: currentPage === totalPages ? 'rgba(0,0,0,0.02)' : 'linear-gradient(135deg, var(--primary) 0%, #2563eb 100%)',
                 color: currentPage === totalPages ? 'var(--text-muted)' : 'var(--text-inverse)',
                 border: currentPage === totalPages ? '1px solid var(--border-color)' : 'none',
-                boxShadow: currentPage === totalPages ? 'none' : '0 2px 6px rgba(170, 133, 19, 0.15)',
+                boxShadow: currentPage === totalPages ? 'none' : '0 2px 6px rgba(37, 99, 235, 0.15)',
                 cursor: currentPage === totalPages ? 'not-allowed' : 'pointer'
               }}
             >
@@ -688,7 +688,7 @@ export const ReleaseList: React.FC = () => {
             <div style={{ overflowX: 'auto', border: '1px solid var(--border-color)', borderRadius: '6px' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px', textAlign: 'left' }}>
                 <thead>
-                  <tr style={{ background: 'rgba(255, 255, 255, 0.02)', borderBottom: '1px solid var(--border-color)' }}>
+                  <tr style={{ background: 'rgba(15, 23, 42, 0.02)', borderBottom: '1px solid var(--border-color)' }}>
                     <th style={{ padding: '8px 10px', width: '40px', textAlign: 'center' }}>
                       <input 
                         type="checkbox" 
@@ -707,7 +707,7 @@ export const ReleaseList: React.FC = () => {
                   {activeInvoiceModalCustomer.items.map((item) => {
                     const laborSum = item.laborSingle * item.quantity;
                     return (
-                      <tr key={item.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                      <tr key={item.id} style={{ borderBottom: '1px solid rgba(15,23,42,0.05)' }}>
                         <td style={{ padding: '8px 10px', textAlign: 'center', verticalAlign: 'middle' }}>
                           <input 
                             type="checkbox" 
@@ -735,7 +735,7 @@ export const ReleaseList: React.FC = () => {
                 type="button" 
                 onClick={() => setActiveInvoiceModalCustomer(null)} 
                 className="btn-primary" 
-                style={{ padding: '6px 14px', background: 'rgba(255,255,255,0.05)', color: 'var(--text-muted)', border: '1px solid var(--border-color)', boxShadow: 'none' }}
+                style={{ padding: '6px 14px', background: 'rgba(15,23,42,0.05)', color: 'var(--text-muted)', border: '1px solid var(--border-color)', boxShadow: 'none' }}
               >
                 닫기
               </button>

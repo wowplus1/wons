@@ -330,7 +330,7 @@ export const CompletedLedger: React.FC = () => {
       </div>
 
       {/* Filter Options */}
-      <div className="ledger-filter-toolbar" style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap', background: 'rgba(255,255,255,0.01)', padding: '10px 14px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+      <div className="ledger-filter-toolbar" style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap', background: 'rgba(15,23,42,0.01)', padding: '10px 14px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <label style={{ fontWeight: '700', color: 'var(--text-muted)' }}>거래처 검색:</label>
           <input
@@ -399,7 +399,7 @@ export const CompletedLedger: React.FC = () => {
       </div>
 
       {/* Batch Action Buttons */}
-      <div className="ledger-action-toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+      <div className="ledger-action-toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(15,23,42,0.02)', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
         <div style={{ display: 'flex', gap: '8px' }}>
           {activeTab === 'unpaid_ledger' && (
             <>
@@ -493,7 +493,7 @@ export const CompletedLedger: React.FC = () => {
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '15px' }}>
             <thead>
-              <tr style={{ background: 'rgba(212,175,55,0.07)', borderBottom: '2px solid var(--primary)', color: 'var(--text-muted)' }}>
+              <tr style={{ background: 'rgba(37,99,235,0.07)', borderBottom: '2px solid var(--primary)', color: 'var(--text-muted)' }}>
                 <th style={{ padding: '10px 12px', textAlign: 'center', border: '1px solid var(--border-color)', width: '40px' }}>No</th>
                 <th style={{ padding: '10px 12px', border: '1px solid var(--border-color)' }}>거래처명</th>
                 <th style={{ padding: '10px 12px', textAlign: 'center', border: '1px solid var(--border-color)', width: '80px' }}>품목 수</th>
@@ -512,7 +512,7 @@ export const CompletedLedger: React.FC = () => {
                     style={{
                       borderBottom: '1px solid var(--border-color)',
                       height: '40px',
-                      background: idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)',
+                      background: idx % 2 === 0 ? 'transparent' : 'rgba(15,23,42,0.01)',
                       cursor: 'pointer',
                       transition: 'background 0.15s'
                     }}
@@ -538,7 +538,7 @@ export const CompletedLedger: React.FC = () => {
             </tbody>
             {customerSummary.length > 0 && (
               <tfoot>
-                <tr style={{ background: 'rgba(212,175,55,0.1)', borderTop: '2px solid var(--primary)', fontWeight: '800' }}>
+                <tr style={{ background: 'rgba(37,99,235,0.1)', borderTop: '2px solid var(--primary)', fontWeight: '800' }}>
                   <td colSpan={2} style={{ padding: '10px 12px', fontSize: '14px', color: 'var(--text-muted)' }}>합계 ({customerSummary.length}개 거래처)</td>
                   <td style={{ padding: '10px 12px', textAlign: 'center', color: 'var(--primary)' }}>{customerSummary.reduce((s, c) => s + c.count, 0)}건</td>
                   <td style={{ padding: '10px 12px', textAlign: 'center', color: 'var(--primary)' }}>{customerSummary.reduce((s, c) => s + c.totalQty, 0)}개</td>
@@ -580,7 +580,7 @@ export const CompletedLedger: React.FC = () => {
             <col style={{ width: '6%' }} />
           </colgroup>
           <thead>
-            <tr style={{ background: 'rgba(255, 255, 255, 0.03)', borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
+            <tr style={{ background: 'rgba(15, 23, 42, 0.03)', borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
               <th rowSpan={2} style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>
                 <input 
                   type="checkbox" 
@@ -606,7 +606,7 @@ export const CompletedLedger: React.FC = () => {
               <th rowSpan={2} style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>상태</th>
               <th rowSpan={2} style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>되돌리기</th>
             </tr>
-            <tr style={{ background: 'rgba(255, 255, 255, 0.03)', borderBottom: '2px solid var(--border-color)', color: 'var(--text-muted)' }}>
+            <tr style={{ background: 'rgba(15, 23, 42, 0.03)', borderBottom: '2px solid var(--border-color)', color: 'var(--text-muted)' }}>
               <th style={{ padding: '4px 4px', textAlign: 'center', border: '1px solid var(--border-color)', fontSize: '13px' }}>금</th>
               <th style={{ padding: '4px 4px', textAlign: 'center', border: '1px solid var(--border-color)', fontSize: '13px' }}>순금</th>
               <th style={{ padding: '4px 4px', textAlign: 'center', border: '1px solid var(--border-color)', fontSize: '13px' }}>기+추</th>
@@ -631,7 +631,7 @@ export const CompletedLedger: React.FC = () => {
                     key={row.id} 
                     style={{ 
                       borderBottom: '1px solid var(--border-color)',
-                      backgroundColor: idx % 2 === 0 ? 'transparent' : 'rgba(255, 255, 255, 0.01)',
+                      backgroundColor: idx % 2 === 0 ? 'transparent' : 'rgba(15, 23, 42, 0.01)',
                       height: '32px'
                     }}
                   >
@@ -809,10 +809,10 @@ export const CompletedLedger: React.FC = () => {
               style={{
                 padding: '5px 12px',
                 fontSize: '13px',
-                background: currentPage === 1 ? 'rgba(0,0,0,0.02)' : 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)',
+                background: currentPage === 1 ? 'rgba(0,0,0,0.02)' : 'linear-gradient(135deg, var(--primary) 0%, #2563eb 100%)',
                 color: currentPage === 1 ? 'var(--text-muted)' : 'var(--text-inverse)',
                 border: currentPage === 1 ? '1px solid var(--border-color)' : 'none',
-                boxShadow: currentPage === 1 ? 'none' : '0 2px 6px rgba(170, 133, 19, 0.15)',
+                boxShadow: currentPage === 1 ? 'none' : '0 2px 6px rgba(37, 99, 235, 0.15)',
                 cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
               }}
             >
@@ -842,10 +842,10 @@ export const CompletedLedger: React.FC = () => {
                       padding: '5px 12px',
                       fontSize: '13px',
                       minWidth: '32px',
-                      background: isActive ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : 'transparent',
+                      background: isActive ? 'linear-gradient(135deg, var(--primary) 0%, #2563eb 100%)' : 'transparent',
                       color: isActive ? 'var(--text-inverse)' : 'var(--text-muted)',
                       border: isActive ? 'none' : '1px solid var(--border-color)',
-                      boxShadow: isActive ? '0 2px 6px rgba(170, 133, 19, 0.15)' : 'none',
+                      boxShadow: isActive ? '0 2px 6px rgba(37, 99, 235, 0.15)' : 'none',
                       cursor: 'pointer'
                     }}
                   >
@@ -864,10 +864,10 @@ export const CompletedLedger: React.FC = () => {
               style={{
                 padding: '5px 12px',
                 fontSize: '13px',
-                background: currentPage === totalPages ? 'rgba(0,0,0,0.02)' : 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)',
+                background: currentPage === totalPages ? 'rgba(0,0,0,0.02)' : 'linear-gradient(135deg, var(--primary) 0%, #2563eb 100%)',
                 color: currentPage === totalPages ? 'var(--text-muted)' : 'var(--text-inverse)',
                 border: currentPage === totalPages ? '1px solid var(--border-color)' : 'none',
-                boxShadow: currentPage === totalPages ? 'none' : '0 2px 6px rgba(170, 133, 19, 0.15)',
+                boxShadow: currentPage === totalPages ? 'none' : '0 2px 6px rgba(37, 99, 235, 0.15)',
                 cursor: currentPage === totalPages ? 'not-allowed' : 'pointer'
               }}
             >

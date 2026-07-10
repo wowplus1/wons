@@ -139,7 +139,7 @@ export const RatesManager: React.FC = () => {
           <div className="rates-cards-grid">
             
             {/* Left: Buy Rates (앞시세 - 매입) */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '12px', border: '1px solid var(--border-color)', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.01)' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '12px', border: '1px solid var(--border-color)', borderRadius: '8px', background: 'rgba(15, 23, 42, 0.01)' }}>
               <h3 style={{ fontSize: '17px', color: 'var(--primary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <Landmark size={14} /> 앞시세 (매입/소매매입)
               </h3>
@@ -208,7 +208,7 @@ export const RatesManager: React.FC = () => {
             </div>
 
             {/* Right: Sell Rates (뒷시세 - 매도/출고) */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '12px', border: '1px solid var(--border-color)', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.01)' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '12px', border: '1px solid var(--border-color)', borderRadius: '8px', background: 'rgba(15, 23, 42, 0.01)' }}>
               <h3 style={{ fontSize: '17px', color: '#ef4444', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <Landmark size={14} /> 뒷시세 (매도/공장도매출고)
               </h3>
@@ -283,7 +283,7 @@ export const RatesManager: React.FC = () => {
               type="button" 
               className="btn-primary mobile-cancel-btn" 
               onClick={() => setIsFormOpen(false)}
-              style={{ background: 'rgba(255,255,255,0.03)', color: 'var(--text-muted)', border: '1px solid var(--border-color)', boxShadow: 'none', justifyContent: 'center' }}
+              style={{ background: 'rgba(15,23,42,0.03)', color: 'var(--text-muted)', border: '1px solid var(--border-color)', boxShadow: 'none', justifyContent: 'center' }}
             >
               취소
             </button>

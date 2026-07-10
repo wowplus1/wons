@@ -467,7 +467,7 @@ export const OrderList: React.FC = () => {
       </div>
 
       {/* Filter Options */}
-      <div className="order-list-filter-bar" style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap', background: 'rgba(255,255,255,0.01)', padding: '10px 14px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+      <div className="order-list-filter-bar" style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap', background: 'rgba(15,23,42,0.01)', padding: '10px 14px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <label style={{ fontWeight: '700', color: 'var(--text-muted)', fontSize: '14px' }}>거래처 검색:</label>
           <input
@@ -548,7 +548,7 @@ export const OrderList: React.FC = () => {
       </div>
 
       {/* Batch Action Buttons */}
-      <div className="ledger-action-toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+      <div className="ledger-action-toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(15,23,42,0.02)', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
         <div style={{ display: 'flex', gap: '8px' }}>
           <button
             onClick={handleSendToWorkList}
@@ -560,7 +560,7 @@ export const OrderList: React.FC = () => {
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              background: checkedRows.size > 0 ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : '#e2e8f0',
+              background: checkedRows.size > 0 ? 'linear-gradient(135deg, var(--primary) 0%, #2563eb 100%)' : '#e2e8f0',
               color: checkedRows.size > 0 ? 'var(--text-inverse)' : '#475569',
               border: checkedRows.size > 0 ? 'none' : '1.5px solid #94a3b8',
               fontWeight: 'bold',
@@ -599,7 +599,7 @@ export const OrderList: React.FC = () => {
             <col style={{ width: '5%' }} />
           </colgroup>
           <thead>
-            <tr style={{ background: 'rgba(255, 255, 255, 0.03)', borderBottom: '2px solid var(--border-color)', color: 'var(--text-muted)', height: '40px' }}>
+            <tr style={{ background: 'rgba(15, 23, 42, 0.03)', borderBottom: '2px solid var(--border-color)', color: 'var(--text-muted)', height: '40px' }}>
               <th style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>
                 <input 
                   type="checkbox" 
@@ -645,7 +645,7 @@ export const OrderList: React.FC = () => {
                     key={row.id} 
                     style={{ 
                       borderBottom: '1px solid var(--border-color)',
-                      backgroundColor: idx % 2 === 0 ? 'transparent' : 'rgba(255, 255, 255, 0.01)',
+                      backgroundColor: idx % 2 === 0 ? 'transparent' : 'rgba(15, 23, 42, 0.01)',
                       height: '48px'
                     }}
                   >
@@ -788,8 +788,8 @@ export const OrderList: React.FC = () => {
                           style={{
                             padding: '2px 6px',
                             fontSize: '13px',
-                            background: 'rgba(212, 175, 55, 0.15)',
-                            border: '1px solid rgba(212, 175, 55, 0.4)',
+                            background: 'rgba(37, 99, 235, 0.15)',
+                            border: '1px solid rgba(37, 99, 235, 0.4)',
                             color: 'var(--primary)',
                             borderRadius: '3px',
                             cursor: 'pointer',
@@ -851,10 +851,10 @@ export const OrderList: React.FC = () => {
               style={{
                 padding: '5px 12px',
                 fontSize: '13px',
-                background: currentPage === 1 ? 'rgba(0,0,0,0.02)' : 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)',
+                background: currentPage === 1 ? 'rgba(0,0,0,0.02)' : 'linear-gradient(135deg, var(--primary) 0%, #2563eb 100%)',
                 color: currentPage === 1 ? 'var(--text-muted)' : 'var(--text-inverse)',
                 border: currentPage === 1 ? '1px solid var(--border-color)' : 'none',
-                boxShadow: currentPage === 1 ? 'none' : '0 2px 6px rgba(170, 133, 19, 0.15)',
+                boxShadow: currentPage === 1 ? 'none' : '0 2px 6px rgba(37, 99, 235, 0.15)',
                 cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
               }}
             >
@@ -884,10 +884,10 @@ export const OrderList: React.FC = () => {
                       padding: '5px 12px',
                       fontSize: '13px',
                       minWidth: '32px',
-                      background: isActive ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : 'transparent',
+                      background: isActive ? 'linear-gradient(135deg, var(--primary) 0%, #2563eb 100%)' : 'transparent',
                       color: isActive ? 'var(--text-inverse)' : 'var(--text-muted)',
                       border: isActive ? 'none' : '1px solid var(--border-color)',
-                      boxShadow: isActive ? '0 2px 6px rgba(170, 133, 19, 0.15)' : 'none',
+                      boxShadow: isActive ? '0 2px 6px rgba(37, 99, 235, 0.15)' : 'none',
                       cursor: 'pointer'
                     }}
                   >
@@ -906,10 +906,10 @@ export const OrderList: React.FC = () => {
               style={{
                 padding: '5px 12px',
                 fontSize: '13px',
-                background: currentPage === totalPages ? 'rgba(0,0,0,0.02)' : 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)',
+                background: currentPage === totalPages ? 'rgba(0,0,0,0.02)' : 'linear-gradient(135deg, var(--primary) 0%, #2563eb 100%)',
                 color: currentPage === totalPages ? 'var(--text-muted)' : 'var(--text-inverse)',
                 border: currentPage === totalPages ? '1px solid var(--border-color)' : 'none',
-                boxShadow: currentPage === totalPages ? 'none' : '0 2px 6px rgba(170, 133, 19, 0.15)',
+                boxShadow: currentPage === totalPages ? 'none' : '0 2px 6px rgba(37, 99, 235, 0.15)',
                 cursor: currentPage === totalPages ? 'not-allowed' : 'pointer'
               }}
             >

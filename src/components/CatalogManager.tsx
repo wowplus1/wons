@@ -139,7 +139,7 @@ export const CatalogManager: React.FC = () => {
             fontSize: '14px',
             borderRadius: '4px',
             border: '1px solid var(--border-color)',
-            background: 'rgba(255, 255, 255, 0.02)',
+            background: 'rgba(15, 23, 42, 0.02)',
             color: 'var(--text-main)',
             outline: 'none'
           }}
@@ -183,7 +183,7 @@ export const CatalogManager: React.FC = () => {
                 border: '1px solid var(--border-color)',
                 borderRadius: '8px',
                 overflow: 'hidden',
-                background: 'rgba(255, 255, 255, 0.01)',
+                background: 'rgba(15, 23, 42, 0.01)',
                 display: 'flex',
                 flexDirection: 'column',
                 transition: 'border-color 0.2s ease, transform 0.2s ease',
@@ -198,7 +198,7 @@ export const CatalogManager: React.FC = () => {
                 hasImage={item.has_image}
                 imgStyle={{ width: '100%', height: '130px', objectFit: 'cover', borderBottom: '1px solid var(--border-color)' }}
                 fallback={
-                  <div className="catalog-no-image" style={{ width: '100%', height: '130px', background: 'rgba(255,255,255,0.03)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px', borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
+                  <div className="catalog-no-image" style={{ width: '100%', height: '130px', background: 'rgba(15,23,42,0.03)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px', borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
                     <Image size={28} />
                     <span style={{ fontSize: '14px' }}>이미지 없음</span>
                   </div>
@@ -288,10 +288,10 @@ export const CatalogManager: React.FC = () => {
             style={{
               padding: '5px 12px',
               fontSize: '13px',
-              background: currentPage === 1 ? 'rgba(0,0,0,0.02)' : 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)',
+              background: currentPage === 1 ? 'rgba(0,0,0,0.02)' : 'linear-gradient(135deg, var(--primary) 0%, #2563eb 100%)',
               color: currentPage === 1 ? 'var(--text-muted)' : 'var(--text-inverse)',
               border: currentPage === 1 ? '1px solid var(--border-color)' : 'none',
-              boxShadow: currentPage === 1 ? 'none' : '0 2px 6px rgba(170, 133, 19, 0.15)',
+              boxShadow: currentPage === 1 ? 'none' : '0 2px 6px rgba(37, 99, 235, 0.15)',
               cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
             }}
           >
@@ -322,10 +322,10 @@ export const CatalogManager: React.FC = () => {
                     padding: '5px 12px',
                     fontSize: '13px',
                     minWidth: '32px',
-                    background: isActive ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : 'transparent',
+                    background: isActive ? 'linear-gradient(135deg, var(--primary) 0%, #2563eb 100%)' : 'transparent',
                     color: isActive ? 'var(--text-inverse)' : 'var(--text-muted)',
                     border: isActive ? 'none' : '1px solid var(--border-color)',
-                    boxShadow: isActive ? '0 2px 6px rgba(170, 133, 19, 0.15)' : 'none',
+                    boxShadow: isActive ? '0 2px 6px rgba(37, 99, 235, 0.15)' : 'none',
                     cursor: 'pointer'
                   }}
                 >
@@ -345,10 +345,10 @@ export const CatalogManager: React.FC = () => {
             style={{
               padding: '5px 12px',
               fontSize: '13px',
-              background: currentPage === totalPages ? 'rgba(0,0,0,0.02)' : 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)',
+              background: currentPage === totalPages ? 'rgba(0,0,0,0.02)' : 'linear-gradient(135deg, var(--primary) 0%, #2563eb 100%)',
               color: currentPage === totalPages ? 'var(--text-muted)' : 'var(--text-inverse)',
               border: currentPage === totalPages ? '1px solid var(--border-color)' : 'none',
-              boxShadow: currentPage === totalPages ? 'none' : '0 2px 6px rgba(170, 133, 19, 0.15)',
+              boxShadow: currentPage === totalPages ? 'none' : '0 2px 6px rgba(37, 99, 235, 0.15)',
               cursor: currentPage === totalPages ? 'not-allowed' : 'pointer'
             }}
           >

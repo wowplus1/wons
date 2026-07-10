@@ -163,7 +163,7 @@ export const CatalogDetailView: React.FC = () => {
                 window.location.search = `?popup=catalog&model=${encodeURIComponent(item.model_number)}`;
               }} 
               style={{ 
-                background: 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)', 
+                background: 'linear-gradient(135deg, var(--primary) 0%, #2563eb 100%)', 
                 border: 'none', 
                 color: 'var(--text-inverse)', 
                 cursor: 'pointer', 
@@ -223,7 +223,7 @@ export const CatalogDetailView: React.FC = () => {
         </div>
 
         {/* 1. 상품 대형 이미지 */}
-        <div style={{ width: '100%', height: isMobile ? '240px' : '380px', borderRadius: '6px', overflow: 'hidden', border: '1px solid var(--border-color)', marginBottom: '16px', background: '#0a0a0f', display: 'flex', justifyContent: 'center', alignItems: 'center', position: 'relative' }}>
+        <div style={{ width: '100%', height: isMobile ? '240px' : '380px', borderRadius: '6px', overflow: 'hidden', border: '1px solid var(--border-color)', marginBottom: '16px', background: '#f1f5f9', display: 'flex', justifyContent: 'center', alignItems: 'center', position: 'relative' }}>
           <CatalogImage
             model={item.model_number}
             embeddedImages={item.images}
@@ -241,7 +241,7 @@ export const CatalogDetailView: React.FC = () => {
 
         {/* 2. 상세 정보 테이블 Grid */}
         {isMobile ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '12px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-color)', borderRadius: '8px', marginBottom: '16px', fontSize: '15px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '12px', background: 'rgba(15, 23, 42, 0.02)', border: '1px solid var(--border-color)', borderRadius: '8px', marginBottom: '16px', fontSize: '15px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed var(--border-color)', paddingBottom: '6px' }}>
               <span style={{ color: 'var(--text-muted)' }}>모델명:</span>
               <strong style={{ fontSize: '17px', color: 'var(--primary)' }}>{item.model_number}</strong>
@@ -281,7 +281,7 @@ export const CatalogDetailView: React.FC = () => {
             
             {/* 등급별 공임비 */}
             <div style={{ marginTop: '8px', border: '1px solid var(--border-color)', borderRadius: '6px', overflow: 'hidden' }}>
-              <div style={{ background: 'rgba(212,175,55,0.1)', padding: '6px', fontWeight: 'bold', fontSize: '14px', textAlign: 'center', color: 'var(--primary)' }}>
+              <div style={{ background: 'rgba(37,99,235,0.1)', padding: '6px', fontWeight: 'bold', fontSize: '14px', textAlign: 'center', color: 'var(--primary)' }}>
                 [{mainMaterial}] 등급별 공임비 분석
               </div>
             </div>
@@ -289,7 +289,7 @@ export const CatalogDetailView: React.FC = () => {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', background: 'var(--border-color)', border: '1px solid var(--border-color)', borderRadius: '6px', overflow: 'hidden', marginBottom: '16px', fontSize: '14px' }}>
             {/* Row 1 Header */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.2fr 1.2fr 2.4fr', background: 'rgba(212,175,55,0.05)', fontWeight: '700', color: 'var(--primary)', borderBottom: '1px solid var(--border-color)', textAlign: 'center', minHeight: '26px', alignItems: 'center' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.2fr 1.2fr 2.4fr', background: 'rgba(37,99,235,0.05)', fontWeight: '700', color: 'var(--primary)', borderBottom: '1px solid var(--border-color)', textAlign: 'center', minHeight: '26px', alignItems: 'center' }}>
               <div style={{ borderRight: '1px solid var(--border-color)', padding: '6px' }}>모델명</div>
               <div style={{ borderRight: '1px solid var(--border-color)', padding: '6px' }}>분류</div>
               <div style={{ borderRight: '1px solid var(--border-color)', padding: '6px' }}>표준중량</div>
@@ -297,7 +297,7 @@ export const CatalogDetailView: React.FC = () => {
             </div>
 
             {/* Row 1 Data & Nested Table */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.2fr 1.2fr 2.4fr', background: 'rgba(255,255,255,0.01)', minHeight: '120px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.2fr 1.2fr 2.4fr', background: 'rgba(15,23,42,0.01)', minHeight: '120px' }}>
               {/* 모델명 */}
               <div style={{ borderRight: '1px solid var(--border-color)', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '8px', fontSize: '16px', fontWeight: '800' }}>
                 <a href="#" style={{ color: '#5b92e5', textDecoration: 'underline', display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -323,7 +323,7 @@ export const CatalogDetailView: React.FC = () => {
               <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
                 <table style={{ width: '100%', height: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'right' }}>
                   <thead>
-                    <tr style={{ background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
+                    <tr style={{ background: 'rgba(15,23,42,0.03)', borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
                       <th style={{ padding: '4px', textAlign: 'center', borderRight: '1px solid var(--border-color)' }}>{materialLaborMap.color}</th>
                       <th style={{ padding: '4px', borderRight: '1px solid var(--border-color)' }}>기본</th>
                       <th style={{ padding: '4px', borderRight: '1px solid var(--border-color)' }}>알</th>
@@ -358,7 +358,7 @@ export const CatalogDetailView: React.FC = () => {
             </div>
 
             {/* Row 2 Header */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', background: 'rgba(212,175,55,0.05)', fontWeight: '700', color: 'var(--primary)', borderTop: '1px solid var(--border-color)', borderBottom: '1px solid var(--border-color)', textAlign: 'center', minHeight: '26px', alignItems: 'center' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', background: 'rgba(37,99,235,0.05)', fontWeight: '700', color: 'var(--primary)', borderTop: '1px solid var(--border-color)', borderBottom: '1px solid var(--border-color)', textAlign: 'center', minHeight: '26px', alignItems: 'center' }}>
               <div style={{ borderRight: '1px solid var(--border-color)', padding: '6px' }}>제조번호</div>
               <div style={{ borderRight: '1px solid var(--border-color)', padding: '6px' }}>매입처</div>
               <div style={{ borderRight: '1px solid var(--border-color)', padding: '6px' }}>재고개수</div>
@@ -367,7 +367,7 @@ export const CatalogDetailView: React.FC = () => {
             </div>
 
             {/* Row 2 Data */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', background: 'rgba(255,255,255,0.01)', textAlign: 'center', minHeight: '30px', alignItems: 'center' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', background: 'rgba(15,23,42,0.01)', textAlign: 'center', minHeight: '30px', alignItems: 'center' }}>
               <div style={{ borderRight: '1px solid var(--border-color)', padding: '6px', fontWeight: '600' }}>{item.manufacturer_code || '김숙희N'}</div>
               <div style={{ borderRight: '1px solid var(--border-color)', padding: '6px', fontWeight: '600' }}>{item.vendor || 'JP'}</div>
               <div style={{ borderRight: '1px solid var(--border-color)', padding: '6px' }}>
@@ -393,7 +393,7 @@ export const CatalogDetailView: React.FC = () => {
         <div style={{ marginBottom: '16px' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px', textAlign: 'left', border: '1px solid var(--border-color)', borderRadius: '4px', overflow: 'hidden' }}>
             <thead>
-              <tr style={{ background: 'rgba(212,175,55,0.05)', color: 'var(--primary)', height: '26px' }}>
+              <tr style={{ background: 'rgba(37,99,235,0.05)', color: 'var(--primary)', height: '26px' }}>
                 <th style={{ padding: '6px 10px', width: '40%', borderRight: '1px solid var(--border-color)' }}>스톤명</th>
                 <th style={{ padding: '6px 10px', width: '20%', textAlign: 'center', borderRight: '1px solid var(--border-color)' }}>알수</th>
                 <th style={{ padding: '6px 10px', width: '40%' }}>비고</th>
@@ -405,7 +405,7 @@ export const CatalogDetailView: React.FC = () => {
                   const matchedStone = stones.find(s => s.stone_id === ds.stone_id);
                   return (
                     <React.Fragment key={ds.stone_id}>
-                      <tr style={{ borderBottom: '1px solid var(--border-color)', background: 'rgba(255,255,255,0.01)' }}>
+                      <tr style={{ borderBottom: '1px solid var(--border-color)', background: 'rgba(15,23,42,0.01)' }}>
                         <td style={{ padding: '8px 10px', fontWeight: '700', borderRight: '1px solid var(--border-color)' }}>
                           {matchedStone ? matchedStone.name : ds.stone_id}
                         </td>
@@ -420,7 +420,7 @@ export const CatalogDetailView: React.FC = () => {
                   );
                 })
               ) : (
-                <tr style={{ borderBottom: '1px solid var(--border-color)', background: 'rgba(255,255,255,0.01)' }}>
+                <tr style={{ borderBottom: '1px solid var(--border-color)', background: 'rgba(15,23,42,0.01)' }}>
                   <td style={{ padding: '8px 10px', color: 'var(--text-muted)', borderRight: '1px solid var(--border-color)' }}>세팅 스톤 없음</td>
                   <td style={{ padding: '8px 10px', textAlign: 'center', borderRight: '1px solid var(--border-color)' }}>0</td>
                   <td style={{ padding: '8px 10px' }}>기타: 없음</td>
@@ -433,7 +433,7 @@ export const CatalogDetailView: React.FC = () => {
         {/* 4. 관련제품 썸네일 그리드 */}
         {relatedItems.length > 0 && (
           <div>
-            <span style={{ fontSize: '14px', color: 'var(--primary)', fontWeight: '700', display: 'block', marginBottom: '8px', background: 'rgba(212,175,55,0.05)', padding: '6px 10px', borderRadius: '4px', border: '1px solid var(--border-color)' }}>
+            <span style={{ fontSize: '14px', color: 'var(--primary)', fontWeight: '700', display: 'block', marginBottom: '8px', background: 'rgba(37,99,235,0.05)', padding: '6px 10px', borderRadius: '4px', border: '1px solid var(--border-color)' }}>
               관련제품 목록
             </span>
             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(4, 1fr)' : 'repeat(7, 1fr)', gap: '6px', padding: '4px' }}>
@@ -450,7 +450,7 @@ export const CatalogDetailView: React.FC = () => {
                       overflow: 'hidden', 
                       aspectRatio: '1', 
                       cursor: 'pointer',
-                      background: '#0a0a0f',
+                      background: '#f1f5f9',
                       transition: 'border-color 0.2s ease, transform 0.2s ease'
                     }}
                     className="catalog-card"
@@ -473,7 +473,7 @@ export const CatalogDetailView: React.FC = () => {
 
         {/* 4.5 기타 설명 및 사양 정보 */}
         {item.note && item.note.trim() !== '' && (
-          <div style={{ marginBottom: '16px', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '12px', background: 'rgba(255,255,255,0.01)' }}>
+          <div style={{ marginBottom: '16px', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '12px', background: 'rgba(15,23,42,0.01)' }}>
             <span style={{ fontSize: '15px', color: 'var(--primary)', fontWeight: '600', display: 'block', borderBottom: '1px dashed var(--border-color)', paddingBottom: '4px', marginBottom: '8px' }}>
               기타 설명 및 사양 정보
             </span>

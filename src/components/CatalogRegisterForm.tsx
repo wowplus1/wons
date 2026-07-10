@@ -242,7 +242,7 @@ export const CatalogRegisterForm: React.FC = () => {
       ctx.fillRect(360, 40, 40, 320); // 우
 
       // 2. 금색 대시 선으로 1:1 크롭 영역 틀 렌더링
-      ctx.strokeStyle = '#d4af37';
+      ctx.strokeStyle = '#2563eb';
       ctx.lineWidth = 2.5;
       ctx.setLineDash([8, 5]); // 금색 점선틀
       ctx.strokeRect(40, 40, 320, 320);
@@ -537,7 +537,7 @@ export const CatalogRegisterForm: React.FC = () => {
               <div className="catalog-form-section" style={{ width: isMobile ? '100%' : '180px', flexShrink: 0 }}>
                 <label style={{ display: 'block', fontSize: '15px', color: 'var(--text-muted)', marginBottom: '4px' }}>대표 사진 등록</label>
                 <input type="file" accept="image/*" onChange={handleImageUpload} style={{ display: 'none' }} id="reg-catalog-file" />
-                <label htmlFor="reg-catalog-file" style={{ display: 'flex', height: '130px', border: '1px dashed var(--border-color)', borderRadius: '6px', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', fontSize: '15px', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.01)', overflow: 'hidden' }}>
+                <label htmlFor="reg-catalog-file" style={{ display: 'flex', height: '130px', border: '1px dashed var(--border-color)', borderRadius: '6px', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', fontSize: '15px', color: 'var(--text-muted)', background: 'rgba(15,23,42,0.01)', overflow: 'hidden' }}>
                   {images.length > 0 ? (
                     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
                       <img src={images[0]} alt="업로드" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -636,7 +636,7 @@ export const CatalogRegisterForm: React.FC = () => {
             <div className="catalog-stone-table-wrapper">
               <table className="catalog-stone-table labor-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '15px', textAlign: 'left' }}>
                 <thead>
-                  <tr style={{ borderBottom: '2px solid var(--border-color)', color: 'var(--text-main)', background: 'rgba(255, 255, 255, 0.04)', height: '28px' }}>
+                  <tr style={{ borderBottom: '2px solid var(--border-color)', color: 'var(--text-main)', background: 'rgba(15, 23, 42, 0.04)', height: '28px' }}>
                     <th style={{ padding: '6px 8px' }}>구분</th>
                     <th style={{ padding: '6px 8px', width: '100px' }}>색상</th>
                     <th style={{ padding: '6px 8px', textAlign: 'right' }}>구매원가</th>
@@ -648,7 +648,7 @@ export const CatalogRegisterForm: React.FC = () => {
                 </thead>
                 <tbody>
                   {laborFees.map((lf, idx) => (
-                    <tr key={lf.type} style={{ borderBottom: '1px solid var(--border-color)', background: idx % 2 === 0 ? 'rgba(255,255,255,0.005)' : 'rgba(255,255,255,0.02)' }}>
+                    <tr key={lf.type} style={{ borderBottom: '1px solid var(--border-color)', background: idx % 2 === 0 ? 'rgba(15,23,42,0.005)' : 'rgba(15,23,42,0.02)' }}>
                       <td style={{ padding: '6px 8px', fontWeight: '700', color: 'var(--primary)' }}>{lf.type}</td>
                       <td style={{ padding: '4px 6px' }}>
                         <select value={lf.color} onChange={e => handleLaborFeeChange(idx, 'color', e.target.value)} className="input-field" style={{ width: '100%', padding: '3px 6px', fontSize: '15px', border: '1px solid var(--border-color)', background: 'var(--bg-surface)' }}>
@@ -757,7 +757,7 @@ export const CatalogRegisterForm: React.FC = () => {
             <div className="catalog-stone-table-wrapper">
               <table className="catalog-stone-table stones-spec-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '15px', textAlign: 'left' }}>
                 <thead>
-                  <tr style={{ borderBottom: '2px solid var(--border-color)', color: 'var(--text-main)', background: 'rgba(255, 255, 255, 0.04)', height: '28px' }}>
+                  <tr style={{ borderBottom: '2px solid var(--border-color)', color: 'var(--text-main)', background: 'rgba(15, 23, 42, 0.04)', height: '28px' }}>
                     <th style={{ padding: '6px 4px', width: '65px', textAlign: 'center' }}>메인</th>
                     <th style={{ padding: '6px 4px', width: '150px' }}>스톤 종류</th>
                     <th style={{ padding: '6px 4px', width: '100px' }}>스톤 설명</th>
@@ -774,7 +774,7 @@ export const CatalogRegisterForm: React.FC = () => {
                 </thead>
                 <tbody>
                   {stoneRows.map((row, idx) => (
-                    <tr key={row.row_id} style={{ borderBottom: '1px solid var(--border-color)', background: idx % 2 === 0 ? 'rgba(255,255,255,0.005)' : 'rgba(255,255,255,0.02)' }}>
+                    <tr key={row.row_id} style={{ borderBottom: '1px solid var(--border-color)', background: idx % 2 === 0 ? 'rgba(15,23,42,0.005)' : 'rgba(15,23,42,0.02)' }}>
                       {/* 메인 */}
                       <td style={{ padding: '2px' }}>
                         <select value={row.is_main} onChange={e => handleStoneRowChange(idx, 'is_main', e.target.value)} className="input-field" style={{ width: '100%', padding: '3px 14px 3px 6px', fontSize: '15px', border: '1px solid var(--border-color)', background: 'var(--bg-surface)' }}>
@@ -901,11 +901,11 @@ export const CatalogRegisterForm: React.FC = () => {
                                       cursor: 'pointer', 
                                       fontSize: '14px',
                                       color: row.stone_id === s.stone_id ? 'var(--primary)' : 'var(--text-main)',
-                                      background: row.stone_id === s.stone_id ? 'rgba(170, 133, 19, 0.1)' : 'transparent',
+                                      background: row.stone_id === s.stone_id ? 'rgba(37, 99, 235, 0.1)' : 'transparent',
                                       transition: 'background 0.2s'
                                     }}
-                                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(170, 133, 19, 0.18)'; }}
-                                    onMouseLeave={e => { e.currentTarget.style.background = row.stone_id === s.stone_id ? 'rgba(170, 133, 19, 0.1)' : 'transparent'; }}
+                                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(37, 99, 235, 0.18)'; }}
+                                    onMouseLeave={e => { e.currentTarget.style.background = row.stone_id === s.stone_id ? 'rgba(37, 99, 235, 0.1)' : 'transparent'; }}
                                   >
                                     {s.name} ({(s.weight_carat || 0).toFixed(3)}ct)
                                   </div>
@@ -1158,7 +1158,7 @@ export const CatalogRegisterForm: React.FC = () => {
                     flex: 1,
                     padding: '6px 12px',
                     fontSize: '13px',
-                    background: 'rgba(255,255,255,0.05)',
+                    background: 'rgba(15,23,42,0.05)',
                     color: 'var(--text-main)',
                     border: '1px solid var(--border-color)',
                     boxShadow: 'none',
@@ -1182,7 +1182,7 @@ export const CatalogRegisterForm: React.FC = () => {
                     flex: 1,
                     padding: '6px 12px',
                     fontSize: '13px',
-                    background: 'rgba(255,255,255,0.05)',
+                    background: 'rgba(15,23,42,0.05)',
                     color: 'var(--text-muted)',
                     border: '1px solid var(--border-color)',
                     boxShadow: 'none',
@@ -1205,7 +1205,7 @@ export const CatalogRegisterForm: React.FC = () => {
                   flex: 1,
                   padding: '8px 16px',
                   fontSize: '14px',
-                  background: 'rgba(255, 255, 255, 0.03)',
+                  background: 'rgba(15, 23, 42, 0.03)',
                   color: 'var(--text-muted)',
                   border: '1px solid var(--border-color)',
                   boxShadow: 'none',
@@ -1223,7 +1223,7 @@ export const CatalogRegisterForm: React.FC = () => {
                   flex: 1,
                   padding: '8px 16px',
                   fontSize: '14px',
-                  background: 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)',
+                  background: 'linear-gradient(135deg, var(--primary) 0%, #2563eb 100%)',
                   color: '#000',
                   fontWeight: '700',
                   border: 'none',

@@ -227,7 +227,7 @@ export const CustomerManager: React.FC = () => {
         </div>
 
         {/* Filter Toolbar */}
-        <div className="customer-filter-toolbar" style={{ display: 'flex', gap: '12px', alignItems: 'center', background: 'rgba(255,255,255,0.01)', padding: '10px 14px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+        <div className="customer-filter-toolbar" style={{ display: 'flex', gap: '12px', alignItems: 'center', background: 'rgba(15,23,42,0.01)', padding: '10px 14px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <label style={{ fontWeight: '700', color: 'var(--text-muted)', fontSize: '14px' }}>거래처 검색:</label>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
@@ -265,7 +265,7 @@ export const CustomerManager: React.FC = () => {
         </div>
 
         {/* Count indicators & Classification Descriptions */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '14px', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.02)', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-color)', margin: '0' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '14px', color: 'var(--text-muted)', background: 'rgba(15,23,42,0.02)', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-color)', margin: '0' }}>
           <div style={{ display: 'flex', gap: '12px', fontSize: '13px' }}>
             <span><strong>등급구분:</strong> 1등(최우수) 2등(일반) 3등(신규) 4등(소매)</span>
             <span style={{ color: 'var(--border-color)', opacity: 0.3 }}>|</span>
@@ -305,7 +305,7 @@ export const CustomerManager: React.FC = () => {
                       key={cust.customer_id}
                       style={{ 
                         borderBottom: '1px solid var(--border-color)',
-                        background: idx % 2 === 0 ? 'rgba(255,255,255,0.005)' : 'rgba(255,255,255,0.02)',
+                        background: idx % 2 === 0 ? 'rgba(15,23,42,0.005)' : 'rgba(15,23,42,0.02)',
                         transition: 'background 0.2s ease',
                         cursor: 'pointer'
                       }}
@@ -319,7 +319,7 @@ export const CustomerManager: React.FC = () => {
                       <td style={{ padding: '10px', width: '110px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cust.phone || '-'}</td>
                       <td style={{ padding: '10px', width: '110px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cust.mobile || '-'}</td>
                       <td style={{ padding: '10px', width: '80px' }}>
-                        <span className="badge badge-warning" style={{ fontSize: '14px', padding: '2px 5px', background: 'rgba(212, 175, 55, 0.1)' }}>
+                        <span className="badge badge-warning" style={{ fontSize: '14px', padding: '2px 5px', background: 'rgba(37, 99, 235, 0.1)' }}>
                           {(!cust.grade || isNaN(cust.grade)) ? '1' : cust.grade}등
                         </span>
                       </td>
@@ -368,7 +368,7 @@ export const CustomerManager: React.FC = () => {
                           <button
                             onClick={() => handleSelectCustomer(cust)}
                             className="btn-primary"
-                            style={{ padding: '4px 8px', fontSize: '14px', background: 'rgba(255,255,255,0.05)', color: 'var(--text-main)', border: '1px solid var(--border-color)', boxShadow: 'none' }}
+                            style={{ padding: '4px 8px', fontSize: '14px', background: 'rgba(15,23,42,0.05)', color: 'var(--text-main)', border: '1px solid var(--border-color)', boxShadow: 'none' }}
                             title="상세 수정"
                           >
                             <Edit2 size={12} />
@@ -401,10 +401,10 @@ export const CustomerManager: React.FC = () => {
               style={{ 
                 fontSize: '12px', 
                 padding: '4px 10px', 
-                background: currentPage === 1 ? 'rgba(0,0,0,0.02)' : 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)', 
+                background: currentPage === 1 ? 'rgba(0,0,0,0.02)' : 'linear-gradient(135deg, var(--primary) 0%, #2563eb 100%)', 
                 color: currentPage === 1 ? 'var(--text-muted)' : 'var(--text-inverse)', 
                 border: currentPage === 1 ? '1px solid var(--border-color)' : 'none',
-                boxShadow: currentPage === 1 ? 'none' : '0 2px 6px rgba(170, 133, 19, 0.15)',
+                boxShadow: currentPage === 1 ? 'none' : '0 2px 6px rgba(37, 99, 235, 0.15)',
                 cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
               }}
             >
@@ -422,7 +422,7 @@ export const CustomerManager: React.FC = () => {
                     padding: '4px 10px',
                     borderRadius: '4px',
                     border: isActive ? '1px solid var(--primary)' : '1px solid var(--border-color)',
-                    background: isActive ? 'rgba(170, 133, 19, 0.15)' : 'transparent',
+                    background: isActive ? 'rgba(37, 99, 235, 0.15)' : 'transparent',
                     color: isActive ? 'var(--primary)' : 'var(--text-main)',
                     fontWeight: isActive ? 'bold' : 'normal',
                     cursor: 'pointer',
@@ -441,10 +441,10 @@ export const CustomerManager: React.FC = () => {
               style={{ 
                 fontSize: '12px', 
                 padding: '4px 10px', 
-                background: currentPage === totalPages ? 'rgba(0,0,0,0.02)' : 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)', 
+                background: currentPage === totalPages ? 'rgba(0,0,0,0.02)' : 'linear-gradient(135deg, var(--primary) 0%, #2563eb 100%)', 
                 color: currentPage === totalPages ? 'var(--text-muted)' : 'var(--text-inverse)', 
                 border: currentPage === totalPages ? '1px solid var(--border-color)' : 'none',
-                boxShadow: currentPage === totalPages ? 'none' : '0 2px 6px rgba(170, 133, 19, 0.15)',
+                boxShadow: currentPage === totalPages ? 'none' : '0 2px 6px rgba(37, 99, 235, 0.15)',
                 cursor: currentPage === totalPages ? 'not-allowed' : 'pointer'
               }}
             >
@@ -700,7 +700,7 @@ export const CustomerManager: React.FC = () => {
               type="button" 
               onClick={handleResetForm} 
               className="btn-primary" 
-              style={{ flex: 1, background: 'rgba(255, 255, 255, 0.03)', color: 'var(--text-muted)', border: '1px solid var(--border-color)', boxShadow: 'none', justifyContent: 'center' }}
+              style={{ flex: 1, background: 'rgba(15, 23, 42, 0.03)', color: 'var(--text-muted)', border: '1px solid var(--border-color)', boxShadow: 'none', justifyContent: 'center' }}
             >
               취소
             </button>

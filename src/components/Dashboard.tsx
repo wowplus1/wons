@@ -356,8 +356,8 @@ export const Dashboard: React.FC = () => {
           className="glass-panel" 
           style={{ 
             padding: '12px 20px', 
-            background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.12) 0%, var(--bg-surface-solid) 100%)', 
-            border: '1px solid rgba(212, 175, 55, 0.25)',
+            background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.12) 0%, var(--bg-surface-solid) 100%)', 
+            border: '1px solid rgba(37, 99, 235, 0.25)',
             borderLeft: '5px solid var(--primary)',
             display: 'flex', 
             justifyContent: 'space-between', 
@@ -542,7 +542,7 @@ export const Dashboard: React.FC = () => {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', flex: 1 }}>
             
             {/* 24K Gold Loss Card */}
-            <div style={{ background: 'rgba(255,255,255,0.02)', padding: '14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <div style={{ background: 'rgba(15,23,42,0.02)', padding: '14px', borderRadius: '10px', border: '1px solid rgba(15,23,42,0.04)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <strong style={{ fontSize: '16px', color: 'var(--text-main)' }}>순금 (24K)</strong>
@@ -559,7 +559,7 @@ export const Dashboard: React.FC = () => {
                     {materialLossStats.gold24k.initialWeight > 0 ? ((materialLossStats.gold24k.lossWeight / materialLossStats.gold24k.initialWeight) * 100).toFixed(2) : '0.00'}%
                   </span>
                 </div>
-                <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '2px', overflow: 'hidden' }}>
+                <div style={{ width: '100%', height: '4px', background: 'rgba(15,23,42,0.05)', borderRadius: '2px', overflow: 'hidden' }}>
                   <div style={{ 
                     width: `${Math.min(100, materialLossStats.gold24k.initialWeight > 0 ? (materialLossStats.gold24k.lossWeight / materialLossStats.gold24k.initialWeight) * 100 : 0)}%`, 
                     height: '100%', 
@@ -571,7 +571,7 @@ export const Dashboard: React.FC = () => {
             </div>
 
             {/* 18K Gold Loss Card */}
-            <div style={{ background: 'rgba(255,255,255,0.02)', padding: '14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <div style={{ background: 'rgba(15,23,42,0.02)', padding: '14px', borderRadius: '10px', border: '1px solid rgba(15,23,42,0.04)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <strong style={{ fontSize: '16px', color: 'var(--text-main)' }}>18K 골드</strong>
@@ -588,7 +588,7 @@ export const Dashboard: React.FC = () => {
                     {materialLossStats.gold18k.initialWeight > 0 ? ((materialLossStats.gold18k.lossWeight / materialLossStats.gold18k.initialWeight) * 100).toFixed(2) : '0.00'}%
                   </span>
                 </div>
-                <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '2px', overflow: 'hidden' }}>
+                <div style={{ width: '100%', height: '4px', background: 'rgba(15,23,42,0.05)', borderRadius: '2px', overflow: 'hidden' }}>
                   <div style={{ 
                     width: `${Math.min(100, materialLossStats.gold18k.initialWeight > 0 ? (materialLossStats.gold18k.lossWeight / materialLossStats.gold18k.initialWeight) * 100 : 0)}%`, 
                     height: '100%', 
@@ -600,7 +600,7 @@ export const Dashboard: React.FC = () => {
             </div>
 
             {/* 14K Gold Loss Card */}
-            <div style={{ background: 'rgba(255,255,255,0.02)', padding: '14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <div style={{ background: 'rgba(15,23,42,0.02)', padding: '14px', borderRadius: '10px', border: '1px solid rgba(15,23,42,0.04)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <strong style={{ fontSize: '16px', color: 'var(--text-main)' }}>14K 골드</strong>
@@ -617,7 +617,7 @@ export const Dashboard: React.FC = () => {
                     {materialLossStats.gold14k.initialWeight > 0 ? ((materialLossStats.gold14k.lossWeight / materialLossStats.gold14k.initialWeight) * 100).toFixed(2) : '0.00'}%
                   </span>
                 </div>
-                <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '2px', overflow: 'hidden' }}>
+                <div style={{ width: '100%', height: '4px', background: 'rgba(15,23,42,0.05)', borderRadius: '2px', overflow: 'hidden' }}>
                   <div style={{ 
                     width: `${Math.min(100, materialLossStats.gold14k.initialWeight > 0 ? (materialLossStats.gold14k.lossWeight / materialLossStats.gold14k.initialWeight) * 100 : 0)}%`, 
                     height: '100%', 
@@ -629,7 +629,7 @@ export const Dashboard: React.FC = () => {
             </div>
 
             {/* Silver / Others Loss Card */}
-            <div style={{ background: 'rgba(255,255,255,0.02)', padding: '14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <div style={{ background: 'rgba(15,23,42,0.02)', padding: '14px', borderRadius: '10px', border: '1px solid rgba(15,23,42,0.04)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <strong style={{ fontSize: '16px', color: 'var(--text-main)' }}>실버 / 기타</strong>
@@ -646,7 +646,7 @@ export const Dashboard: React.FC = () => {
                     {materialLossStats.silver.initialWeight > 0 ? ((materialLossStats.silver.lossWeight / materialLossStats.silver.initialWeight) * 100).toFixed(2) : '0.00'}%
                   </span>
                 </div>
-                <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '2px', overflow: 'hidden' }}>
+                <div style={{ width: '100%', height: '4px', background: 'rgba(15,23,42,0.05)', borderRadius: '2px', overflow: 'hidden' }}>
                   <div style={{ 
                     width: `${Math.min(100, materialLossStats.silver.initialWeight > 0 ? (materialLossStats.silver.lossWeight / materialLossStats.silver.initialWeight) * 100 : 0)}%`, 
                     height: '100%', 

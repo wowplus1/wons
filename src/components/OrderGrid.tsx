@@ -288,7 +288,7 @@ export const OrderGrid: React.FC = () => {
                   overflowY: 'auto',
                   zIndex: 9999,
                   background: '#ffffff', // 백색 단색 배경으로 변경 (가독성 극대화)
-                  border: '1px solid #d4af37', // 골드 테두리로 고급화
+                  border: '1px solid #2563eb', // 골드 테두리로 고급화
                   borderRadius: '6px',
                   marginTop: '4px',
                   boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.15)'
@@ -314,13 +314,13 @@ export const OrderGrid: React.FC = () => {
                         alignItems: 'center',
                         color: '#1f2937' // 명확하고 진한 글자색
                       }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(212, 175, 55, 0.12)'}
+                      onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(37, 99, 235, 0.12)'}
                       onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                     >
                       <div>
                         <strong style={{ color: '#111827' }}>{c.name}</strong> <span style={{ color: '#6b7280', fontSize: '12px' }}>({c.code})</span>
                       </div>
-                      <span style={{ fontSize: '11px', background: 'rgba(212, 175, 55, 0.15)', padding: '3px 6px', borderRadius: '3px', color: '#aa8513', fontWeight: 'bold' }}>
+                      <span style={{ fontSize: '11px', background: 'rgba(37, 99, 235, 0.15)', padding: '3px 6px', borderRadius: '3px', color: '#2563eb', fontWeight: 'bold' }}>
                         {c.grade}등급 • {c.trade_type === 'weight' ? '중량' : '시세'}
                       </span>
                     </div>
@@ -353,7 +353,7 @@ export const OrderGrid: React.FC = () => {
           padding: '60px 20px',
           border: '1px dashed var(--border-color)',
           borderRadius: '8px',
-          background: 'rgba(255, 255, 255, 0.01)',
+          background: 'rgba(15, 23, 42, 0.01)',
           textAlign: 'center',
           gap: '8px',
           margin: '20px 0'
@@ -378,7 +378,7 @@ export const OrderGrid: React.FC = () => {
                     border: '1.5px solid var(--border-color)',
                     borderRadius: '8px',
                     padding: '16px',
-                    background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.01) 0%, rgba(255, 255, 255, 0.03) 100%)',
+                    background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.01) 0%, rgba(15, 23, 42, 0.03) 100%)',
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '14px',
@@ -387,7 +387,7 @@ export const OrderGrid: React.FC = () => {
                   }}
                 >
                   {/* Card Title & Delete Button */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px dashed rgba(255,255,255,0.08)', paddingBottom: '8px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px dashed rgba(15,23,42,0.08)', paddingBottom: '8px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <span style={{ 
                         width: '20px', 
@@ -604,12 +604,12 @@ export const OrderGrid: React.FC = () => {
                                     cursor: 'pointer', 
                                     fontSize: '14px',
                                     color: item.model_number === c.model_number ? 'var(--primary)' : 'var(--text-main)',
-                                    background: item.model_number === c.model_number ? 'rgba(170, 133, 19, 0.1)' : 'transparent',
+                                    background: item.model_number === c.model_number ? 'rgba(37, 99, 235, 0.1)' : 'transparent',
                                     transition: 'background 0.2s',
                                     whiteSpace: 'nowrap'
                                   }}
-                                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(170, 133, 19, 0.18)'; }}
-                                  onMouseLeave={e => { e.currentTarget.style.background = item.model_number === c.model_number ? 'rgba(170, 133, 19, 0.1)' : 'transparent'; }}
+                                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(37, 99, 235, 0.18)'; }}
+                                  onMouseLeave={e => { e.currentTarget.style.background = item.model_number === c.model_number ? 'rgba(37, 99, 235, 0.1)' : 'transparent'; }}
                                 >
                                   {c.model_number}
                                 </div>
@@ -868,8 +868,8 @@ export const OrderGrid: React.FC = () => {
                           fontSize: '16px', 
                           fontWeight: '800', 
                           color: 'var(--primary)',
-                          background: 'rgba(212, 175, 55, 0.08)',
-                          border: '1px solid rgba(212, 175, 55, 0.2)',
+                          background: 'rgba(37, 99, 235, 0.08)',
+                          border: '1px solid rgba(37, 99, 235, 0.2)',
                           padding: '0 8px',
                           borderRadius: '6px',
                           display: 'inline-flex',
@@ -910,7 +910,7 @@ export const OrderGrid: React.FC = () => {
                   {/* 상세설정 아코디언 내부 (가로 1줄 콤팩트 배치) */}
                   {expandedItems[item.item_id || 0] && (
                     <div style={{ 
-                      borderTop: '1px dashed rgba(255,255,255,0.08)', 
+                      borderTop: '1px dashed rgba(15,23,42,0.08)', 
                       paddingTop: '12px',
                       display: 'flex',
                       flexDirection: 'row',
@@ -1166,7 +1166,7 @@ export const OrderGrid: React.FC = () => {
               type="button"
               onClick={handleAddRow}
               className="btn-primary"
-              style={{ padding: '8px 16px', background: 'rgba(255, 255, 255, 0.05)', color: 'var(--text-main)', border: '1px solid var(--border-color)', boxShadow: 'none', fontSize: '16px' }}
+              style={{ padding: '8px 16px', background: 'rgba(15, 23, 42, 0.05)', color: 'var(--text-main)', border: '1px solid var(--border-color)', boxShadow: 'none', fontSize: '16px' }}
             >
               <Plus size={14} /> 품목 추가하기
             </button>
@@ -1190,7 +1190,7 @@ export const OrderGrid: React.FC = () => {
                     >
                       수정 취소
                     </button>
-                    <button type="submit" className="btn-primary" style={{ fontSize: '16px', padding: '8px 20px', background: 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)', color: 'var(--text-inverse)', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                    <button type="submit" className="btn-primary" style={{ fontSize: '16px', padding: '8px 20px', background: 'linear-gradient(135deg, var(--primary) 0%, #2563eb 100%)', color: 'var(--text-inverse)', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
                       <CheckCircle2 size={14} style={{ marginRight: '4px' }} /> 수정 완료 (덮어쓰기)
                     </button>
                   </>
@@ -1204,7 +1204,7 @@ export const OrderGrid: React.FC = () => {
                         }
                       }}
                       className="btn-primary"
-                      style={{ background: 'rgba(255, 255, 255, 0.03)', color: 'var(--text-muted)', border: '1px solid var(--border-color)', boxShadow: 'none', fontSize: '16px', padding: '8px 18px', cursor: 'pointer' }}
+                      style={{ background: 'rgba(15, 23, 42, 0.03)', color: 'var(--text-muted)', border: '1px solid var(--border-color)', boxShadow: 'none', fontSize: '16px', padding: '8px 18px', cursor: 'pointer' }}
                     >
                       전체 초기화
                     </button>
@@ -1291,7 +1291,7 @@ export const OrderGrid: React.FC = () => {
                         justifyContent: 'space-between',
                         alignItems: 'center',
                         transition: 'background 0.2s',
-                        background: 'rgba(255, 255, 255, 0.01)'
+                        background: 'rgba(15, 23, 42, 0.01)'
                       }}
                       className="stone-select-item"
                     >
@@ -1319,7 +1319,7 @@ export const OrderGrid: React.FC = () => {
                 type="button" 
                 onClick={() => { setStoneModalTarget(null); setStoneSearchText(''); }} 
                 className="btn-primary" 
-                style={{ padding: '5px 14px', background: 'rgba(255,255,255,0.05)', color: 'var(--text-muted)', border: '1px solid var(--border-color)', boxShadow: 'none' }}
+                style={{ padding: '5px 14px', background: 'rgba(15,23,42,0.05)', color: 'var(--text-muted)', border: '1px solid var(--border-color)', boxShadow: 'none' }}
               >
                 닫기
               </button>

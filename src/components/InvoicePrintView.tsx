@@ -595,7 +595,7 @@ export const InvoicePrintView: React.FC = () => {
         margin: '0 auto 20px auto'
       }}>
         <div>
-          <strong style={{ color: '#d4af37' }}>[거래 명세서 출력 모드]</strong> A4 가로(Landscape)에 최적화된 화면입니다. 인쇄 창이 뜨지 않으면 버튼을 눌러주세요.
+          <strong style={{ color: '#2563eb' }}>[거래 명세서 출력 모드]</strong> A4 가로(Landscape)에 최적화된 화면입니다. 인쇄 창이 뜨지 않으면 버튼을 눌러주세요.
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
           <button 
@@ -605,7 +605,7 @@ export const InvoicePrintView: React.FC = () => {
               display: 'flex', 
               alignItems: 'center', 
               gap: '6px',
-              background: '#d4af37',
+              background: '#2563eb',
               border: 'none',
               borderRadius: '4px',
               color: '#fff',

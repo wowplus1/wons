@@ -244,13 +244,12 @@ function App() {
       
       {/* Premium Navigation Header */}
       <header 
-        className="glass-panel app-header" 
-        style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'flex-start', 
+        className="glass-panel app-header"
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
           padding: '12px 24px',
-          background: 'linear-gradient(135deg, rgba(17, 19, 28, 0.8) 0%, rgba(9, 10, 15, 0.9) 100%)',
           gap: '24px'
         }}
       >
@@ -263,9 +262,9 @@ function App() {
             style={{
               padding: '6px 12px',
               fontSize: '15px',
-              background: isMenuOpen ? 'rgba(239, 68, 68, 0.1)' : 'rgba(212, 175, 55, 0.1)',
+              background: isMenuOpen ? 'rgba(239, 68, 68, 0.1)' : 'rgba(37, 99, 235, 0.1)',
               color: isMenuOpen ? 'var(--danger)' : 'var(--primary)',
-              border: isMenuOpen ? '1px solid rgba(239, 68, 68, 0.2)' : '1px solid rgba(212, 175, 55, 0.2)',
+              border: isMenuOpen ? '1px solid rgba(239, 68, 68, 0.2)' : '1px solid rgba(37, 99, 235, 0.2)',
               boxShadow: 'none',
               display: 'flex',
               alignItems: 'center',
@@ -282,7 +281,7 @@ function App() {
           
           {/* 그룹 1: 모니터링 */}
           <div className="nav-group" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span className="nav-group-label" style={{ fontSize: '14px', color: 'rgba(212, 175, 55, 0.7)', fontWeight: '700', marginRight: '2px', borderRight: '1px solid rgba(255,255,255,0.15)', paddingRight: '8px', width: '80px', textAlign: 'right', display: 'inline-block' }}>모니터링</span>
+            <span className="nav-group-label" style={{ fontSize: '14px', color: 'rgba(37, 99, 235, 0.7)', fontWeight: '700', marginRight: '2px', borderRight: '1px solid rgba(15,23,42,0.15)', paddingRight: '8px', width: '80px', textAlign: 'right', display: 'inline-block' }}>모니터링</span>
             <div className="nav-buttons-container">
 
               <button
@@ -292,7 +291,7 @@ function App() {
                   padding: '6px 12px',
                   fontSize: '15px',
                   boxShadow: 'none',
-                  background: activeTab === 'statistics' ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : 'transparent',
+                  background: activeTab === 'statistics' ? 'linear-gradient(135deg, var(--primary) 0%, #2563eb 100%)' : 'transparent',
                   color: activeTab === 'statistics' ? 'var(--text-inverse)' : 'var(--text-muted)',
                   border: activeTab === 'statistics' ? 'none' : '1px solid var(--border-color)',
                   display: 'flex',
@@ -311,7 +310,7 @@ function App() {
                   padding: '6px 12px',
                   fontSize: '15px',
                   boxShadow: 'none',
-                  background: activeTab === 'audit_logs' ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : 'transparent',
+                  background: activeTab === 'audit_logs' ? 'linear-gradient(135deg, var(--primary) 0%, #2563eb 100%)' : 'transparent',
                   color: activeTab === 'audit_logs' ? 'var(--text-inverse)' : 'var(--text-muted)',
                   border: activeTab === 'audit_logs' ? 'none' : '1px solid var(--border-color)',
                   display: 'flex',
@@ -327,7 +326,7 @@ function App() {
 
           {/* 그룹 2: 마스터 정보 */}
           <div className="nav-group" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span className="nav-group-label" style={{ fontSize: '14px', color: 'rgba(212, 175, 55, 0.7)', fontWeight: '700', marginRight: '2px', borderRight: '1px solid rgba(255,255,255,0.15)', paddingRight: '8px', width: '80px', textAlign: 'right', display: 'inline-block' }}>마스터 정보</span>
+            <span className="nav-group-label" style={{ fontSize: '14px', color: 'rgba(37, 99, 235, 0.7)', fontWeight: '700', marginRight: '2px', borderRight: '1px solid rgba(15,23,42,0.15)', paddingRight: '8px', width: '80px', textAlign: 'right', display: 'inline-block' }}>마스터 정보</span>
             <div className="nav-buttons-container">
               <button
                 onClick={() => { setActiveTab('customers'); setIsMenuOpen(false); }}
@@ -336,7 +335,7 @@ function App() {
                   padding: '6px 12px',
                   fontSize: '15px',
                   boxShadow: 'none',
-                  background: activeTab === 'customers' ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : 'transparent',
+                  background: activeTab === 'customers' ? 'linear-gradient(135deg, var(--primary) 0%, #2563eb 100%)' : 'transparent',
                   color: activeTab === 'customers' ? 'var(--text-inverse)' : 'var(--text-muted)',
                   border: activeTab === 'customers' ? 'none' : '1px solid var(--border-color)',
                   display: 'flex',
@@ -354,7 +353,7 @@ function App() {
                   padding: '6px 12px',
                   fontSize: '15px',
                   boxShadow: 'none',
-                  background: activeTab === 'catalog' ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : 'transparent',
+                  background: activeTab === 'catalog' ? 'linear-gradient(135deg, var(--primary) 0%, #2563eb 100%)' : 'transparent',
                   color: activeTab === 'catalog' ? 'var(--text-inverse)' : 'var(--text-muted)',
                   border: activeTab === 'catalog' ? 'none' : '1px solid var(--border-color)',
                   display: 'flex',
@@ -372,7 +371,7 @@ function App() {
                   padding: '6px 12px',
                   fontSize: '15px',
                   boxShadow: 'none',
-                  background: activeTab === 'rates' ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : 'transparent',
+                  background: activeTab === 'rates' ? 'linear-gradient(135deg, var(--primary) 0%, #2563eb 100%)' : 'transparent',
                   color: activeTab === 'rates' ? 'var(--text-inverse)' : 'var(--text-muted)',
                   border: activeTab === 'rates' ? 'none' : '1px solid var(--border-color)',
                   display: 'flex',
@@ -390,7 +389,7 @@ function App() {
                   padding: '6px 12px',
                   fontSize: '15px',
                   boxShadow: 'none',
-                  background: activeTab === 'stones' ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : 'transparent',
+                  background: activeTab === 'stones' ? 'linear-gradient(135deg, var(--primary) 0%, #2563eb 100%)' : 'transparent',
                   color: activeTab === 'stones' ? 'var(--text-inverse)' : 'var(--text-muted)',
                   border: activeTab === 'stones' ? 'none' : '1px solid var(--border-color)',
                   display: 'flex',
@@ -405,7 +404,7 @@ function App() {
 
           {/* 그룹 3: 주요 공정 */}
           <div className="nav-group" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span className="nav-group-label" style={{ fontSize: '14px', color: 'rgba(212, 175, 55, 0.7)', fontWeight: '700', marginRight: '2px', borderRight: '1px solid rgba(255,255,255,0.15)', paddingRight: '8px', width: '80px', textAlign: 'right', display: 'inline-block' }}>주요 공정</span>
+            <span className="nav-group-label" style={{ fontSize: '14px', color: 'rgba(37, 99, 235, 0.7)', fontWeight: '700', marginRight: '2px', borderRight: '1px solid rgba(15,23,42,0.15)', paddingRight: '8px', width: '80px', textAlign: 'right', display: 'inline-block' }}>주요 공정</span>
             <div className="nav-buttons-container">
               <button
                 onClick={() => { setActiveTab('order'); setIsMenuOpen(false); }}
@@ -414,7 +413,7 @@ function App() {
                   padding: '6px 12px',
                   fontSize: '15px',
                   boxShadow: 'none',
-                  background: activeTab === 'order' ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : 'transparent',
+                  background: activeTab === 'order' ? 'linear-gradient(135deg, var(--primary) 0%, #2563eb 100%)' : 'transparent',
                   color: activeTab === 'order' ? 'var(--text-inverse)' : 'var(--text-muted)',
                   border: activeTab === 'order' ? 'none' : '1px solid var(--border-color)',
                   display: 'flex',
@@ -433,7 +432,7 @@ function App() {
                   padding: '6px 12px',
                   fontSize: '15px',
                   boxShadow: 'none',
-                  background: activeTab === 'orders' ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : 'transparent',
+                  background: activeTab === 'orders' ? 'linear-gradient(135deg, var(--primary) 0%, #2563eb 100%)' : 'transparent',
                   color: activeTab === 'orders' ? 'var(--text-inverse)' : 'var(--text-muted)',
                   border: activeTab === 'orders' ? 'none' : '1px solid var(--border-color)',
                   display: 'flex',
@@ -451,7 +450,7 @@ function App() {
                   padding: '6px 12px',
                   fontSize: '15px',
                   boxShadow: 'none',
-                  background: activeTab === 'work_list' ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : 'transparent',
+                  background: activeTab === 'work_list' ? 'linear-gradient(135deg, var(--primary) 0%, #2563eb 100%)' : 'transparent',
                   color: activeTab === 'work_list' ? 'var(--text-inverse)' : 'var(--text-muted)',
                   border: activeTab === 'work_list' ? 'none' : '1px solid var(--border-color)',
                   display: 'flex',
@@ -482,7 +481,7 @@ function App() {
                   padding: '6px 12px',
                   fontSize: '15px',
                   boxShadow: 'none',
-                  background: activeTab === 'release_list' ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : 'transparent',
+                  background: activeTab === 'release_list' ? 'linear-gradient(135deg, var(--primary) 0%, #2563eb 100%)' : 'transparent',
                   color: activeTab === 'release_list' ? 'var(--text-inverse)' : 'var(--text-muted)',
                   border: activeTab === 'release_list' ? 'none' : '1px solid var(--border-color)',
                   display: 'flex',
@@ -513,7 +512,7 @@ function App() {
                   padding: '6px 12px',
                   fontSize: '15px',
                   boxShadow: 'none',
-                  background: activeTab === 'unpaid_ledger' ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : 'transparent',
+                  background: activeTab === 'unpaid_ledger' ? 'linear-gradient(135deg, var(--primary) 0%, #2563eb 100%)' : 'transparent',
                   color: activeTab === 'unpaid_ledger' ? 'var(--text-inverse)' : 'var(--text-muted)',
                   border: activeTab === 'unpaid_ledger' ? 'none' : '1px solid var(--border-color)',
                   display: 'flex',
@@ -544,7 +543,7 @@ function App() {
                   padding: '6px 12px',
                   fontSize: '15px',
                   boxShadow: 'none',
-                  background: activeTab === 'paid_ledger' ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : 'transparent',
+                  background: activeTab === 'paid_ledger' ? 'linear-gradient(135deg, var(--primary) 0%, #2563eb 100%)' : 'transparent',
                   color: activeTab === 'paid_ledger' ? 'var(--text-inverse)' : 'var(--text-muted)',
                   border: activeTab === 'paid_ledger' ? 'none' : '1px solid var(--border-color)',
                   display: 'flex',
@@ -562,7 +561,7 @@ function App() {
                   padding: '6px 12px',
                   fontSize: '15px',
                   boxShadow: 'none',
-                  background: activeTab === 'hold_ledger' ? 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)' : 'transparent',
+                  background: activeTab === 'hold_ledger' ? 'linear-gradient(135deg, var(--primary) 0%, #2563eb 100%)' : 'transparent',
                   color: activeTab === 'hold_ledger' ? 'var(--text-inverse)' : 'var(--text-muted)',
                   border: activeTab === 'hold_ledger' ? 'none' : '1px solid var(--border-color)',
                   display: 'flex',

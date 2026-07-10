@@ -3,25 +3,25 @@
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-title: 'Outfit', var(--font-sans);
 
-  /* Color System (Ivory Theme & Warm Bronze/Gold Accent) */
-  --bg-base: #f7f5f0; /* Warm Soft Ivory */
-  --bg-surface: rgba(255, 255, 255, 0.75); /* White Translucent Glass */
+  /* Color System (Clean White Theme & Calm Blue Accent) */
+  --bg-base: #f4f6fb; /* Clean cool light gray */
+  --bg-surface: rgba(255, 255, 255, 0.82); /* White translucent glass */
   --bg-surface-solid: #ffffff;
-  --bg-card: rgba(250, 248, 244, 0.8);
-  --bg-card-hover: rgba(243, 239, 230, 0.95);
-  
-  --primary: #aa8513; /* Deep Bronze Gold for legibility on light background */
-  --primary-rgb: 170, 133, 19;
-  --primary-hover: #8b6d10;
-  --primary-active: #6b530c;
-  
-  --text-main: #2b2927; /* Dark Charcoal Brown for cozy warm feeling */
-  --text-muted: #736e67; /* Soft Medium Brown */
+  --bg-card: rgba(248, 250, 252, 0.9);
+  --bg-card-hover: rgba(241, 245, 249, 0.96);
+
+  --primary: #2563eb; /* Calm blue */
+  --primary-rgb: 37, 99, 235;
+  --primary-hover: #1d4ed8;
+  --primary-active: #1e40af;
+
+  --text-main: #1e293b; /* Slate 800 */
+  --text-muted: #64748b; /* Slate 500 */
   --text-inverse: #ffffff;
 
-  --border-color: rgba(43, 41, 39, 0.18); /* Soft dark borders - 18% 투명도로 더 잘 보이게 조정 */
-  --border-focus: rgba(170, 133, 19, 0.6);
-  
+  --border-color: rgba(30, 41, 59, 0.12); /* Soft cool border */
+  --border-focus: rgba(37, 99, 235, 0.55);
+
   --success: #059669;
   --success-bg: rgba(5, 150, 105, 0.08);
   --danger: #dc2626;
@@ -32,18 +32,18 @@
 
   /* Glassmorphism Effect */
   --backdrop-blur: blur(16px);
-  --glass-shadow: 0 8px 32px 0 rgba(133, 126, 110, 0.12); /* Soft bronze shadow */
-  --glass-border: 1px solid rgba(255, 255, 255, 0.5);
+  --glass-shadow: 0 8px 32px 0 rgba(15, 23, 42, 0.08); /* Soft cool shadow */
+  --glass-border: 1px solid rgba(255, 255, 255, 0.6);
 
-  /* AG Grid overrides variables for light ivory theme */
+  /* AG Grid overrides variables for light theme */
   --ag-background-color: #ffffff;
-  --ag-header-background-color: #f7f5f0;
-  --ag-odd-row-background-color: #faf9f6;
-  --ag-border-color: rgba(43, 41, 39, 0.08);
-  --ag-row-hover-color: rgba(170, 133, 19, 0.05);
-  --ag-selected-row-color: rgba(170, 133, 19, 0.1);
-  --ag-foreground-color: #2b2927;
-  --ag-header-foreground-color: #736e67;
+  --ag-header-background-color: #f1f5f9;
+  --ag-odd-row-background-color: #f8fafc;
+  --ag-border-color: rgba(30, 41, 59, 0.08);
+  --ag-row-hover-color: rgba(37, 99, 235, 0.06);
+  --ag-selected-row-color: rgba(37, 99, 235, 0.1);
+  --ag-foreground-color: #1e293b;
+  --ag-header-foreground-color: #64748b;
   --ag-font-family: var(--font-sans);
   --ag-font-size: 19px;
 }
@@ -58,10 +58,10 @@ body {
   font-family: var(--font-sans);
   background-color: var(--bg-base);
   color: var(--text-main);
-  background-image: 
-    radial-gradient(at 0% 0%, rgba(212, 175, 55, 0.08) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(220, 180, 150, 0.05) 0px, transparent 50%),
-    radial-gradient(at 50% 100%, rgba(240, 236, 227, 0.6) 0px, transparent 50%);
+  background-image:
+    radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.06) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(59, 130, 246, 0.05) 0px, transparent 50%),
+    radial-gradient(at 50% 100%, rgba(226, 232, 240, 0.6) 0px, transparent 50%);
   background-attachment: fixed;
   min-height: 100vh;
   overflow-x: hidden;
@@ -108,7 +108,7 @@ body {
 }
 
 .glass-panel:hover {
-  border-color: rgba(212, 175, 55, 0.2);
+  border-color: rgba(37, 99, 235, 0.2);
 }
 
 /* Typography & Titles */
@@ -119,14 +119,14 @@ h1, h2, h3, h4 {
 }
 
 .gradient-text {
-  background: linear-gradient(135deg, #2b2927 0%, var(--primary) 100%);
+  background: linear-gradient(135deg, #1e293b 0%, var(--primary) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 /* Button & Form Controls */
 .btn-primary {
-  background: linear-gradient(135deg, var(--primary) 0%, #aa8513 100%);
+  background: linear-gradient(135deg, var(--primary) 0%, #1d4ed8 100%);
   color: var(--text-inverse);
   border: none;
   padding: 8px 16px;
@@ -137,12 +137,12 @@ h1, h2, h3, h4 {
   align-items: center;
   gap: 8px;
   transition: transform 0.1s ease, box-shadow 0.2s ease;
-  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.2);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
 }
 
 .btn-primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(212, 175, 55, 0.3);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.3);
 }
 
 .btn-primary:active {
@@ -150,7 +150,7 @@ h1, h2, h3, h4 {
 }
 
 .input-field {
-  background: rgba(255, 255, 255, 0.03);
+  background: #ffffff;
   border: 1px solid var(--border-color);
   color: var(--text-main);
   padding: 8px 12px;
@@ -162,14 +162,14 @@ h1, h2, h3, h4 {
 
 .input-field:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.15);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
 }
 
 /* select 요소 하위 option의 브라우저 기본 배경 및 글자색 보정 (라이트 모드 가독성 확보) */
 .input-field option,
 select option {
   background-color: #ffffff;
-  color: #2b2927;
+  color: #1e293b;
 }
 
 
@@ -275,7 +275,7 @@ input[type="number"] {
 }
 
 .excel-input:focus {
-  background-color: rgba(212, 175, 55, 0.08);
+  background-color: rgba(37, 99, 235, 0.08);
   box-shadow: inset 0 0 0 1px var(--primary);
 }
 
@@ -292,7 +292,7 @@ select.excel-input {
 
 /* 스톤 선택 모달 내 아이템 호버 */
 .stone-select-item:hover {
-  background-color: rgba(212, 175, 55, 0.15) !important;
+  background-color: rgba(37, 99, 235, 0.15) !important;
   border-color: var(--primary) !important;
 }
 
@@ -429,7 +429,7 @@ select.excel-input {
 
 /* 카탈로그 카드 테두리 선명화 및 호버 효과 */
 .catalog-card {
-  border: 1px solid rgba(170, 133, 19, 0.25) !important;
+  border: 1px solid rgba(37, 99, 235, 0.25) !important;
   box-shadow: 0 4px 12px rgba(133, 126, 110, 0.08) !important;
   background-color: var(--bg-surface-solid) !important;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
@@ -438,7 +438,7 @@ select.excel-input {
 .catalog-card:hover {
   border-color: var(--primary) !important;
   transform: translateY(-2px) !important;
-  box-shadow: 0 8px 24px rgba(170, 133, 19, 0.18) !important;
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.18) !important;
 }
 
 /* 카탈로그 스톤 및 공임 설정 테이블 선 강화 */
@@ -448,7 +448,7 @@ select.excel-input {
   padding: 8px 10px !important;
 }
 .catalog-stone-table th {
-  background-color: rgba(170, 133, 19, 0.06) !important;
+  background-color: rgba(37, 99, 235, 0.06) !important;
   font-weight: 600 !important;
   color: var(--text-main) !important;
 }
@@ -474,7 +474,7 @@ select.excel-input {
     align-items: flex-start !important;
     width: 100% !important;
     gap: 6px !important;
-    border-bottom: 1px dashed rgba(255, 255, 255, 0.05);
+    border-bottom: 1px dashed rgba(15, 23, 42, 0.05);
     padding-bottom: 8px;
   }
 
@@ -938,7 +938,7 @@ select.excel-input {
   display: flex;
   gap: 12px;
   align-items: center;
-  background: rgba(255,255,255,0.01);
+  background: rgba(15,23,42,0.01);
   padding: 10px 14px;
   border-radius: 6px;
   border: 1px solid var(--border-color);
@@ -1022,7 +1022,7 @@ select.excel-input {
   }
   
   .release-diagnostic-panel > span {
-    border-bottom: 1px dashed rgba(255, 255, 255, 0.05);
+    border-bottom: 1px dashed rgba(15, 23, 42, 0.05);
     padding-bottom: 4px;
     display: block;
   }
@@ -1116,10 +1116,10 @@ select.excel-input {
   display: flex;
   align-items: center;
   gap: 12px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(15, 23, 42, 0.05);
   padding: 6px 14px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(15, 23, 42, 0.1);
   flex-shrink: 0;
   margin-top: 2px;
 }

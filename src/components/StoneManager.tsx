@@ -170,7 +170,7 @@ export const StoneManager: React.FC = () => {
         <button 
           onClick={() => { setSearchKeyword(''); setFilterName(''); setFilterShape(''); }}
           className="btn-primary"
-          style={{ padding: '6px', background: 'rgba(255,255,255,0.03)', color: 'var(--text-muted)', border: '1px solid var(--border-color)', boxShadow: 'none' }}
+          style={{ padding: '6px', background: 'rgba(15,23,42,0.03)', color: 'var(--text-muted)', border: '1px solid var(--border-color)', boxShadow: 'none' }}
           title="필터 초기화"
         >
           <RotateCcw size={14} />
@@ -187,7 +187,7 @@ export const StoneManager: React.FC = () => {
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '16px', minWidth: '950px' }}>
           <thead>
-            <tr style={{ borderBottom: '2px solid var(--border-color)', color: 'var(--text-muted)', background: 'rgba(255, 255, 255, 0.01)', height: '36px' }}>
+            <tr style={{ borderBottom: '2px solid var(--border-color)', color: 'var(--text-muted)', background: 'rgba(15, 23, 42, 0.01)', height: '36px' }}>
               <th style={{ padding: '8px', width: '50px', textAlign: 'left' }}>No</th>
               <th style={{ padding: '8px', width: '60px', textAlign: 'left' }}>조회</th>
               <th style={{ padding: '8px', width: '250px', textAlign: 'left' }}>스톤명</th>
@@ -208,7 +208,7 @@ export const StoneManager: React.FC = () => {
                 style={{ 
                   borderBottom: '1px solid var(--border-color)', 
                   height: '40px',
-                  backgroundColor: idx % 2 === 0 ? 'transparent' : 'rgba(255, 255, 255, 0.01)'
+                  backgroundColor: idx % 2 === 0 ? 'transparent' : 'rgba(15, 23, 42, 0.01)'
                 }}
               >
                 <td style={{ padding: '8px', textAlign: 'left', color: 'var(--text-muted)' }}>{startIndex + idx + 1}</td>
@@ -306,10 +306,10 @@ export const StoneManager: React.FC = () => {
             style={{ 
               fontSize: '12px', 
               padding: '4px 10px', 
-              background: currentPage === 1 ? 'rgba(0,0,0,0.02)' : 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)', 
+              background: currentPage === 1 ? 'rgba(0,0,0,0.02)' : 'linear-gradient(135deg, var(--primary) 0%, #2563eb 100%)', 
               color: currentPage === 1 ? 'var(--text-muted)' : 'var(--text-inverse)', 
               border: currentPage === 1 ? '1px solid var(--border-color)' : 'none',
-              boxShadow: currentPage === 1 ? 'none' : '0 2px 6px rgba(170, 133, 19, 0.15)',
+              boxShadow: currentPage === 1 ? 'none' : '0 2px 6px rgba(37, 99, 235, 0.15)',
               cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
             }}
           >
@@ -337,7 +337,7 @@ export const StoneManager: React.FC = () => {
                     padding: '4px 10px',
                     borderRadius: '4px',
                     border: isActive ? '1px solid var(--primary)' : '1px solid var(--border-color)',
-                    background: isActive ? 'rgba(170, 133, 19, 0.15)' : 'transparent',
+                    background: isActive ? 'rgba(37, 99, 235, 0.15)' : 'transparent',
                     color: isActive ? 'var(--primary)' : 'var(--text-main)',
                     fontWeight: isActive ? 'bold' : 'normal',
                     cursor: 'pointer',
@@ -357,10 +357,10 @@ export const StoneManager: React.FC = () => {
             style={{ 
               fontSize: '12px', 
               padding: '4px 10px', 
-              background: currentPage === totalPages ? 'rgba(0,0,0,0.02)' : 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)', 
+              background: currentPage === totalPages ? 'rgba(0,0,0,0.02)' : 'linear-gradient(135deg, var(--primary) 0%, #2563eb 100%)', 
               color: currentPage === totalPages ? 'var(--text-muted)' : 'var(--text-inverse)', 
               border: currentPage === totalPages ? '1px solid var(--border-color)' : 'none',
-              boxShadow: currentPage === totalPages ? 'none' : '0 2px 6px rgba(170, 133, 19, 0.15)',
+              boxShadow: currentPage === totalPages ? 'none' : '0 2px 6px rgba(37, 99, 235, 0.15)',
               cursor: currentPage === totalPages ? 'not-allowed' : 'pointer'
             }}
           >
@@ -434,7 +434,7 @@ export const StoneManager: React.FC = () => {
               {usedCatalogItems.length > 0 ? (
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '15px' }}>
                   <thead>
-                    <tr style={{ borderBottom: '2px solid var(--border-color)', color: 'var(--text-muted)', height: '32px', background: 'rgba(255,255,255,0.02)' }}>
+                    <tr style={{ borderBottom: '2px solid var(--border-color)', color: 'var(--text-muted)', height: '32px', background: 'rgba(15,23,42,0.02)' }}>
                       <th style={{ padding: '8px', width: '80px', textAlign: 'center' }}>이미지</th>
                       <th style={{ padding: '8px' }}>모델번호</th>
                       <th style={{ padding: '8px' }}>카테고리</th>
@@ -457,7 +457,7 @@ export const StoneManager: React.FC = () => {
                               alt={c.model_number}
                               imgStyle={{ width: '36px', height: '36px', borderRadius: '4px', objectFit: 'cover', border: '1px solid var(--border-color)' }}
                               fallback={
-                                <div style={{ width: '36px', height: '36px', borderRadius: '4px', backgroundColor: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)', color: 'var(--text-muted)', fontSize: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <div style={{ width: '36px', height: '36px', borderRadius: '4px', backgroundColor: 'rgba(15, 23, 42, 0.05)', border: '1px solid rgba(15, 23, 42, 0.1)', color: 'var(--text-muted)', fontSize: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                   No Img
                                 </div>
                               }

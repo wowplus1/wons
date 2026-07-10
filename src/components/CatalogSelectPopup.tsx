@@ -149,7 +149,7 @@ export const CatalogSelectPopup: React.FC = () => {
             gap: '10px',
             alignItems: 'center',
             transition: 'background 0.2s',
-            background: 'rgba(212, 175, 55, 0.08)'
+            background: 'rgba(37, 99, 235, 0.08)'
           }}
           className="stone-select-item"
         >
@@ -157,7 +157,7 @@ export const CatalogSelectPopup: React.FC = () => {
             width: '40px', 
             height: '40px', 
             borderRadius: '4px', 
-            background: 'rgba(212, 175, 55, 0.15)', 
+            background: 'rgba(37, 99, 235, 0.15)', 
             display: 'flex', 
             alignItems: 'center', 
             justifyContent: 'center', 
@@ -197,7 +197,7 @@ export const CatalogSelectPopup: React.FC = () => {
                   gap: '10px',
                   alignItems: 'center',
                   transition: 'background 0.2s',
-                  background: 'rgba(255, 255, 255, 0.01)'
+                  background: 'rgba(15, 23, 42, 0.01)'
                 }}
                 className="stone-select-item"
               >
@@ -208,7 +208,7 @@ export const CatalogSelectPopup: React.FC = () => {
                   alt={c.model_number}
                   imgStyle={{ width: '40px', height: '40px', borderRadius: '4px', objectFit: 'cover' }}
                   fallback={
-                    <div style={{ width: '40px', height: '40px', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', color: 'var(--text-muted)' }}>
+                    <div style={{ width: '40px', height: '40px', borderRadius: '4px', background: 'rgba(15,23,42,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', color: 'var(--text-muted)' }}>
                       No Img
                     </div>
                   }
@@ -247,7 +247,7 @@ export const CatalogSelectPopup: React.FC = () => {
           type="button" 
           onClick={() => window.close()} 
           className="btn-primary" 
-          style={{ padding: '5px 14px', background: 'rgba(255,255,255,0.05)', color: 'var(--text-muted)', border: '1px solid var(--border-color)', boxShadow: 'none' }}
+          style={{ padding: '5px 14px', background: 'rgba(15,23,42,0.05)', color: 'var(--text-muted)', border: '1px solid var(--border-color)', boxShadow: 'none' }}
         >
           닫기
         </button>

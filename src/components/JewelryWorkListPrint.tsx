@@ -154,7 +154,7 @@ export const JewelryWorkListPrint: React.FC = () => {
               display: 'flex', 
               alignItems: 'center', 
               gap: '6px',
-              background: '#d4af37',
+              background: '#2563eb',
               border: 'none',
               borderRadius: '4px',
               color: '#fff',

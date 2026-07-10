@@ -60,9 +60,9 @@ export const Login: React.FC = () => {
           width: '100%',
           maxWidth: '440px',
           padding: '40px 30px',
-          boxShadow: '0 20px 40px rgba(212, 175, 55, 0.15), 0 1px 3px rgba(0,0,0,0.05)',
+          boxShadow: '0 20px 40px rgba(37, 99, 235, 0.15), 0 1px 3px rgba(0,0,0,0.05)',
           background: 'rgba(255, 255, 255, 0.85)',
-          border: '1px solid rgba(212, 175, 55, 0.25)',
+          border: '1px solid rgba(37, 99, 235, 0.25)',
           borderRadius: '16px',
           display: 'flex',
           flexDirection: 'column',
@@ -82,12 +82,12 @@ export const Login: React.FC = () => {
             width: '60px',
             height: '60px',
             borderRadius: '16px',
-            background: 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)',
+            background: 'linear-gradient(135deg, var(--primary) 0%, #2563eb 100%)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             color: '#fff',
-            boxShadow: '0 8px 16px rgba(212, 175, 55, 0.3)'
+            boxShadow: '0 8px 16px rgba(37, 99, 235, 0.3)'
           }}>
             <Sparkles size={28} />
           </div>
@@ -187,7 +187,7 @@ export const Login: React.FC = () => {
               padding: '14px',
               fontSize: '15px',
               fontWeight: '700',
-              background: 'linear-gradient(135deg, var(--primary) 0%, #aa8513 100%)',
+              background: 'linear-gradient(135deg, var(--primary) 0%, #2563eb 100%)',
               color: 'var(--text-inverse)',
               border: 'none',
               borderRadius: '8px',
@@ -197,7 +197,7 @@ export const Login: React.FC = () => {
               justifyContent: 'center',
               gap: '8px',
               marginTop: '12px',
-              boxShadow: '0 4px 12px rgba(212, 175, 55, 0.25)'
+              boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)'
             }}
           >
             {loading ? '인증 처리 중...' : '시스템 로그인'}
