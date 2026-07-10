@@ -465,6 +465,23 @@ export const useErpStore = create<ErpState>((set, get) => {
                 .map(d => d.data())
                 .filter((d: any) => d.collection === col)
                 .map((d: any) => d.targetId);
+
+              // ⚠️ 재생성(delete 후 동일 ID 재등록) 방지:
+              // 방금 조회한 활성 문서(fetchedDocs)에 존재하는 ID는 삭제 tombstone 이 남아 있어도
+              // '삭제됨'으로 처리하지 않는다. (오래된 tombstone 이 재등록된 항목을 지워버리는 버그 차단)
+              const idKeyByCol: Record<string, string> = {
+                stones: 'stone_id',
+                customers: 'customer_id',
+                catalog: 'model_number',
+                orders: 'order_id',
+                gold_transactions: 'transaction_id',
+                audit_logs: 'log_id',
+              };
+              const idKey = idKeyByCol[col];
+              if (idKey) {
+                const liveIds = new Set(fetchedDocs.map((d: any) => d[idKey]));
+                deletedIds = deletedIds.filter(id => !liveIds.has(id));
+              }
             } catch (e) {
               console.error(`Failed to fetch deletions for ${col}:`, e);
             }

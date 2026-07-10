@@ -34,21 +34,12 @@ export const InvoicePrintView: React.FC = () => {
     }
   }, [order]);
 
-  if (!order) {
-    return (
-      <div style={{ padding: '20px', color: '#000', textAlign: 'center', fontSize: '15px', background: '#fff' }}>
-        해당 주문 정보 또는 시세 데이터를 불러올 수 없습니다. (주문번호: {orderId})
-      </div>
-    );
-  }
-
-  // Find customer master data for ledger calculations
-  const customer = customers.find(c => c.customer_id === order.customer_snapshot.customer_id);
-  const customerLossRate = order.customer_snapshot.loss_rate || customer?.loss_rate || 0;
-  const customerTradeType = order.customer_snapshot.trade_type || customer?.trade_type || 'price';
+  // ⚠️ Rules of Hooks: 아래 useMemo 훅들은 어떤 렌더에서도 동일한 순서로 호출되어야 하므로
+  // 반드시 `if (!order) return` 조기 반환보다 위에서, null-safe 하게 선언한다.
 
   // 거래처별 누적 거래 차수(tradeNo) 계산
   const tradeNo = React.useMemo(() => {
+    if (!order) return '1';
     const cId = order.customer_snapshot.customer_id;
     if (!cId) return '1';
 
@@ -82,7 +73,69 @@ export const InvoicePrintView: React.FC = () => {
 
     const matchedIndex = customerEvents.findIndex(e => e.id === order.order_id);
     return matchedIndex !== -1 ? String(matchedIndex + 1) : '1';
-  }, [order.order_id, order.customer_snapshot.customer_id, orders, transactions]);
+  }, [order, orders, transactions]);
+
+  // 최근 결제일 당일에 입고된 모든 순금 중량 합산 (self-contained, null-safe)
+  const lastPaymentGoldDon = React.useMemo(() => {
+    if (!order) return 0;
+    const cId = order.customer_snapshot.customer_id;
+    const lastIn = transactions
+      .filter(t => t.customer_id === cId && t.type === 'in')
+      .sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
+    if (!lastIn) return 0;
+    const dateStr = new Date(lastIn.created_at).toISOString().slice(5, 10);
+    const sameDayTxs = transactions.filter(t =>
+      t.customer_id === cId &&
+      t.type === 'in' &&
+      new Date(t.created_at).toISOString().slice(5, 10) === dateStr
+    );
+    const sumG = sameDayTxs.reduce((acc, t) => acc + (t.weight_g || 0), 0);
+    return parseFloat((sumG / 3.75).toFixed(3));
+  }, [order, transactions]);
+
+  // 최근 결제일 당일에 주문서 결제 품목을 통해 입금된 현금 총합 계산 (self-contained, null-safe)
+  const lastPaymentCashAmount = React.useMemo(() => {
+    if (!order) return 0;
+    const cId = order.customer_snapshot.customer_id;
+    const lastIn = transactions
+      .filter(t => t.customer_id === cId && t.type === 'in')
+      .sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
+    if (!lastIn) return 0;
+    const dateStr = new Date(lastIn.created_at).toISOString().slice(5, 10);
+
+    const customerOrders = orders.filter(o => o.customer_snapshot?.customer_id === cId);
+    let sumCash = 0;
+    customerOrders.forEach(o => {
+      const oDateStr = new Date(o.order_date).toISOString().slice(5, 10);
+      if (oDateStr === dateStr) {
+        (o.items || []).forEach(item => {
+          if (item.division === '결제') {
+            const qty = item.quantity || 1;
+            const baseLabor = item.labor_base || 0;
+            const extraLabor = item.labor_extra || 0;
+            const stoneLabor = item.labor_stone_total !== undefined ? item.labor_stone_total : ((item.labor_main || 0) * (item.qty_main || 0)) + ((item.labor_sub || 0) * (item.qty_sub || 0));
+            const laborPerEa = baseLabor + extraLabor + stoneLabor;
+            const laborTotalRow = laborPerEa * qty;
+            sumCash += item.calculated_price || laborTotalRow;
+          }
+        });
+      }
+    });
+    return sumCash;
+  }, [order, orders, transactions]);
+
+  if (!order) {
+    return (
+      <div style={{ padding: '20px', color: '#000', textAlign: 'center', fontSize: '15px', background: '#fff' }}>
+        해당 주문 정보 또는 시세 데이터를 불러올 수 없습니다. (주문번호: {orderId})
+      </div>
+    );
+  }
+
+  // Find customer master data for ledger calculations
+  const customer = customers.find(c => c.customer_id === order.customer_snapshot.customer_id);
+  const customerLossRate = order.customer_snapshot.loss_rate || customer?.loss_rate || 0;
+  const customerTradeType = order.customer_snapshot.trade_type || customer?.trade_type || 'price';
 
   // 1. Calculate sales metrics (Labor, Gold weight, Gold cost)
   let totalLaborSales = 0;
@@ -215,46 +268,6 @@ export const InvoicePrintView: React.FC = () => {
   const lastPaymentDateStr = lastInTx 
     ? new Date(lastInTx.created_at).toISOString().slice(5, 10) 
     : '-'; // 이력이 없는 경우 빈칸 처리
-
-  // 최근 결제일 당일에 입고된 모든 순금 중량 합산
-  const lastPaymentGoldDon = React.useMemo(() => {
-    if (lastPaymentDateStr === '-') return 0;
-    const sameDayTxs = transactions.filter(t => 
-      t.customer_id === order.customer_snapshot.customer_id && 
-      t.type === 'in' &&
-      new Date(t.created_at).toISOString().slice(5, 10) === lastPaymentDateStr
-    );
-    const sumG = sameDayTxs.reduce((acc, t) => acc + (t.weight_g || 0), 0);
-    return parseFloat((sumG / 3.75).toFixed(3));
-  }, [lastPaymentDateStr, transactions, order.customer_snapshot.customer_id]);
-
-  // 최근 결제일 당일에 주문서 결제 품목을 통해 입금된 현금 총합 계산
-  const lastPaymentCashAmount = React.useMemo(() => {
-    if (lastPaymentDateStr === '-') return 0;
-    
-    const customerOrders = orders.filter(o => o.customer_snapshot?.customer_id === order.customer_snapshot.customer_id);
-    let sumCash = 0;
-    
-    customerOrders.forEach(o => {
-      const oDateStr = new Date(o.order_date).toISOString().slice(5, 10);
-      if (oDateStr === lastPaymentDateStr) {
-        (o.items || []).forEach(item => {
-          if (item.division === '결제') {
-            const qty = item.quantity || 1;
-            const baseLabor = item.labor_base || 0;
-            const extraLabor = item.labor_extra || 0;
-            const stoneLabor = item.labor_stone_total !== undefined ? item.labor_stone_total : ((item.labor_main || 0) * (item.qty_main || 0)) + ((item.labor_sub || 0) * (item.qty_sub || 0));
-            const laborPerEa = baseLabor + extraLabor + stoneLabor;
-            const laborTotalRow = laborPerEa * qty;
-            
-            sumCash += item.calculated_price || laborTotalRow;
-          }
-        });
-      }
-    });
-    
-    return sumCash;
-  }, [lastPaymentDateStr, orders, order.customer_snapshot.customer_id]);
 
   // 12 rows fixed template builder
   const maxRows = 12;
