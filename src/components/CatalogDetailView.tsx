@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useErpStore } from '../store/useErpStore';
 import type { CatalogItem } from '../firebase/mockDb';
 import { X, ExternalLink, Image as ImageIcon } from 'lucide-react';
+import { CatalogImage } from './CatalogImage';
 
 export const CatalogDetailView: React.FC = () => {
   const { catalog, stones, fetchDb, deleteCatalogItem } = useErpStore();
@@ -223,14 +224,19 @@ export const CatalogDetailView: React.FC = () => {
 
         {/* 1. 상품 대형 이미지 */}
         <div style={{ width: '100%', height: isMobile ? '240px' : '380px', borderRadius: '6px', overflow: 'hidden', border: '1px solid var(--border-color)', marginBottom: '16px', background: '#0a0a0f', display: 'flex', justifyContent: 'center', alignItems: 'center', position: 'relative' }}>
-          {item.images && item.images.length > 0 ? (
-            <img src={item.images[0]} alt={item.model_number} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', color: 'var(--text-muted)' }}>
-              <ImageIcon size={48} />
-              <span>등록된 이미지가 없습니다</span>
-            </div>
-          )}
+          <CatalogImage
+            model={item.model_number}
+            embeddedImages={item.images}
+            hasImage={item.has_image}
+            alt={item.model_number}
+            imgStyle={{ width: '100%', height: '100%', objectFit: 'contain' }}
+            fallback={
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', color: 'var(--text-muted)' }}>
+                <ImageIcon size={48} />
+                <span>등록된 이미지가 없습니다</span>
+              </div>
+            }
+          />
         </div>
 
         {/* 2. 상세 정보 테이블 Grid */}
@@ -432,7 +438,6 @@ export const CatalogDetailView: React.FC = () => {
             </span>
             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(4, 1fr)' : 'repeat(7, 1fr)', gap: '6px', padding: '4px' }}>
               {relatedItems.map((relItem) => {
-                const imgUrl = relItem.images[0] || 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=150';
                 return (
                   <div 
                     key={relItem.model_number}
@@ -451,7 +456,14 @@ export const CatalogDetailView: React.FC = () => {
                     className="catalog-card"
                     title={`${relItem.model_number} 상세보기로 이동`}
                   >
-                    <img src={imgUrl} alt={relItem.model_number} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <CatalogImage
+                      model={relItem.model_number}
+                      embeddedImages={relItem.images}
+                      hasImage={relItem.has_image}
+                      alt={relItem.model_number}
+                      imgStyle={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      fallback={<div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}><ImageIcon size={20} /></div>}
+                    />
                   </div>
                 );
               })}

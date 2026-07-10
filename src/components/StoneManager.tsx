@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { useErpStore } from '../store/useErpStore';
 import type { Stone } from '../firebase/mockDb';
 import { Gem, RotateCcw, Plus } from 'lucide-react';
+import { CatalogImage } from './CatalogImage';
 
 export const StoneManager: React.FC = () => {
   const { stones, catalog } = useErpStore();
@@ -449,50 +450,18 @@ export const StoneManager: React.FC = () => {
                       return (
                         <tr key={c.model_number} style={{ borderBottom: '1px solid var(--border-color)', height: '50px' }}>
                           <td style={{ padding: '8px', textAlign: 'center' }}>
-                            {c.images && c.images[0] ? (
-                              <img 
-                                src={c.images[0]} 
-                                alt={c.model_number} 
-                                style={{ width: '36px', height: '36px', borderRadius: '4px', objectFit: 'cover', border: '1px solid var(--border-color)' }}
-                                onError={(e) => {
-                                  // 깨진 이미지 핸들링
-                                  (e.target as HTMLImageElement).src = '';
-                                  (e.target as HTMLImageElement).style.display = 'none';
-                                  const parent = (e.target as HTMLImageElement).parentElement;
-                                  if (parent && !parent.querySelector('.no-img-box')) {
-                                    const noImgDiv = document.createElement('div');
-                                    noImgDiv.className = 'no-img-box';
-                                    noImgDiv.style.width = '36px';
-                                    noImgDiv.style.height = '36px';
-                                    noImgDiv.style.borderRadius = '4px';
-                                    noImgDiv.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
-                                    noImgDiv.style.border = '1px solid rgba(255, 255, 255, 0.1)';
-                                    noImgDiv.style.color = 'var(--text-muted)';
-                                    noImgDiv.style.fontSize = '8px';
-                                    noImgDiv.style.display = 'flex';
-                                    noImgDiv.style.alignItems = 'center';
-                                    noImgDiv.style.justifyContent = 'center';
-                                    noImgDiv.innerText = 'No Img';
-                                    parent.appendChild(noImgDiv);
-                                  }
-                                }}
-                              />
-                            ) : (
-                              <div style={{ 
-                                width: '36px', 
-                                height: '36px', 
-                                borderRadius: '4px', 
-                                backgroundColor: 'rgba(255, 255, 255, 0.05)', 
-                                border: '1px solid rgba(255, 255, 255, 0.1)', 
-                                color: 'var(--text-muted)', 
-                                fontSize: '11px', 
-                                display: 'flex', 
-                                alignItems: 'center', 
-                                justifyContent: 'center' 
-                              }}>
-                                No Img
-                              </div>
-                            )}
+                            <CatalogImage
+                              model={c.model_number}
+                              embeddedImages={c.images}
+                              hasImage={c.has_image}
+                              alt={c.model_number}
+                              imgStyle={{ width: '36px', height: '36px', borderRadius: '4px', objectFit: 'cover', border: '1px solid var(--border-color)' }}
+                              fallback={
+                                <div style={{ width: '36px', height: '36px', borderRadius: '4px', backgroundColor: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)', color: 'var(--text-muted)', fontSize: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                  No Img
+                                </div>
+                              }
+                            />
                           </td>
                           <td style={{ padding: '8px', fontWeight: '700' }}>{c.model_number}</td>
                           <td style={{ padding: '8px', color: 'var(--text-muted)' }}>{c.category}</td>

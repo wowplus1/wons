@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { useErpStore } from '../store/useErpStore';
 import { ShoppingBag } from 'lucide-react';
+import { CatalogImage } from './CatalogImage';
 
 interface RowData {
   id: string;
@@ -32,19 +33,35 @@ interface RowData {
   stoneSubName: string;
   size: string;
   manufacturer: string;
+  status?: string;          // 공정 단계 (접수/공장발주/출고대기/출고완료/보류/결제)
+  releaseDate?: string;     // 출고일 (품목 release_date)
+  releaseDisplay?: string;  // 출고일 MM-DD 표시
 }
+
+// 공정 단계별 배지 색상
+const STATUS_STYLE: Record<string, { bg: string; color: string; label: string }> = {
+  '접수':     { bg: 'rgba(148, 163, 184, 0.18)', color: '#64748b', label: '접수' },
+  '공장발주': { bg: 'rgba(245, 158, 11, 0.18)',  color: '#d97706', label: '공장발주' },
+  '출고대기': { bg: 'rgba(167, 139, 250, 0.18)', color: '#7c3aed', label: '출고대기' },
+  '출고완료': { bg: 'rgba(52, 211, 153, 0.18)',  color: '#059669', label: '출고완료' },
+  '보류':     { bg: 'rgba(239, 68, 68, 0.15)',   color: '#dc2626', label: '보류' },
+  '결제':     { bg: 'rgba(56, 189, 248, 0.15)',  color: '#0284c7', label: '결제' },
+};
 
 export const OrderList: React.FC = () => {
   const { catalog, orders, customers, transactions, updateMultipleItemsStatus, setActiveTab, deleteOrder, deleteOrderItem, deleteTransaction, startEditOrder } = useErpStore();
   const [filterCustomer, setFilterCustomer] = useState('');
   const [filterType, setFilterType] = useState<'전체' | '판매' | '결제' | '반품' | 'DC'>('전체');
+  const [filterStatus, setFilterStatus] = useState<'전체' | '접수' | '공장발주' | '출고대기' | '출고완료' | '보류'>('접수');
+  const [filterText, setFilterText] = useState('');   // 통합 검색 (모델/비고/제조사)
+  const [sortKey, setSortKey] = useState<'접수일' | '출고일' | '거래처' | '모델' | '재질' | '단계'>('접수일');
   const [checkedRows, setCheckedRows] = useState<Set<string>>(new Set());
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 30;
 
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [filterCustomer, filterType]);
+  }, [filterCustomer, filterType, filterStatus, filterText, sortKey]);
 
   const handleDeleteRow = (row: RowData) => {
     const isConfirm = window.confirm(`선택한 [${row.type}] 데이터를 완전히 삭제하시겠습니까?\n삭제된 정보는 즉시 거래처의 미수금 및 순금 미수량에서 복구(역산)처리 됩니다.`);
@@ -136,9 +153,8 @@ export const OrderList: React.FC = () => {
 
       const itemsList = order.items || [];
       itemsList.forEach((item, itemIdx) => {
-        // 품목별 상태 체크 (구버전 데이터 대응 포함)
+        // 품목별 상태 체크 (구버전 데이터 대응 포함) — 통합 현황: 전 단계 표시
         const itemStatus = item.status || order.status || '접수';
-        if (itemStatus === '공장발주' || itemStatus === '출고대기' || itemStatus === '출고완료') return;
         const qty = item.quantity || 1;
         const pureGoldWeightG = item.estimated_weight_g || 0;
         const weightGoldDon = pureGoldWeightG / 3.75;
@@ -203,7 +219,18 @@ export const OrderList: React.FC = () => {
           stoneMainName: item.stone_main_name || '',
           stoneSubName: item.stone_sub_name || '',
           size: item.size || '',
-          manufacturer: item.manufacturer || ''
+          manufacturer: item.manufacturer || '',
+          status: itemStatus,
+          releaseDate: item.release_date || '',
+          releaseDisplay: (() => {
+            if (!item.release_date) return '';
+            try {
+              const d = new Date(item.release_date);
+              return isNaN(d.getTime()) ? '' : d.toISOString().slice(5, 10);
+            } catch {
+              return '';
+            }
+          })(),
         });
       });
     });
@@ -241,21 +268,67 @@ export const OrderList: React.FC = () => {
         stoneMainName: '',
         stoneSubName: '',
         size: '',
-        manufacturer: ''
+        manufacturer: '',
+        status: '결제',
+        releaseDate: '',
+        releaseDisplay: '',
       });
     });
 
     return rows;
   }, [orders, transactions, customers]);
 
-  // Filter & Search Logic (Sorted by Date descending - newest first)
+  // Filter & Search + Sort Logic
   const filteredRows = React.useMemo(() => {
-    return allRows.filter(row => {
+    const text = filterText.trim().toLowerCase();
+    const filtered = allRows.filter(row => {
       const matchCustomer = row.customerName.toLowerCase().includes(filterCustomer.toLowerCase());
       const matchType = filterType === '전체' || row.type === filterType;
-      return matchCustomer && matchType;
-    }).sort((a, b) => b.date.localeCompare(a.date));
-  }, [allRows, filterCustomer, filterType]);
+      const matchStatus = filterStatus === '전체' || (row.status || '접수') === filterStatus;
+      const matchText = !text ||
+        row.model.toLowerCase().includes(text) ||
+        (row.note || '').toLowerCase().includes(text) ||
+        (row.manufacturer || '').toLowerCase().includes(text);
+      return matchCustomer && matchType && matchStatus && matchText;
+    });
+
+    // 정렬 (선택 키 기준, 동률/미지정 시 접수일 최신순)
+    const byDateDesc = (a: RowData, b: RowData) => (b.date || '').localeCompare(a.date || '');
+    filtered.sort((a, b) => {
+      switch (sortKey) {
+        case '출고일': {
+          // 출고일 있는 항목 우선, 최신순. 없으면 뒤로.
+          const ra = a.releaseDate || '';
+          const rb = b.releaseDate || '';
+          if (!ra && !rb) return byDateDesc(a, b);
+          if (!ra) return 1;
+          if (!rb) return -1;
+          return rb.localeCompare(ra);
+        }
+        case '거래처': {
+          const c = a.customerName.localeCompare(b.customerName, 'ko');
+          return c !== 0 ? c : byDateDesc(a, b);
+        }
+        case '모델': {
+          const c = a.model.localeCompare(b.model, 'ko');
+          return c !== 0 ? c : byDateDesc(a, b);
+        }
+        case '재질': {
+          const c = (a.material || '').localeCompare(b.material || '', 'ko');
+          return c !== 0 ? c : byDateDesc(a, b);
+        }
+        case '단계': {
+          const order = ['접수', '공장발주', '출고대기', '출고완료', '보류', '결제'];
+          const c = order.indexOf(a.status || '접수') - order.indexOf(b.status || '접수');
+          return c !== 0 ? c : byDateDesc(a, b);
+        }
+        case '접수일':
+        default:
+          return byDateDesc(a, b);
+      }
+    });
+    return filtered;
+  }, [allRows, filterCustomer, filterType, filterStatus, filterText, sortKey]);
 
   const totalPages = Math.ceil(filteredRows.length / pageSize);
   const startIndex = (currentPage - 1) * pageSize;
@@ -316,11 +389,18 @@ export const OrderList: React.FC = () => {
       const craftUpdates: typeof updates = [];
       const releaseUpdates: typeof updates = [];
 
+      let skippedNotReceived = 0;
       updates.forEach(up => {
         const orderObj = orders.find(o => o.order_id === up.orderId);
         if (orderObj) {
           const item = orderObj.items.find(i => i.item_id === up.itemId);
           if (item) {
+            // 통합 현황에서 전 단계가 함께 보이므로, '접수' 단계 품목만 발주 대상으로 처리
+            const curStatus = item.status || orderObj.status || '접수';
+            if (curStatus !== '접수') {
+              skippedNotReceived++;
+              return;
+            }
             const isCraft = item.division === '판매' || item.division === '반품';
             if (isCraft) {
               craftUpdates.push(up);
@@ -330,6 +410,11 @@ export const OrderList: React.FC = () => {
           }
         }
       });
+
+      if (craftUpdates.length === 0 && releaseUpdates.length === 0) {
+        alert(`전송 대상이 없습니다.\n이미 발주/출고 단계로 넘어간 품목은 이 버튼으로 이동할 수 없습니다.\n('접수' 단계 품목만 발주 대상)`);
+        return;
+      }
 
       // 사용자 확인 및 피드백 메시지 구성
       let confirmMessage = `선택한 ${updates.length}개 품목을 전송하시겠습니까?`;
@@ -350,7 +435,7 @@ export const OrderList: React.FC = () => {
         await updateMultipleItemsStatus(releaseUpdates, '출고대기');
       }
 
-      alert(`선택한 품목들의 전송이 완료되었습니다.\n\n- 세공 작업(공장발주) 이동: ${craftUpdates.length}개\n- 출고 대기 이동 (결제/DC 전용): ${releaseUpdates.length}개`);
+      alert(`선택한 품목들의 전송이 완료되었습니다.\n\n- 세공 작업(공장발주) 이동: ${craftUpdates.length}개\n- 출고 대기 이동 (결제/DC 전용): ${releaseUpdates.length}개${skippedNotReceived > 0 ? `\n- 제외됨(이미 발주/출고 단계): ${skippedNotReceived}개` : ''}`);
       
       // 선택 상태 비우기
       setCheckedRows(new Set());
@@ -382,7 +467,7 @@ export const OrderList: React.FC = () => {
       </div>
 
       {/* Filter Options */}
-      <div className="order-list-filter-bar" style={{ display: 'flex', gap: '12px', alignItems: 'center', background: 'rgba(255,255,255,0.01)', padding: '10px 14px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+      <div className="order-list-filter-bar" style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap', background: 'rgba(255,255,255,0.01)', padding: '10px 14px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <label style={{ fontWeight: '700', color: 'var(--text-muted)', fontSize: '14px' }}>거래처 검색:</label>
           <input
@@ -408,6 +493,52 @@ export const OrderList: React.FC = () => {
             <option value="결제">결제 (정산)</option>
             <option value="반품">반품</option>
             <option value="DC">DC</option>
+          </select>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <label style={{ fontWeight: '700', color: 'var(--text-muted)', fontSize: '14px' }}>단계:</label>
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value as typeof filterStatus)}
+            className="input-field"
+            style={{ padding: '0 8px', fontSize: '15px', width: '120px', height: '32px' }}
+          >
+            <option value="전체">전체 단계</option>
+            <option value="접수">접수</option>
+            <option value="공장발주">공장발주</option>
+            <option value="출고대기">출고대기</option>
+            <option value="출고완료">출고완료</option>
+            <option value="보류">보류</option>
+          </select>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <label style={{ fontWeight: '700', color: 'var(--text-muted)', fontSize: '14px' }}>검색:</label>
+          <input
+            type="text"
+            placeholder="모델 / 비고 / 제조사..."
+            value={filterText}
+            onChange={(e) => setFilterText(e.target.value)}
+            className="input-field"
+            style={{ padding: '5px 10px', fontSize: '15px', width: '170px', height: '32px' }}
+          />
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <label style={{ fontWeight: '700', color: 'var(--text-muted)', fontSize: '14px' }}>정렬:</label>
+          <select
+            value={sortKey}
+            onChange={(e) => setSortKey(e.target.value as typeof sortKey)}
+            className="input-field"
+            style={{ padding: '0 8px', fontSize: '15px', width: '110px', height: '32px' }}
+          >
+            <option value="접수일">접수일순</option>
+            <option value="출고일">출고일순</option>
+            <option value="거래처">거래처순</option>
+            <option value="모델">모델순</option>
+            <option value="재질">재질순</option>
+            <option value="단계">단계순</option>
           </select>
         </div>
 
@@ -453,16 +584,17 @@ export const OrderList: React.FC = () => {
             <col style={{ width: '4%' }} />
             <col style={{ width: '8%' }} />
             <col style={{ width: '9%' }} />
+            <col style={{ width: '7%' }} />
             <col style={{ width: '6%' }} />
-            <col style={{ width: '12%' }} />
-            <col style={{ width: '6%' }} />
-            <col style={{ width: '6%' }} />
-            <col style={{ width: '9%' }} />
-            <col style={{ width: '9%' }} />
-            <col style={{ width: '6%' }} />
+            <col style={{ width: '11%' }} />
+            <col style={{ width: '5%' }} />
+            <col style={{ width: '5%' }} />
+            <col style={{ width: '8%' }} />
+            <col style={{ width: '8%' }} />
+            <col style={{ width: '5%' }} />
             <col style={{ width: '5%' }} />
             <col style={{ width: '9%' }} />
-            <col style={{ width: '12%' }} />
+            <col style={{ width: '11%' }} />
             <col style={{ width: '4%' }} />
             <col style={{ width: '5%' }} />
           </colgroup>
@@ -477,8 +609,9 @@ export const OrderList: React.FC = () => {
                   title="전체 가공 품목 선택/해제"
                 />
               </th>
-              <th style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>일자</th>
+              <th style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>접수/출고일</th>
               <th style={{ padding: '6px 4px', border: '1px solid var(--border-color)' }}>거래처</th>
+              <th style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>단계</th>
               <th style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>사진</th>
               <th style={{ padding: '6px 4px', border: '1px solid var(--border-color)' }}>모델</th>
               <th style={{ padding: '6px 4px', textAlign: 'center', border: '1px solid var(--border-color)' }}>재질</th>
@@ -526,9 +659,12 @@ export const OrderList: React.FC = () => {
                       />
                     </td>
 
-                    {/* 일자 */}
-                    <td style={{ padding: '6px 4px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                      {row.dateDisplay}
+                    {/* 접수/출고일 (2줄) */}
+                    <td style={{ padding: '6px 4px', textAlign: 'center', color: 'var(--text-muted)', lineHeight: '1.3', fontSize: '13px' }}>
+                      <div title="접수일"><span style={{ color: '#94a3b8' }}>접</span> {row.dateDisplay}</div>
+                      <div title="출고일" style={{ color: row.releaseDisplay ? '#059669' : 'var(--text-muted)' }}>
+                        <span style={{ color: '#94a3b8' }}>출</span> {row.releaseDisplay || '-'}
+                      </div>
                     </td>
 
                     {/* 거래처 */}
@@ -541,24 +677,43 @@ export const OrderList: React.FC = () => {
                       </span>
                     </td>
 
+                    {/* 단계 */}
+                    <td style={{ padding: '6px 4px', textAlign: 'center' }}>
+                      {(() => {
+                        const st = row.status || '접수';
+                        const s = STATUS_STYLE[st] || STATUS_STYLE['접수'];
+                        return (
+                          <span style={{
+                            display: 'inline-block',
+                            padding: '2px 7px',
+                            borderRadius: '10px',
+                            background: s.bg,
+                            color: s.color,
+                            fontSize: '12px',
+                            fontWeight: 700,
+                            whiteSpace: 'nowrap',
+                          }}>
+                            {s.label}
+                          </span>
+                        );
+                      })()}
+                    </td>
+
                     {/* 사진 */}
                     <td style={{ padding: '6px 4px', textAlign: 'center' }}>
                       {(() => {
                         const matched = catalog.find(c => c.model_number.toUpperCase() === row.model.toUpperCase());
-                        const imageUrl = matched?.images?.[0];
-                        if (imageUrl) {
-                          return (
-                            <img 
-                              src={imageUrl} 
-                              alt={row.model} 
-                              style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px', border: '1px solid var(--border-color)' }}
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).style.display = 'none';
-                              }}
-                            />
-                          );
-                        }
-                        return <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>-</span>;
+                        if (!matched) return <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>-</span>;
+                        return (
+                          <CatalogImage
+                            model={matched.model_number}
+                            embeddedImages={matched.images}
+                            hasImage={matched.has_image}
+                            alt={row.model}
+                            imgStyle={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px', border: '1px solid var(--border-color)' }}
+                            fallback={<span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>-</span>}
+                          />
+                        );
                       })()}
                     </td>
 
@@ -677,7 +832,7 @@ export const OrderList: React.FC = () => {
             ) : (
               <tr>
                 <td colSpan={16} style={{ padding: '30px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                  접수 및 접수 진행 중인 주문 내역이 없습니다.
+                  조건에 해당하는 주문 내역이 없습니다.
                 </td>
               </tr>
             )}

@@ -2,6 +2,7 @@
 import React from 'react';
 import { useErpStore } from '../store/useErpStore';
 import { Eye, Plus, Image } from 'lucide-react';
+import { CatalogImage } from './CatalogImage';
 
 export const CatalogManager: React.FC = () => {
   const { catalog, stones } = useErpStore();
@@ -191,18 +192,18 @@ export const CatalogManager: React.FC = () => {
               }}
               className="catalog-card"
             >
-              {item.images && item.images[0] ? (
-                <img 
-                  src={item.images[0]} 
-                  alt={item.model_number} 
-                  style={{ width: '100%', height: '130px', objectFit: 'cover', borderBottom: '1px solid var(--border-color)' }}
-                />
-              ) : (
-                <div className="catalog-no-image" style={{ width: '100%', height: '130px', background: 'rgba(255,255,255,0.03)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px', borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
-                  <Image size={28} />
-                  <span style={{ fontSize: '14px' }}>이미지 없음</span>
-                </div>
-              )}
+              <CatalogImage
+                model={item.model_number}
+                embeddedImages={item.images}
+                hasImage={item.has_image}
+                imgStyle={{ width: '100%', height: '130px', objectFit: 'cover', borderBottom: '1px solid var(--border-color)' }}
+                fallback={
+                  <div className="catalog-no-image" style={{ width: '100%', height: '130px', background: 'rgba(255,255,255,0.03)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px', borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
+                    <Image size={28} />
+                    <span style={{ fontSize: '14px' }}>이미지 없음</span>
+                  </div>
+                }
+              />
               <div className="catalog-card-details" style={{ padding: '10px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '17px', fontWeight: '700', color: 'var(--primary)', fontFamily: 'var(--font-title)' }}>

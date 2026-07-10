@@ -94,7 +94,8 @@ export interface CatalogItem {
     quantity: number;
     description?: string;
   }[];
-  images: string[];
+  images: string[];         // 마이그레이션 후에는 비어있음(이미지는 catalog_images 컬렉션에 별도 저장)
+  has_image?: boolean;      // 이미지 존재 여부(지연 로딩 판단용)
   created_at: string;
   manufacturer?: string;
   manufacturer_code?: string;

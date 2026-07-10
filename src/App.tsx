@@ -165,19 +165,17 @@ function App() {
     
     // 초기 로딩이 완료된 상태(customers.length > 0)일 때만 작동
     if (!loading && customers.length > 0) {
-      const state = useErpStore.getState();
-      const needed: ('catalog' | 'stones')[] = [];
-      
-      if (state.catalog.length === 0) needed.push('catalog');
-      if (state.stones.length === 0) needed.push('stones');
-      
-      if (needed.length > 0) {
-        // 사용자 인터랙션의 병목을 방지하기 위해 1.5초 후 백그라운드로 가져옴
-        const timer = setTimeout(() => {
-          prefetchDb(needed);
-        }, 1500);
-        return () => clearTimeout(timer);
-      }
+      // 사용자 인터랙션의 병목을 방지하기 위해 1.5초 후 백그라운드로 가져옴.
+      // catalog 는 IndexedDB 캐시에서 비동기 하이드레이션되므로, 필요 여부는
+      // 타이머 발화 시점(하이드레이션 완료 이후)에 재확인해 불필요한 전체 조회를 막는다.
+      const timer = setTimeout(() => {
+        const state = useErpStore.getState();
+        const needed: ('catalog' | 'stones')[] = [];
+        if (state.catalog.length === 0) needed.push('catalog');
+        if (state.stones.length === 0) needed.push('stones');
+        if (needed.length > 0) prefetchDb(needed);
+      }, 1500);
+      return () => clearTimeout(timer);
     }
   }, [loading, customers, prefetchDb, popupType]);
 

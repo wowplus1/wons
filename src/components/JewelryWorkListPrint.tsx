@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useErpStore } from '../store/useErpStore';
 import { Printer, Eye, EyeOff } from 'lucide-react';
+import { getCatalogImage } from '../utils/imageStore';
 
 export const JewelryWorkListPrint: React.FC = () => {
   const { orders, catalog } = useErpStore();
@@ -13,6 +14,9 @@ export const JewelryWorkListPrint: React.FC = () => {
   const rowIds = idsParam ? idsParam.split(',') : [];
 
   const [showPrice, setShowPrice] = useState<boolean>(showPriceParam);
+  // 이미지는 catalog_images 에서 지연 로딩 → 인쇄 전 미리 확보
+  const [imgMap, setImgMap] = useState<Record<string, string>>({});
+  const [imagesReady, setImagesReady] = useState<boolean>(false);
 
   // 선택된 주문 품목(OrderItem) 매핑 및 원본 주문 메타데이터 파싱
   const selectedItems = rowIds.map(rowId => {
@@ -49,15 +53,40 @@ export const JewelryWorkListPrint: React.FC = () => {
     imageUrl: string;
   }[];
 
+  // 인쇄에 필요한 이미지들을 catalog_images 에서 미리 로딩
   useEffect(() => {
-    if (selectedItems.length > 0) {
-      // 컴포넌트 마운트 완료 및 렌더링 대기 후 인쇄 대화상자 호출
+    const models = Array.from(new Set(
+      selectedItems
+        .filter(r => !r.imageUrl) // 내장 이미지가 없는 경우만
+        .map(r => {
+          const ci = catalog.find(c => c.model_number === r.item.model_number);
+          return ci && ci.has_image ? ci.model_number : '';
+        })
+        .filter(Boolean)
+    ));
+    if (models.length === 0) { setImagesReady(true); return; }
+    let alive = true;
+    Promise.all(models.map(async (m) => [m, (await getCatalogImage(m)) || ''] as const))
+      .then((pairs) => {
+        if (!alive) return;
+        const map: Record<string, string> = {};
+        pairs.forEach(([m, u]) => { if (u) map[m] = u; });
+        setImgMap(map);
+        setImagesReady(true);
+      })
+      .catch(() => { if (alive) setImagesReady(true); });
+    return () => { alive = false; };
+  }, [selectedItems.length, catalog]);
+
+  useEffect(() => {
+    if (selectedItems.length > 0 && imagesReady) {
+      // 이미지 로딩 완료 후 인쇄 대화상자 호출
       const timer = setTimeout(() => {
         window.print();
       }, 600);
       return () => clearTimeout(timer);
     }
-  }, [selectedItems.length]);
+  }, [selectedItems.length, imagesReady]);
 
   if (selectedItems.length === 0) {
     return (
@@ -223,7 +252,8 @@ export const JewelryWorkListPrint: React.FC = () => {
           </thead>
           <tbody>
             {selectedItems.map((row, i) => {
-              const { item, orderDate, customerName, imageUrl } = row;
+              const { item, orderDate, customerName } = row;
+              const imageUrl = row.imageUrl || imgMap[item.model_number] || '';
               
               // 스톤 요약 텍스트
               const mainStoneText = item.stone_main_name ? `[메] ${item.stone_main_name} (${item.qty_main || 0}ea)` : '';

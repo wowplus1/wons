@@ -4,6 +4,7 @@ import { useErpStore } from '../store/useErpStore';
 import type { CatalogItem } from '../firebase/mockDb';
 import { PackagePlus } from 'lucide-react';
 import { toCommaString, fromCommaStringInt } from '../utils/numberFormat';
+import { getCatalogImage } from '../utils/imageStore';
 
 export const CatalogRegisterForm: React.FC = () => {
   const { stones, catalog, saveCatalogItem } = useErpStore();
@@ -185,6 +186,11 @@ export const CatalogRegisterForm: React.FC = () => {
         }
         if (matched.images && matched.images.length > 0) {
           setImages(matched.images);
+        } else if (matched.has_image) {
+          // 이미지는 별도 컬렉션에 있으므로 지연 로딩하여 편집 폼에 채운다
+          getCatalogImage(matched.model_number).then((url) => {
+            if (url) setImages([url]);
+          });
         }
       }
     }

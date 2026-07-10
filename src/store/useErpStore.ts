@@ -16,6 +16,8 @@ import { signInWithEmailAndPassword, signOut as firebaseSignOut } from 'firebase
 import type { User as FirebaseUser } from 'firebase/auth';
 import type { GoldRates, Stone, Customer, CatalogItem, Order, OrderItem, GoldTransaction, AuditLog } from '../firebase/mockDb';
 import { mockDb } from '../firebase/mockDb';
+import { primeCatalogImage, invalidateCatalogImage } from '../utils/imageStore';
+import { loadCatalogCache, saveCatalogCache } from '../utils/catalogCache';
 
 // 증분 데이터를 기존 배열과 합치는 헬퍼 함수
 const mergeArrays = <T>(existing: T[], incoming: any[], idKey: keyof T): T[] => {
@@ -187,9 +189,16 @@ const saveCacheToLocalStorage = (data: {
   transactions?: any[];
 }) => {
   try {
+    // ⚠️ 카탈로그(5,120건 메타데이터 ~3.3MB)는 localStorage 한도(~5MB)를 넘겨 QuotaExceededError 를
+    // 유발하므로 IndexedDB 에 별도 저장한다. 나머지 소량 컬렉션만 localStorage 에 저장한다.
+    const { catalog: catalogData, ...rest } = data;
+    if (Array.isArray(catalogData)) {
+      void saveCatalogCache(catalogData as any);
+    }
     const existing = localStorage.getItem(LOCAL_STORAGE_KEY);
     const existingData = existing ? JSON.parse(existing) : {};
-    const merged = { ...existingData, ...data, cached_at: new Date().toISOString() };
+    delete existingData.catalog; // 과거에 저장됐을 수 있는 catalog 는 제거
+    const merged = { ...existingData, ...rest, cached_at: new Date().toISOString() };
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(merged));
   } catch (e) {
     console.error("Failed to save local storage cache", e);
@@ -208,6 +217,12 @@ const loadCacheFromLocalStorage = () => {
   }
   return null;
 };
+
+// 카탈로그 IndexedDB 캐시 하이드레이션 완료를 알리는 게이트.
+// fetchDb 는 catalog 조회 전에 이 게이트를 기다려, 하이드레이션 전 빈 상태에서
+// 불필요한 전체 조회(full fetch)가 발생하지 않도록 한다.
+let __resolveCatalogHydrated: () => void = () => {};
+const catalogHydrated: Promise<void> = new Promise((r) => { __resolveCatalogHydrated = r; });
 
 export const useErpStore = create<ErpState>((set, get) => {
   const cachedData = loadCacheFromLocalStorage() || {};
@@ -411,6 +426,9 @@ export const useErpStore = create<ErpState>((set, get) => {
     },
 
     fetchDb: async (targetCollections, forceFull = false, bypassThrottle = false) => {
+      // 카탈로그 IndexedDB 캐시 하이드레이션이 끝난 뒤 진행(증분 판정이 올바르게 되도록).
+      // 첫 로드에서만 수십 ms 대기하고, 이후에는 이미 resolve 되어 즉시 통과한다.
+      await catalogHydrated;
       const now = Date.now();
       const state = get();
       const collectionsToFetch = targetCollections || [
@@ -1400,16 +1418,35 @@ export const useErpStore = create<ErpState>((set, get) => {
     try {
       const existing = get().catalog.find(c => c.model_number === item.model_number);
       const isNew = !existing;
-      await setDoc(doc(db, 'catalog', item.model_number), item);
+
+      // 이미지(base64)는 별도 컬렉션(catalog_images)에 저장하고, 카탈로그 문서에는 메타데이터만 저장한다.
+      const { images, ...meta } = item as any;
+      const hasImage = Array.isArray(images) && images.length > 0 && !!images[0];
+      const nowIso = new Date().toISOString();
+      const metaDoc = { ...meta, images: [], has_image: hasImage, updated_at: nowIso };
+      await setDoc(doc(db, 'catalog', item.model_number), metaDoc);
+      if (hasImage) {
+        await setDoc(doc(db, 'catalog_images', item.model_number), {
+          model_number: item.model_number,
+          images: [images[0]],
+          updated_at: nowIso,
+        });
+      } else {
+        // 이미지 제거 시 기존 이미지 문서도 삭제
+        try { await deleteDoc(doc(db, 'catalog_images', item.model_number)); } catch { /* 없으면 무시 */ }
+      }
+      invalidateCatalogImage(item.model_number);
+      if (hasImage) primeCatalogImage(item.model_number, images[0]);
+
       await get().addAuditLog({
         target_type: 'catalog',
         target_id: item.model_number,
         action_type: isNew ? 'create' : 'modify',
-        description: isNew 
+        description: isNew
           ? `카탈로그 상품 [${item.model_number}] 신규 등록 완료`
           : `카탈로그 상품 [${item.model_number}] 정보 수정 완료`,
-        before_value: isNew ? undefined : JSON.stringify(existing),
-        after_value: JSON.stringify(item)
+        before_value: isNew ? undefined : JSON.stringify({ ...(existing as any), images: [] }),
+        after_value: JSON.stringify(metaDoc)
       });
       await get().fetchDb(undefined, false, true);
     } catch (error) {
@@ -1422,7 +1459,10 @@ export const useErpStore = create<ErpState>((set, get) => {
     try {
       const target = get().catalog.find(c => c.model_number === modelNumber);
       await deleteDoc(doc(db, 'catalog', modelNumber));
-      
+      // 이미지 문서도 함께 삭제 + 캐시 무효화
+      try { await deleteDoc(doc(db, 'catalog_images', modelNumber)); } catch { /* 없으면 무시 */ }
+      invalidateCatalogImage(modelNumber);
+
       // deletions 컬렉션에 기록
       await setDoc(doc(db, 'deletions', `catalog_${modelNumber}`), {
         collection: 'catalog',
@@ -2296,6 +2336,23 @@ export const useErpStore = create<ErpState>((set, get) => {
   }
 };
 });
+
+// 카탈로그 메타데이터를 IndexedDB 캐시에서 비동기 하이드레이션한다.
+// (localStorage 는 5,120건을 담지 못하므로 catalog 만 IndexedDB 에서 복원)
+// 아직 서버 fetch 로 채워지지 않은 경우(state.catalog 가 비어있을 때)에만 반영해 최신 데이터를 덮지 않는다.
+loadCatalogCache()
+  .then((cat) => {
+    if (cat && cat.length > 0 && useErpStore.getState().catalog.length === 0) {
+      const sorted = [...cat].sort((a: any, b: any) => {
+        const tA = a.updated_at || a.created_at || '';
+        const tB = b.updated_at || b.created_at || '';
+        return tB.localeCompare(tA);
+      });
+      useErpStore.setState({ catalog: sorted });
+    }
+  })
+  .catch(() => { /* ignore */ })
+  .finally(() => { __resolveCatalogHydrated(); });
 
 if (typeof window !== 'undefined') {
   (window as any).syncErpDb = () => {

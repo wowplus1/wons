@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useErpStore } from '../store/useErpStore';
 import { X } from 'lucide-react';
+import { CatalogImage } from './CatalogImage';
 
 export const CatalogSelectPopup: React.FC = () => {
   const { catalog } = useErpStore();
   const [searchText, setSearchText] = useState('');
-  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
 
   // Parse URL Parameters
   const queryParams = new URLSearchParams(window.location.search);
@@ -184,7 +184,6 @@ export const CatalogSelectPopup: React.FC = () => {
         {displayedCatalog.length > 0 ? (
           displayedCatalog.map(c => {
             const price = c.base_labor_fees['14K']?.[`grade_${targetGrade}`] || 0;
-            const hasImageError = imageErrors[c.model_number];
             return (
               <div 
                 key={c.model_number} 
@@ -202,18 +201,18 @@ export const CatalogSelectPopup: React.FC = () => {
                 }}
                 className="stone-select-item"
               >
-                {c.images && c.images[0] && !hasImageError ? (
-                  <img 
-                    src={c.images[0]} 
-                    alt={c.model_number} 
-                    style={{ width: '40px', height: '40px', borderRadius: '4px', objectFit: 'cover' }} 
-                    onError={() => setImageErrors(prev => ({ ...prev, [c.model_number]: true }))}
-                  />
-                ) : (
-                  <div style={{ width: '40px', height: '40px', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', color: 'var(--text-muted)' }}>
-                    No Img
-                  </div>
-                )}
+                <CatalogImage
+                  model={c.model_number}
+                  embeddedImages={c.images}
+                  hasImage={c.has_image}
+                  alt={c.model_number}
+                  imgStyle={{ width: '40px', height: '40px', borderRadius: '4px', objectFit: 'cover' }}
+                  fallback={
+                    <div style={{ width: '40px', height: '40px', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', color: 'var(--text-muted)' }}>
+                      No Img
+                    </div>
+                  }
+                />
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontWeight: '700', color: 'var(--text-main)', fontSize: '15px' }}>{c.model_number}</span>
