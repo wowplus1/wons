@@ -22,6 +22,21 @@ import {
 } from 'recharts';
 import * as XLSX from 'xlsx';
 
+// ── KST(한국 표준시, UTC+9) 기준 날짜 유틸 ──
+// 브라우저 로컬 타임존과 무관하게 항상 한국 날짜를 반환한다.
+const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
+/** KST 기준 오늘 'YYYY-MM-DD' (i일 전으로 이동 가능). */
+const kstDateStr = (offsetDays = 0): string =>
+  new Date(Date.now() + KST_OFFSET_MS - offsetDays * 86400000).toISOString().substring(0, 10);
+/** 주문/출고 날짜값을 KST 'YYYY-MM-DD' 로 정규화. 이미 YYYY-MM-DD 면 그대로(사용자 입력 출고일), ISO 타임스탬프면 KST 날짜로 변환. */
+const toKstDate = (v?: string | number | Date | null): string => {
+  if (v === undefined || v === null || v === '') return '';
+  if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+  const d = v instanceof Date ? v : new Date(v);
+  if (isNaN(d.getTime())) return typeof v === 'string' ? v.substring(0, 10) : '';
+  return new Date(d.getTime() + KST_OFFSET_MS).toISOString().substring(0, 10);
+};
+
 export const Statistics: React.FC = () => {
   const { orders, customers, catalog, totalReceivable, totalGoldBalance24k, currentRates, setActiveTab } = useErpStore();
 
@@ -31,13 +46,9 @@ export const Statistics: React.FC = () => {
   const [paymentFilter, setPaymentFilter] = useState<'all' | 'paid' | 'unpaid'>('all');
   const [selectedDivision, setSelectedDivision] = useState<string>('전체');
 
-  // 직접선택용 날짜 설정 (기본값: 오늘 기준 최근 30일)
-  const todayStr = useMemo(() => new Date().toISOString().substring(0, 10), []);
-  const monthAgoStr = useMemo(() => {
-    const d = new Date();
-    d.setDate(d.getDate() - 30);
-    return d.toISOString().substring(0, 10);
-  }, []);
+  // 직접선택용 날짜 설정 (기본값: 한국시간 오늘 기준 최근 30일)
+  const todayStr = useMemo(() => kstDateStr(0), []);
+  const monthAgoStr = useMemo(() => kstDateStr(30), []);
   const [startDate, setStartDate] = useState<string>(monthAgoStr);
   const [endDate, setEndDate] = useState<string>(todayStr);
 
@@ -183,46 +194,37 @@ export const Statistics: React.FC = () => {
   // ISO 주차 계산 헬퍼
   const getISOWeek = (dateStr: string) => {
     if (!dateStr) return '';
-    const date = new Date(dateStr);
+    // KST 날짜 문자열을 UTC 자정으로 파싱하고 UTC 메서드로 계산 → 타임존 영향 제거
+    const date = new Date(String(dateStr).substring(0, 10) + 'T00:00:00Z');
     if (isNaN(date.getTime())) return '';
     const tempDate = new Date(date.valueOf());
-    tempDate.setDate(tempDate.getDate() + 4 - (tempDate.getDay() || 7));
-    const yearStart = new Date(tempDate.getFullYear(), 0, 1);
+    tempDate.setUTCDate(tempDate.getUTCDate() + 4 - (tempDate.getUTCDay() || 7));
+    const yearStart = new Date(Date.UTC(tempDate.getUTCFullYear(), 0, 1));
     const weekNo = Math.ceil((((tempDate.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
-    return `${tempDate.getFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+    return `${tempDate.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
   };
 
-  // 날짜 범위 배열 생성 헬퍼
+  // 날짜 범위 배열 생성 헬퍼 (모두 한국시간 KST 기준)
   const getDailyRange = () => {
     const arr = [];
-    const now = new Date();
-    for (let i = 29; i >= 0; i--) {
-      const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
-      arr.push(d.toISOString().substring(0, 10));
-    }
+    for (let i = 29; i >= 0; i--) arr.push(kstDateStr(i));
     return arr;
   };
 
   const getWeeklyRange = () => {
     const arr = [];
-    const now = new Date();
-    for (let i = 11; i >= 0; i--) {
-      const d = new Date(now.getTime() - i * 7 * 24 * 60 * 60 * 1000);
-      arr.push(getISOWeek(d.toISOString().substring(0, 10)));
-    }
+    for (let i = 11; i >= 0; i--) arr.push(getISOWeek(kstDateStr(i * 7)));
     return Array.from(new Set(arr)).slice(-12);
   };
 
   const getMonthlyRange = () => {
     const arr = [];
-    const now = new Date();
-    const y = now.getFullYear();
-    const m = now.getMonth();
+    const kstNow = kstDateStr(0); // 'YYYY-MM-DD' (KST)
+    const y = parseInt(kstNow.substring(0, 4), 10);
+    const m = parseInt(kstNow.substring(5, 7), 10) - 1; // 0-indexed
     for (let i = 11; i >= 0; i--) {
-      const d = new Date(y, m - i, 1);
-      const yStr = d.getFullYear();
-      const mStr = String(d.getMonth() + 1).padStart(2, '0');
-      arr.push(`${yStr}-${mStr}`);
+      const d = new Date(Date.UTC(y, m - i, 1));
+      arr.push(`${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`);
     }
     return arr;
   };
@@ -230,13 +232,13 @@ export const Statistics: React.FC = () => {
   const getCustomRange = (start: string, end: string) => {
     if (!start || !end) return [];
     const arr = [];
-    const s = new Date(start);
-    const e = new Date(end);
-    const curr = new Date(s.getTime());
+    // UTC 자정으로 파싱 + UTC 증가 → 브라우저 타임존 영향 제거
+    const curr = new Date(start.substring(0, 10) + 'T00:00:00Z');
+    const e = new Date(end.substring(0, 10) + 'T00:00:00Z');
     let limit = 0;
     while (curr <= e && limit < 366) {
       arr.push(curr.toISOString().substring(0, 10));
-      curr.setDate(curr.getDate() + 1);
+      curr.setUTCDate(curr.getUTCDate() + 1);
       limit++;
     }
     return arr;
@@ -279,7 +281,7 @@ export const Statistics: React.FC = () => {
         if (selectedDivision !== '전체' && division !== selectedDivision) return;
         if (division === '결제') return; // 단순 입금은 매출에서 배제
 
-        const dateStr = item.release_date || order.order_date || '';
+        const dateStr = toKstDate(item.release_date || order.order_date || '');
         if (!dateStr) return;
 
         let key = '';
@@ -375,7 +377,7 @@ export const Statistics: React.FC = () => {
         if (selectedDivision !== '전체' && division !== selectedDivision) return;
         if (division === '결제') return;
 
-        const dateStr = item.release_date || order.order_date || '';
+        const dateStr = toKstDate(item.release_date || order.order_date || '');
         if (periodType === 'custom') {
           if (dateStr < startDate || dateStr > endDate) return;
         } else if (periodType === 'daily') {
@@ -430,7 +432,7 @@ export const Statistics: React.FC = () => {
         if (selectedDivision !== '전체' && division !== selectedDivision) return;
         if (division === '결제') return;
 
-        const dateStr = item.release_date || order.order_date || '';
+        const dateStr = toKstDate(item.release_date || order.order_date || '');
         if (periodType === 'custom') {
           if (dateStr < startDate || dateStr > endDate) return;
         } else if (periodType === 'daily') {
